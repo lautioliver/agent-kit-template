@@ -1,0 +1,43 @@
+# .github/workflows/pr-title.yml — <PROYECTO>
+# Valida que el título del PR sea un Conventional Commit (docs/convencion-nombres-github.md §2–3).
+# Con squash merge, el título queda como commit en la rama base.
+name: PR title
+
+on:
+  pull_request_target:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # No hace checkout del código del PR: seguro con pull_request_target.
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            refactor
+            perf
+            test
+            docs
+            style
+            build
+            ci
+            chore
+            revert
+          # TODO: lista cerrada de scopes (§2). Mientras esté vacía, cualquier scope es válido.
+          # scopes: |
+          #   api
+          #   db
+          #   docs
+          requireScope: false
+          # Descripción en minúscula, sin punto final.
+          subjectPattern: ^(?![A-ZÁÉÍÓÚÑ]).+[^.]$
+          subjectPatternError: |
+            La descripción "{subject}" del título "{title}" tiene que empezar en minúscula y no terminar en punto.

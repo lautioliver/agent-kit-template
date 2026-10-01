@@ -24,7 +24,7 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
    ./scripts/init-plantilla.sh "Nombre del proyecto" main
    ```
 
-   El segundo argumento es la rama base de los PRs (`main` o `develop`). El script reemplaza los marcadores `<PROYECTO>` y `<RAMA_BASE>`, y se borra solo.
+   El segundo argumento es la rama base de los PRs (`main` o `develop`). El script pone el nombre, la rama base, la regla de ramas que corresponde y la fecha de hoy como fecha de las decisiones. Después se borra solo.
 3. Completá lo que está marcado con `TODO:`. Buscalo con `grep -rn "TODO:" .`. Lo mínimo:
    - `AGENTS.md`: qué es, stack, comandos y convenciones de código.
    - `.github/labels.yml` y `.github/labeler.yml`: los labels `area:` y las rutas de tu repo.

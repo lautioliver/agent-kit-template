@@ -38,7 +38,7 @@ Siempre:
 Fuente de verdad: `docs/convencion-nombres-github.md`. Labels: `.github/labels.yml`. Solo lo marcado como decidido en su §12 es obligatorio. Lo que no esté decidido o cubierto se le pregunta al equipo antes de inventar un formato.
 
 - **Ramas:** Conventional Branch 1.1, `<tipo>/<n°issue>-<descripcion>`. Tipos: `feat`, `fix`, `hotfix`, `chore`, `release`. Si la crea un agente: `claude/<n°issue>-<descripcion>`. Solo minúsculas, números y guiones, sin tildes ni ñ.
-- **Base de los PRs:** `<RAMA_BASE>`. Ver la skill `git-workflow`.
+- **Rama base:** <REGLA_RAMAS> Ver la skill `git-workflow`.
 - **Commits y títulos de PR:** Conventional Commits 1.0, `<tipo>(<scope>): <descripcion>`, en imperativo, minúscula, sin punto final, ≤ 72 caracteres. Tipos en inglés; descripción en español.
 - **Scopes:** los de `docs/convencion-nombres-github.md` §2. Si un cambio toca varios, se omite el scope o se divide en varios commits.
 - **Cuerpo del PR:** `.github/pull_request_template.md` (Qué cambia / Por qué / Lógica de negocio afectada / Cómo probarlo / `Closes #n`).

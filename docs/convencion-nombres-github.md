@@ -1,7 +1,7 @@
 # Convención de nombres en GitHub — <PROYECTO>
 
 > **Estado:** PROPUESTA — pendiente de decisión del equipo.
-> **Fecha:** TODO: fecha
+> **Fecha:** <FECHA>
 > **Alcance:** ramas, commits, pull requests, issues / ítems del Project, labels, campos del Project, milestones, tags y releases.
 > **Para agentes:** una vez aprobado, este documento es la fuente de verdad. Ningún agente debe crear ramas, commits, PRs o issues con otro formato. Si algo no está cubierto, preguntar antes de inventar un formato nuevo.
 
@@ -31,7 +31,9 @@ Ramas permanentes `main` + `develop`, y temporales `feature/*`, `release/*`, `ho
 - ✅ Muy conocido, separa claramente producción de desarrollo.
 - ❌ Pesado para un equipo de 2: hay que mantener `develop` sincronizada y hacer ramas de release.
 
-### Opción B — GitHub Flow + Conventional Branch 1.1 ⭐ elegida
+> ✅ **DECIDIDO (<FECHA>):** ramas cortas con prefijo (Conventional Branch 1.1). <REGLA_RAMAS>
+
+### Opción B — GitHub Flow + Conventional Branch 1.1
 Una sola rama permanente (`main`) y ramas cortas con el formato `<tipo>/<descripcion>`.
 
 La especificación Conventional Branch define los prefijos `feature/` (alias `feat/`), `bugfix/` (alias `fix/`), `hotfix/`, `release/` y `chore/`, y desde la v1.1.0 agrega prefijos para ramas creadas por agentes de IA: `ai/`, `claude/`, `codex/`, `copilot/`, `cursor/`. Las ramas troncales (`main`, `master`, `develop`) no llevan prefijo.
@@ -288,7 +290,8 @@ Para incluir en `CLAUDE.md` / `AGENTS.md` del repo:
 - Tipos de rama: feat, fix, hotfix, chore, release, claude.
 - Commits y títulos de PR: Conventional Commits 1.0 → `<tipo>(<scope>): <descripcion>`.
 - Scopes válidos: los de §2.
-- Nunca pushear a `main` directamente. Todo entra por PR.
+- <REGLA_RAMAS>
+- Nunca pushear directo a las ramas troncales. Todo entra por PR.
 - Si el cambio modifica lógica de negocio ya definida, agregar el label `logica-negocio` y explicarlo en el PR.
 - Ver docs/convencion-nombres-github.md para el detalle.
 ```
@@ -301,8 +304,8 @@ Para incluir en `CLAUDE.md` / `AGENTS.md` del repo:
 |---|---|
 | Nombre de rama | GitHub Action `commit-check-action` o un Ruleset de GitHub con patrón de nombre |
 | Mensaje de commit | `commitlint` + hook de `husky`, o `commit-check` |
-| Título de PR | Action `amannn/action-semantic-pull-request` |
-| `main` protegida | Ruleset: PR obligatorio, 1 aprobación, sin force-push |
+| Título de PR | Action `amannn/action-semantic-pull-request` — incluido en `.github/workflows/pr-title.yml` |
+| Ramas troncales protegidas | Ruleset: PR obligatorio, 1 aprobación, sin force-push |
 | Labels | Archivo `.github/labels.yml` + Action de sincronización |
 
 ---
@@ -313,12 +316,12 @@ Marcar la opción elegida por el equipo y fecha:
 
 | # | Tema | Opción elegida | Fecha | Notas |
 |---|---|---|---|---|
-| 1 | Ramas | ✅ B — GitHub Flow + Conventional Branch 1.1 | TODO: fecha | Viene decidido en la plantilla |
+| 1 | Ramas | ✅ Conventional Branch 1.1 | <FECHA> | <REGLA_RAMAS> |
 | 2 | Commits | | | ¿scopes confirmados? |
 | 3 | PRs | | | ¿squash merge? |
 | 4 | Títulos de issues | | | |
 | 4.2 | Tipo de issue | | | ¿repo en organización? |
-| 5 | Labels | ✅ B — prefijo `grupo:valor` | TODO: fecha | Viene decidido en la plantilla; fuente en .github/labels.yml |
+| 5 | Labels | ✅ B — prefijo `grupo:valor` | <FECHA> | Viene decidido en la plantilla; fuente en .github/labels.yml |
 | 6 | Campos del Project | | | ¿prioridad en campo o label? |
 | 7 | Milestones | | | |
 | 8 | Versionado | | | |

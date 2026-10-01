@@ -82,6 +82,6 @@ Regla: si un documento de producto y el código no coinciden, **gana** [architec
 - Idea de **algún día** → `horizon.md`, no al código.
 - Decisión irreversible → ADR nuevo en `decisions/`.
 - Un ADR y el código no coinciden → actualizar el ADR o el código; no dejar los dos.
-- Documento nuevo → sumarlo a este índice **y** a `llms.txt`.
+- Documento nuevo → sumarlo a este índice. A `llms.txt` se suma recién cuando tiene contenido (no solo `TODO:`).
 
 No duplicar listas canónicas (endpoints, tablas): viven en un solo archivo y el resto enlaza.

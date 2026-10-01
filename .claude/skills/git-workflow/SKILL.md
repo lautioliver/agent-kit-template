@@ -9,7 +9,7 @@ Detalle en `docs/convencion-nombres-github.md`. Resumen obligatorio en `AGENTS.m
 
 ## Ramas
 
-- Base de todos los PRs: **`<RAMA_BASE>`**. Creá la rama de trabajo desde `<RAMA_BASE>` actualizada.
+- <REGLA_RAMAS> Creá la rama de trabajo desde `<RAMA_BASE>` actualizada.
 - Nombre: `claude/<n°issue>-<descripcion>` (agente) o `<tipo>/<n°issue>-<descripcion>` (persona). Solo minúsculas, números y guiones.
 - Si no hay issue, preguntá si abrir uno (skill `crear-issue`) antes de inventar el número.
 
