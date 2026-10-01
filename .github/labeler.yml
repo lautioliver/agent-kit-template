@@ -1,0 +1,38 @@
+# .github/labeler.yml — <PROYECTO>
+# Etiquetado automático de PRs con actions/labeler v5.
+# Regla: este archivo SOLO usa labels que existen en .github/labels.yml. No crear labels nuevos acá.
+
+# ── tipo: según el prefijo de la rama (Conventional Branch 1.1) ──────────
+# Sin tipo automático: claude/, cursor/, release/ y ramas de bots.
+# En esos casos se pone a mano; el check del workflow avisa si falta.
+"tipo:feature":
+  - head-branch: ['^feat/', '^feature/']
+
+"tipo:bug":
+  - head-branch: ['^fix/', '^bugfix/', '^hotfix/']
+
+"tipo:task":
+  - head-branch: ['^chore/']
+
+"tipo:docs":
+  - head-branch: ['^docs/']
+
+# ── area: según los archivos que toca el PR ──────────────────────────────
+# TODO: una entrada por cada area: de labels.yml, con las rutas de tu repo.
+
+"area:api":
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'src/**'           # TODO: ajustar
+
+"area:infra":
+  - changed-files:
+      - any-glob-to-any-file:
+          - '.github/workflows/**'
+          - 'infra/**'
+          - 'Dockerfile'
+
+"area:docs":
+  - changed-files:
+      - all-globs-to-all-files:
+          - '{docs/**,*.md,llms.txt,.claude/**}'

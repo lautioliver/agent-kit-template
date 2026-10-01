@@ -1,0 +1,66 @@
+# .github/workflows/labels.yml — <PROYECTO>
+# 1) sync:    aplica .github/labels.yml al repo (borra labels que no estén en el archivo).
+# 2) labeler: etiqueta PRs según rama y archivos (.github/labeler.yml).
+# 3) check:   valida los labels del PR contra docs/convencion-nombres-github.md §5.
+name: Labels
+
+on:
+  push:
+    branches: [<RAMA_BASE>]
+    paths: ['.github/labels.yml']
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, labeled, unlabeled]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    if: github.event_name != 'pull_request_target'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EndBug/label-sync@v2
+        with:
+          config-file: .github/labels.yml
+          delete-other-labels: true   # borra bug, enhancement, etc. (convención §5)
+
+  labeler:
+    if: github.event_name == 'pull_request_target' && contains(fromJSON('["opened","synchronize","reopened"]'), github.event.action)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      # No hace checkout del código del PR: seguro con pull_request_target.
+      # La config se lee de la rama base, así que los cambios a labeler.yml rigen después del merge.
+      - uses: actions/labeler@v5
+        with:
+          sync-labels: false   # no quita labels puestos a mano (tipo:audit, logica-negocio, etc.)
+
+  check:
+    needs: [labeler]
+    # always(): corre aunque labeler se haya salteado (labeled/unlabeled/edited).
+    if: ${{ always() && github.event_name == 'pull_request_target' }}
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: pr } = await github.rest.pulls.get({
+              ...context.repo, pull_number: context.payload.pull_request.number,
+            });
+            const names = pr.labels.map(l => l.name);
+            const count = p => names.filter(n => n.startsWith(p)).length;
+            const errors = [];
+            if (count('tipo:') !== 1)    errors.push(`tipo: debe haber exactamente 1 (hay ${count('tipo:')}). Ramas claude/, cursor/ y release/ lo llevan a mano.`);
+            if (count('prioridad:') > 0) errors.push('prioridad: no se usa en PRs (solo en issues).');
+            if (count('estado:') > 1)    errors.push(`estado: máximo 1 (hay ${count('estado:')}).`);
+            if (count('area:') === 0)    core.warning('Ningún area: detectado. Si el PR toca producto, ponelo a mano.');
+            if (count('area:') > 2)      core.warning(`${count('area:')} labels area: (la convención pide 1–2). Revisá si conviene dividir el PR.`);
+            if (names.includes('logica-negocio')) core.notice('logica-negocio: requiere revisión de todo el equipo y la sección "Lógica de negocio afectada" completa.');
+            if (errors.length) core.setFailed('Labels fuera de convención:\n- ' + errors.join('\n- '));
+            else core.info('Labels OK: ' + names.join(', '));

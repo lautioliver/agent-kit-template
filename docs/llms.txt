@@ -1,0 +1,28 @@
+# <PROYECTO>
+
+> TODO: una línea con qué es el producto, la decisión que lo define y cómo está armado el repo.
+
+Instrucciones para modelos: leer este archivo y AGENTS.md. Spec aspiracional = /README.md. Narrativa = docs/development/vision.md. Código que corre = docs/development/architecture.md. Orden = docs/development/roadmap.md. Largo plazo (no implementar) = docs/development/horizon.md. Por qué = docs/decisions/. TODO: reglas de una línea que un modelo no debe romper.
+
+## Documentación
+
+- [Hub](README.md)
+- [Glosario](reference/glossary.md)
+- [Dominio](reference/domain.md)
+- [Superficies](reference/surfaces.md)
+- [Módulos](reference/modules.md)
+- [Recorridos](reference/journeys.md)
+- [Arquitectura implementada](development/architecture.md)
+- [Visión](development/vision.md)
+- [Setup](development/setup.md)
+- [Deploy](development/deploy.md)
+- [Roadmap](development/roadmap.md)
+- [Horizonte](development/horizon.md)
+- [Convención de nombres en GitHub](convencion-nombres-github.md) — labels en ../.github/labels.yml
+- [Decisiones (ADRs)](decisions/README.md)
+- [AGENTS.md](../AGENTS.md)
+- [Spec](../README.md)
+
+## Código ancla
+
+- TODO: los 4 o 5 archivos por donde se entiende el sistema (montaje de rutas, schema, estados).
