@@ -24,7 +24,15 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
    ./scripts/init-plantilla.sh "Nombre del proyecto" main
    ```
 
-   El segundo argumento es la rama base de los PRs (`main` o `develop`). El script pone el nombre, la rama base, la regla de ramas que corresponde y la fecha de hoy como fecha de las decisiones. Después se borra solo.
+   El segundo argumento es la rama base de los PRs:
+
+   | Opción | Flujo | Cuándo |
+   |---|---|---|
+   | `main` | rama → `main` | Proyecto nuevo, sin usuarios todavía |
+   | `develop` | rama → `develop` → `main` | Separar integración de producción |
+   | `develop releases` | rama → `develop` → `release/vX.Y.Z` → `main` | La app ya tiene usuarios activos: cada versión se congela y se prueba en staging antes de llegar a producción |
+
+   Ejemplo con releases: `./scripts/init-plantilla.sh "Nombre del proyecto" develop releases`. El script pone el nombre, la rama base, la regla de ramas que corresponde y la fecha de hoy como fecha de las decisiones. Después se borra solo.
 3. Completá lo que está marcado con `TODO:`. Buscalo con `grep -rn "TODO:" .`. Lo mínimo:
    - `AGENTS.md`: qué es, stack, comandos y convenciones de código.
    - `.github/labels.yml` y `.github/labeler.yml`: los labels `area:` y las rutas de tu repo.

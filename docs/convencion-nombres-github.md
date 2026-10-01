@@ -266,6 +266,14 @@ Preferir **campos del Project** antes que labels para lo que cambia seguido (est
 - Mientras el producto no sea estable: `v0.x.y`.
 - Con Conventional Commits el número se puede calcular automáticamente (`feat` → MINOR, `fix` → PATCH, `!` → MAJOR).
 
+<!-- releases:inicio -->
+### Ramas de release
+
+Con usuarios activos, las versiones se preparan en ramas cortas `release/vX.Y.Z` cortadas desde `develop`. Se congelan (solo arreglos de esa versión), se prueban en staging y se mergean a `main` con su tag. Los arreglos vuelven a `develop`. Un hotfix sale de `main`, va a `main` y siempre vuelve a `develop` y a la `release/*` abierta. Paso a paso en `.claude/skills/git-workflow/SKILL.md`.
+
+Se eligió `release/*` corta en vez de una rama permanente `staging`: cada versión queda congelada y no hay una tercera rama troncal que se desincronice.
+<!-- releases:fin -->
+
 ---
 
 ## 9. Idioma
