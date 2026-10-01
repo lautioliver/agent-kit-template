@@ -22,7 +22,7 @@ TODO: comandos que NO se corren (por ejemplo builds de producción) y por qué.
 
 ## Convenciones que importan
 
-TODO: las reglas de código que un agente rompería si no las lee. Ejemplos de Abra:
+TODO: las reglas de código que un agente rompería si no las lee. Ejemplos:
 - Errores de API con un formato único.
 - IDs públicos con prefijo, nunca secuenciales.
 - Dinero en enteros (centavos).

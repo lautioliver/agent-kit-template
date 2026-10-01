@@ -1,6 +1,6 @@
 # Plantilla de repo: reglas para agentes + documentación
 
-Repo plantilla para arrancar proyectos con la misma estructura de documentación y reglas para LLMs que usa Abra.
+Repo plantilla para arrancar proyectos con una estructura de documentación y reglas para LLMs lista para usar.
 
 ## Qué trae
 
