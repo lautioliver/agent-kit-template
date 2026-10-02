@@ -12,8 +12,8 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
 | Convenciones de GitHub | `docs/convencion-nombres-github.md` (ramas, commits, PRs, issues, labels) |
 | Labels | `.github/labels.yml` (fuente), `.github/labeler.yml` (auto-etiquetado de PRs), `.github/workflows/labels.yml` (sync + labeler + check) |
 | PRs | `.github/pull_request_template.md` |
-| Issues | `.github/ISSUE_TEMPLATE/*.yml` (formularios con labels automáticos) |
-| Skills de Claude Code | `.claude/skills/crear-issue` (abrir issues desde el chat), `.claude/skills/git-workflow` |
+| Issues | `.github/ISSUE_TEMPLATE/*.yml` (formularios con labels automáticos), `.github/workflows/desbloquear.yml` (saca `estado:bloqueado` al cerrarse los bloqueantes) |
+| Skills de Claude Code | `.claude/skills/crear-issue` (abrir issues y marcar bloqueos desde el chat), `.claude/skills/git-workflow` |
 
 ## Cómo usarla
 
@@ -46,6 +46,10 @@ Con Claude Code en el repo, pedilo en lenguaje natural:
 
 > abrí un issue: el QR no valida sin conexión, es urgente
 
-La skill `crear-issue` arma el título según la convención, elige labels que existan en `labels.yml`, busca duplicados, te muestra el borrador y lo crea con `gh` cuando lo confirmás. También sirve para pasar una auditoría a issues: un issue por hallazgo.
+La skill `crear-issue` arma el título según la convención, elige labels que existan en `labels.yml`, busca duplicados, te muestra el borrador y lo crea con `gh` cuando lo confirmás. También sirve para pasar una auditoría a issues (un issue por hallazgo) y para marcar bloqueos:
+
+> la migración de pagos depende de que se cierre #25
+
+La skill registra la dependencia nativa de GitHub ("Blocked by"), pone `estado:bloqueado` y el workflow `desbloquear.yml` saca el label solo cuando se cierran todos los bloqueantes.
 
 Necesita `gh` instalado y autenticado (`gh auth status`).
