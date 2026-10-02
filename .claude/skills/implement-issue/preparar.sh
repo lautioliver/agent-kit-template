@@ -34,8 +34,10 @@ RAMA="claude/$N-$slug"
 echo "# Issue #$N: $titulo"
 echo "Labels: $(jq -r '[.labels[].name] | join(", ")' <<<"$issue")"
 echo "URL: $(jq -r .html_url <<<"$issue")"
-padre=$(gh api "repos/$REPO/issues/$N/parent" -q '"#\(.number) \(.title)"' 2>/dev/null || true)
-[ -n "$padre" ] && echo "Épica: $padre"
+# gh imprime el JSON del 404 en stdout cuando no hay épica: se usa el código de salida.
+if padre=$(gh api "repos/$REPO/issues/$N/parent" 2>/dev/null); then
+  echo "Épica: $(jq -r '"#\(.number) \(.title)"' <<<"$padre")"
+fi
 bloquea=$(gh api "repos/$REPO/issues/$N/dependencies/blocking" -q '[.[] | select(.state == "open") | "#\(.number)"] | join(", ")')
 [ -n "$bloquea" ] && echo "Bloquea a: $bloquea (al cerrarse este, se desbloquean)"
 echo
