@@ -1,0 +1,61 @@
+---
+name: mejorar-skills
+description: Consolida las retros del flujo con agentes y las señales objetivas (fallas de CI en ramas de agentes, reverts) y propone ajustes a las skills en un PR que revisa una persona. Nunca edita las skills sin PR ni afloja controles. Usar con "/mejorar-skills", "¿qué aprendimos de las últimas corridas?", "ajustá las skills con el uso" o en la corrida semanal programada.
+---
+
+# Mejorar las skills con el uso
+
+Las skills aprenden de su uso, pero **no se reescriben solas**: esta skill propone, una persona decide. Un ajuste sin control se ajusta a un solo caso, alarga las skills y, sobre todo, tiende a sacar los controles que frenan al agente, que son justo lo más valioso.
+
+## 1. Juntar las señales
+
+```bash
+.claude/skills/mejorar-skills/senales.sh [días]
+```
+
+Trae las retros nuevas del issue fijado "Retros del flujo con agentes" (desde la última consolidación) y las señales objetivas: fallas de CI en ramas `claude/` agrupadas por workflow, y reverts. Las señales objetivas pesan más que las retros: el agente no ve sus propios puntos ciegos.
+
+Si no hay nada nuevo, decilo y terminá.
+
+## 2. Agrupar por patrón
+
+Para cada patrón: qué pasó, en qué casos (links), y qué skill o script lo habría evitado. Un patrón es algo que se repite o que fue grave; una anécdota no es un patrón.
+
+## 3. Decidir qué proponer
+
+Reglas, en este orden:
+
+1. **Al menos dos casos, o uno grave.** Grave: un bug que llegó a la revisión o a producción, una regla de negocio rota, datos o dinero en riesgo.
+2. **Nunca quitar ni aflojar** reglas de Autonomía (`AGENTS.md`), aprobaciones, verificaciones ni el "no mergea / no aprueba". Si un control frena seguido sin motivo, se plantea como **pregunta para el equipo** en el PR, no como cambio.
+3. **Script antes que texto.** Si se puede verificar mecánicamente (un check de CI, un control en `verificar.py` o `preparar.sh`), eso; una instrucción más en Markdown es el último recurso. Las instrucciones son lo que el agente se saltea.
+4. **Largo máximo:** ninguna `SKILL.md` pasa de 120 líneas. Si un ajuste no entra, hay que sacar o pasar a script otra cosa.
+5. **Un cambio por patrón**, con su motivo y los casos que lo justifican.
+
+## 4. Proponer en un PR
+
+Rama `claude/<n>-mejorar-skills-<fecha>` (con un issue `tipo:task`), base la rama troncal de trabajo. El cuerpo del PR:
+
+```markdown
+## Patrones encontrados
+| Patrón | Casos | Ajuste propuesto |
+## Preguntas para el equipo
+(controles que frenan seguido; nada de esto se cambia en este PR)
+## Descartado
+(anécdotas o casos que no alcanzan las reglas)
+```
+
+Mostrá el borrador del PR antes de abrirlo y esperá un "sí".
+
+## 5. Marcar lo consolidado
+
+Abierto el PR, comentá en el issue de retros (con `retro.sh`) un resumen corto con el link al PR y, al final, la línea:
+
+```
+<!-- mejorar-skills: consolidado -->
+```
+
+Así la próxima corrida empieza desde ahí.
+
+## Programarla
+
+Para que corra sola (por ejemplo, los lunes), usá una tarea programada que ejecute `/mejorar-skills`. Igual termina en un PR para revisar: programarla no le da permiso para mergear.

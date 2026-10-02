@@ -99,6 +99,7 @@ idea → /plan-feature → épica + issues con bloqueos
          [debug si es bug · db-migration si toca schema · tests · autorevisión · update-docs]
      → PR → /review-pr <n> (otra sesión) [+ /security-review si toca rutas sensibles]
      → merge (una persona)
+     → retro en el issue fijado → /mejorar-skills propone ajustes en un PR
 ```
 
 | Skill | Para qué |
@@ -110,7 +111,12 @@ idea → /plan-feature → épica + issues con bloqueos
 | `db-migration` | Plan con compatibilidad, backfill y rollback antes de tocar el schema. |
 | `update-docs` | Qué docs quedaron viejos por un cambio (según el mapa) y corregirlos en el mismo PR. |
 | `/review-pr <n>` | Revisión con foco en lo propio del proyecto: reglas de negocio, ADRs, autonomía, docs, tests, rutas sensibles. No aprueba. |
+| `/mejorar-skills` | Junta las retros (issue fijado "Retros del flujo con agentes") y las señales objetivas (fallas de CI en ramas de agentes, reverts) y propone ajustes a las skills en un PR. Nunca afloja controles. |
 | `/estado` | Resumen del proyecto generado en el momento (versión, trabajo, épicas, PRs, deuda, decisiones, migraciones) y "¿qué puedo hacer ahora?" (`disponibles.sh`). |
 | `git-workflow` | Ramas, commits y PRs. |
 
 Dos puntos de control quedan siempre en manos de personas: **aprobar el plan** y **mergear**.
+
+**Las skills mejoran con el uso, pero no se reescriben solas.** Cada `implement-issue` y `review-pr` deja una retro; `/mejorar-skills` busca patrones (al menos dos casos o uno grave), prefiere convertirlos en scripts o checks antes que en más texto, y siempre propone en un PR. Las skills tienen un máximo de 120 líneas (lo controla `check-docs.py`) para que no crezcan con cada ajuste. Se puede programar para que corra una vez por semana.
+
+Dos checks del workflow de labels salieron de ese circuito en un repo real: un PR con `logica-negocio` tiene que tocar `docs/decisions/` (o decir "ADR sin cambios: <motivo>"), y un PR que llega sin `tipo:` lo copia del issue que cierra.

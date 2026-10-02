@@ -12,6 +12,7 @@ Revisa:
 - Rutas del mapa (docs, sensibles, verificar) que no coinciden con ningún archivo (salvo las
   marcadas como opcionales con "?" al principio); avisa de
   carpetas con código que el mapa no cubre.
+- Skills (.claude/skills/*/SKILL.md) de más de 120 líneas.
 Las rutas de "ignorar_check" del mapa (por ejemplo, bitácoras históricas) no se validan.
 """
 import json
@@ -140,6 +141,17 @@ if MAPA:
             avisos.append("código que ninguna ruta del mapa cubre (si cambia, nadie avisa qué doc revisar): "
                           + ", ".join(f"{c}/ ({n})" for c, n in top)
                           + (f" y {len(conteo) - 6} carpetas más" if len(conteo) > 6 else ""))
+
+# Skills largas: el agente se saltea pasos justamente por la cantidad. Si un ajuste
+# no entra en el máximo, hay que sacar algo o pasarlo a un script.
+MAX_SKILL = 120
+if os.path.isdir(".claude/skills"):
+    for nombre in sorted(os.listdir(".claude/skills")):
+        ruta = os.path.join(".claude/skills", nombre, "SKILL.md")
+        if os.path.exists(ruta):
+            lineas = sum(1 for _ in open(ruta, encoding="utf-8"))
+            if lineas > MAX_SKILL:
+                errores.append(f"{ruta}: {lineas} líneas (máximo {MAX_SKILL}). Pasá algo a un script o sacá lo que no aporta.")
 
 for a in avisos:
     print(f"Aviso: {a}")
