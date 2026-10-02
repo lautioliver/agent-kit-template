@@ -7,6 +7,7 @@ Revisa:
 - Menciones a ADR-NNN sin archivo en docs/decisions/.
 - ADRs que no figuran en docs/README.md o docs/llms.txt.
 - Documentos obligatorios y rutas de docs/mapa-agentes.json que no existen.
+- Rutas de ejemplo (TODO/…) que quedaron en docs/mapa-agentes.json después del init.
 """
 import json
 import os
@@ -79,6 +80,14 @@ if os.path.exists("docs/mapa-agentes.json"):
     for f in mapa.get("obligatorios", []):
         if not os.path.exists(f):
             errores.append(f"docs/mapa-agentes.json: falta el documento obligatorio {f}")
+    # Después del init (el script se borra solo), un "TODO/" en el mapa es una ruta que no existe:
+    # el agente nunca marcaría nada como sensible. En la plantilla sin inicializar se permite.
+    if not os.path.exists("scripts/init-plantilla.sh"):
+        crudo = open("docs/mapa-agentes.json", encoding="utf-8").read()
+        pendientes = sorted(set(re.findall(r'"(TODO/[^"]*)"', crudo)))
+        if pendientes:
+            errores.append("docs/mapa-agentes.json: completá las rutas de ejemplo con las reales del proyecto: "
+                           + ", ".join(pendientes))
     for regla in mapa.get("docs", []):
         for f in regla.get("revisar", []):
             if not os.path.exists(f):

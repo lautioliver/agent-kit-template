@@ -9,7 +9,7 @@ Lleva un issue a un PR listo para que lo revise una persona. Cada paso deja algo
 
 **Límite:** el agente llega hasta el PR con el CI en verde. **Nunca mergea**, ni a `<RAMA_BASE>` ni a `main`. El merge es el punto donde una persona del equipo mira el cambio entero.
 
-Si no te dieron un número ("tomá el siguiente"), corré `.claude/skills/crear-issue/disponibles.sh`, proponé el primero de "Se pueden empezar ya" y esperá confirmación.
+Si no te dieron un número ("tomá el siguiente"), corré `.claude/skills/estado/disponibles.sh`, proponé el primero de "Se pueden empezar ya" y esperá confirmación.
 
 ## 1. Tomar el issue
 

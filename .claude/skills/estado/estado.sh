@@ -3,7 +3,7 @@
 # (git, GitHub, docs). No se guarda: siempre está al día. Solo lee.
 # Uso: estado.sh
 set -uo pipefail
-cd "$(git rev-parse --show-toplevel)"
+cd "$(git rev-parse --show-toplevel)" || exit 1
 REPO=$(gh repo view --json nameWithOwner,defaultBranchRef -q '.nameWithOwner')
 DEFAULT=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
 git fetch -q --tags origin 2>/dev/null || true

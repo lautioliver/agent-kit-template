@@ -75,7 +75,7 @@ def orden_topologico(issues):
     return [por_clave[c] for c in orden]
 
 
-def validar(plan, repo):
+def validar(plan, obtener_repo):
     errores, avisos = [], []
     issues = plan.get("issues", [])
     if not issues:
@@ -105,7 +105,7 @@ def validar(plan, repo):
             if isinstance(b, int):
                 if b not in externos:
                     try:
-                        externos[b] = gh_json("api", f"repos/{repo}/issues/{b}")
+                        externos[b] = gh_json("api", f"repos/{obtener_repo()}/issues/{b}")
                     except RuntimeError:
                         errores.append(f"{nombre}: el issue #{b} no existe")
                         continue
@@ -221,12 +221,27 @@ def main():
         print(__doc__)
         sys.exit(2)
     borrador = "--borrador" in args
-    repo = args[args.index("--repo") + 1] if "--repo" in args else \
-        gh("repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner")
-    with open(args[0]) as f:
-        plan = json.load(f)
+    try:
+        with open(args[0]) as f:
+            plan = json.load(f)
+    except (OSError, json.JSONDecodeError) as e:
+        print(f"No pude leer el plan {args[0]}: {e}", file=sys.stderr)
+        sys.exit(1)
 
-    orden, externos, errores, avisos = validar(plan, repo)
+    # GitHub se consulta solo si hace falta: issues externos en bloqueado_por, o al crear.
+    repo_cache = []
+
+    def obtener_repo():
+        if not repo_cache:
+            try:
+                repo_cache.append(args[args.index("--repo") + 1] if "--repo" in args else
+                                  gh("repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"))
+            except RuntimeError as e:
+                print(f"No pude identificar el repo de GitHub ({e}). Pasá --repo owner/repo.", file=sys.stderr)
+                sys.exit(1)
+        return repo_cache[0]
+
+    orden, externos, errores, avisos = validar(plan, obtener_repo)
     if errores:
         print("El plan no es válido:", file=sys.stderr)
         for e in errores:
@@ -235,7 +250,7 @@ def main():
     if borrador:
         mostrar_borrador(plan, orden, externos, avisos)
     else:
-        crear(plan, orden, externos, repo)
+        crear(plan, orden, externos, obtener_repo())
 
 
 if __name__ == "__main__":

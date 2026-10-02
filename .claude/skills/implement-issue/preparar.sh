@@ -16,7 +16,7 @@ error() { echo "NO SE PUEDE TOMAR #$N: $*" >&2; exit 1; }
 [ "$(jq -r '.pull_request // empty' <<<"$issue")" ] && error "es un PR, no un issue."
 [ "$(jq -r .state <<<"$issue")" = "open" ] || error "está cerrado."
 if [ "$(jq -r '(.sub_issues_summary.total // 0) > (.sub_issues_summary.completed // 0)' <<<"$issue")" = "true" ]; then
-  error "es una épica con sub-issues abiertos. Implementá sus sub-issues (ver disponibles.sh)."
+  error "es una épica con sub-issues abiertos. Implementá sus sub-issues (ver .claude/skills/estado/disponibles.sh)."
 fi
 bloq=$(gh api "repos/$REPO/issues/$N/dependencies/blocked_by" \
   | jq -r '[.[] | select(.state == "open") | "#\(.number) \(.title)"] | join("; ")')

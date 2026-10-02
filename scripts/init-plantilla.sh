@@ -12,7 +12,8 @@ MODO="${3:-}"
 if [ -n "$MODO" ] && { [ "$MODO" != "releases" ] || [ "$B" = "main" ]; }; then
   echo "$USO"; echo "'releases' solo se puede usar con la rama base develop."; exit 1
 fi
-export F="$(date +%Y-%m-%d)"
+F=$(date +%Y-%m-%d)
+export F
 if [ "$B" = "main" ]; then
   export R='Única rama permanente `main`: los PRs de trabajo van directo a `main`.'
 elif [ "$MODO" = "releases" ]; then

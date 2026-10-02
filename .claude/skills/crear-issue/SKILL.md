@@ -1,20 +1,19 @@
 ---
 name: crear-issue
-description: Abre issues de GitHub en este repo a partir de un pedido en el chat, siguiendo la convención del proyecto (título, labels, cuerpo), y marca bloqueos entre issues (dependencias "bloqueado por"). Usar cuando el usuario pida "abrí un issue", "creá un ticket", "anotá esto como bug", "pasá esta auditoría a issues", "esto depende de #12", "bloqueá #30 hasta que se cierre #25", "planificá X", "armá el plan de trabajo para Y", "¿qué puedo hacer ahora?", "¿qué está bloqueado?" o similar.
+description: Abre issues sueltos de GitHub a partir de un pedido en el chat, siguiendo la convención del proyecto (título, labels, cuerpo), pasa auditorías a issues y marca bloqueos entre issues existentes ("bloqueado por"). Usar con "abrí un issue", "creá un ticket", "anotá esto como bug", "pasá esta auditoría a issues", "esto depende de #12", "bloqueá #30 hasta que se cierre #25". Para planificar una feature con varios issues, usar plan-feature; para "¿qué puedo hacer ahora?", usar estado.
 ---
 
 # Crear issue
 
-Convierte un pedido en lenguaje natural en uno o varios issues que cumplen `docs/convencion-nombres-github.md` §4–5, y registra qué issue bloquea a cuál con las dependencias nativas de GitHub. También planifica trabajos grandes (épica + sub-issues + bloqueos) y responde qué se puede empezar ya.
+Convierte un pedido en lenguaje natural en uno o varios issues que cumplen `docs/convencion-nombres-github.md` §4–5, y registra qué issue bloquea a cuál con las dependencias nativas de GitHub.
 
-Scripts de esta carpeta (rutas relativas a la skill):
-- `disponibles.sh` — qué se puede empezar ya. Solo lee.
-- `planificar.py` — valida y crea un plan completo. Requiere `python3`.
+No es para:
+- Planificar una feature en varios issues (épica, sub-issues, orden) → skill `plan-feature`.
+- "¿Qué puedo hacer ahora?" → skill `estado` (`disponibles.sh`).
 
 ## Requisitos
 
 - `gh` autenticado (`gh auth status`). Si no lo está, pedile al usuario que corra `gh auth login`; no sigas.
-- `jq` para `disponibles.sh` y `python3` para `planificar.py`.
 - Leé `.github/labels.yml` cada vez: es la única lista de labels válida. **Nunca** crees labels nuevos ni uses uno que no esté ahí.
 
 ## Pasos
@@ -63,7 +62,7 @@ Scripts de esta carpeta (rutas relativas a la skill):
    ```
    Opcionales, solo si el usuario los pidió: `--assignee @me`, `--milestone "<nombre>"`, `--project "<nombre>"`.
 
-9. **Sub-issues** (épica con tareas): creá primero el padre y después cada hijo, y vinculalos:
+9. **Sub-issues** (vincular un issue a una épica que ya existe; para armar una épica nueva con varios issues, usá `plan-feature`):
    ```bash
    hijo_id=$(gh api repos/{owner}/{repo}/issues/<n_hijo> -q .id)
    gh api repos/{owner}/{repo}/issues/<n_padre>/sub_issues -X POST -F sub_issue_id=$hijo_id
@@ -116,55 +115,3 @@ Además:
 - **Sin ciclos.** Antes de crear `B bloqueado por A`, revisá que A no esté bloqueado (directa o indirectamente) por B, recorriendo `blocked_by` de A. Si hay ciclo, no lo crees y explicalo.
 - Para bloqueos sobre issues **existentes** (no recién creados), mostrá el cambio (`#B bloqueado por #A`) y pedí confirmación igual que para crear un issue.
 - Si la API responde 404 o 422 (repo sin dependencias habilitadas, issue de otro repo sin permiso), decilo con el error y dejá el bloqueo escrito en el cuerpo del issue como respaldo.
-
-## Qué se puede hacer ahora
-
-Para "¿qué puedo hacer ahora?", "¿qué sigue?", "¿qué está bloqueado?":
-
-```bash
-.claude/skills/crear-issue/disponibles.sh
-```
-
-Devuelve cuatro listas: **se pueden empezar ya** (sin bloqueantes abiertos ni asignados, por prioridad), **en curso** (asignados, con quién los tiene), **bloqueados** (con lo que los bloquea) y **épicas en curso** (con avance de sub-issues). Las épicas no aparecen como disponibles: se trabajan por sus sub-issues. Los asignados tampoco: `/implement-issue` asigna el issue al tomarlo, así dos sesiones no eligen el mismo.
-
-Al responder:
-- Mostrá la salida tal cual, sin inventar issues que no están.
-- Si el usuario dice en qué área o con qué prioridad quiere trabajar, filtrá la lista con eso.
-- Si hay disponibles con `estado:a-triar`, mencionalo: todavía no tienen prioridad.
-- GitHub tarda unos segundos en actualizar el resumen de dependencias: si un issue se cerró recién, puede seguir figurando unos segundos más.
-
-No modifica nada, así que no hace falta confirmación.
-
-## Planificar un trabajo grande
-
-Para "planificá la migración de cuentas", "armá los issues para el checkout nuevo": una épica, sus sub-issues y los bloqueos entre ellos, en un solo borrador.
-
-1. **Entender el alcance.** Leé los docs y el código relevantes (`docs/development/architecture.md`, ADRs, módulos). Si el pedido es ambiguo en algo que cambia la división del trabajo, preguntá antes.
-2. **Dividir.** Cada sub-issue es un PR razonable: se puede revisar solo y deja el sistema funcionando. Típicamente 3 a 8. Si salen más, proponé dividir en dos épicas.
-3. **Ordenar.** Marcá `bloqueado_por` solo cuando un issue de verdad no puede empezar sin el otro (schema → API → pantalla). Lo que se puede hacer en paralelo queda sin bloqueo.
-4. **Escribir el plan** en un JSON temporal (fuera del repo):
-   ```json
-   {
-     "epica": {"titulo": "Migrar cuentas a la tabla nueva", "cuerpo": "## Objetivo\n…", "labels": ["tipo:feature", "area:api"]},
-     "issues": [
-       {"clave": "schema", "titulo": "Crear la tabla de cuentas", "cuerpo": "…", "labels": ["tipo:task", "area:infra"]},
-       {"clave": "api", "titulo": "Exponer las cuentas en la API", "cuerpo": "…", "labels": ["tipo:task", "area:api"],
-        "bloqueado_por": ["schema"], "motivo": "necesita la tabla"},
-       {"clave": "pantalla", "titulo": "Mostrar las cuentas en el panel", "cuerpo": "…", "labels": ["tipo:feature"],
-        "bloqueado_por": ["api", 25], "motivo": "consume el endpoint; #25 define el diseño"}
-     ]
-   }
-   ```
-   `bloqueado_por` acepta claves del plan o números de issues existentes. Títulos, labels y cuerpos siguen los pasos 3–6 de arriba.
-5. **Validar y mostrar el borrador:**
-   ```bash
-   .claude/skills/crear-issue/planificar.py <plan.json> --borrador
-   ```
-   Valida labels contra `labels.yml`, exactamente un `tipo:` por issue, claves y números existentes, y que no haya ciclos. Muestra los issues en el orden en que se pueden hacer. Si falla, corregí el plan; no saltees la validación.
-   Mostrale al usuario esa salida y pedí un "sí" explícito.
-6. **Crear:**
-   ```bash
-   .claude/skills/crear-issue/planificar.py <plan.json>
-   ```
-   Crea la épica, cada issue en orden, los vincula como sub-issues, registra los bloqueos, agrega `estado:bloqueado` y la línea `Bloqueado por #N` donde corresponde. Si falla a mitad de camino, informa qué alcanzó a crear: mostralo y no reintentes el plan entero (duplicaría issues); creá solo lo que falta.
-7. **Responder** con los links y el orden sugerido de trabajo.
