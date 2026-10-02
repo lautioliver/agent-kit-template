@@ -15,6 +15,7 @@ fi
 F=$(date +%Y-%m-%d)
 export F
 if [ "$B" = "main" ]; then
+  # shellcheck disable=SC2016  # backticks de Markdown literales
   export R='Única rama permanente `main`: los PRs de trabajo van directo a `main`.'
 elif [ "$MODO" = "releases" ]; then
   export R="Los PRs de trabajo van a \`$B\`. Las versiones se preparan en \`release/vX.Y.Z\` (cortada desde \`$B\`, probada en staging) y recién ahí pasan a \`main\`, que es producción."
@@ -22,6 +23,7 @@ else
   export R="Los PRs de trabajo van a \`$B\`. \`main\` es producción y solo recibe PRs de release desde \`$B\`."
 fi
 cd "$(git rev-parse --show-toplevel)"
+# shellcheck disable=SC2016  # $ENV{…} lo expande perl, no bash
 grep -rlE '<PROYECTO>|<RAMA_BASE>|<FECHA>|<REGLA_RAMAS>' --exclude-dir=.git --exclude=init-plantilla.sh . \
   | xargs perl -pi -e 's/<PROYECTO>/$ENV{P}/g; s/<RAMA_BASE>/$ENV{B}/g; s/<FECHA>/$ENV{F}/g; s/<REGLA_RAMAS>/$ENV{R}/g'
 BLOQUES=$(grep -rl 'releases:inicio' --exclude-dir=.git --exclude=init-plantilla.sh . || true)

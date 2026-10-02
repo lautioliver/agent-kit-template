@@ -12,6 +12,7 @@ issues=$(gh api --paginate "repos/$REPO/issues?state=open&per_page=100" \
   | jq -s '[.[][] | select(.pull_request | not)]')
 
 # Orden: critica, alta, media, baja, sin prioridad.
+# shellcheck disable=SC2016  # programa de jq: los $ son de jq, no de bash
 ORDEN='def prio: ([.labels[].name | select(startswith("prioridad:"))][0] // "") as $p
   | {"prioridad:critica":0,"prioridad:alta":1,"prioridad:media":2,"prioridad:baja":3}[$p] // 4;
 def epica: (.sub_issues_summary.total // 0) > (.sub_issues_summary.completed // 0);
