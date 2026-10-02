@@ -1,0 +1,51 @@
+# AGENTS.md — <PROYECTO>
+
+Contexto para agentes y personas que tocan este repo. `CLAUDE.md` solo importa este archivo.
+
+## Qué es
+
+TODO: una o dos frases. Qué hace y para quién.
+
+Cómo está armado hoy: `docs/architecture.md`. Decisiones difíciles de revertir: `docs/decisions/`.
+
+## Stack y comandos
+
+TODO: lenguaje, framework, base de datos.
+
+```bash
+# TODO: instalar, lint, test, dev
+```
+
+## Convenciones de código
+
+TODO: las reglas que un agente rompería si no las lee (formato de errores, dónde va la lógica, cómo se manejan fechas o dinero…).
+
+## Autonomía del agente
+
+**Puede solo:** cambiar código y tests dentro de lo que pide el issue, refactors internos, actualizar docs, abrir PRs (nunca mergearlos).
+
+**Consulta antes:** cambiar el schema de la base, agregar o quitar dependencias, tocar auth o secretos, cambiar una API que usan otros, tocar deploy o CI, ampliar el alcance del issue.
+
+**Nunca:** correr migraciones o borrar datos fuera de local, poner secretos en el repo, desactivar tests o checks para que algo pase.
+
+Rutas sensibles de este proyecto (TODO: completar): schema `…`, auth `…`, deploy `…`.
+
+### Si toca la base de datos
+
+Antes de escribir la migración, mostrá y hacé aprobar: schema actual → deseado, si el código desplegado sigue andando, cómo se completan los datos existentes y **cómo se vuelve atrás**. Borrar o renombrar columnas en uso va en dos PRs: primero lo nuevo, después sacar lo viejo.
+
+## GitHub
+
+Detalle en `docs/convencion-nombres-github.md`.
+
+- **Rama:** <REGLA_RAMAS> Nombres `<tipo>/<n°issue>-<descripcion>`; si la crea un agente, `claude/<n°issue>-<descripcion>`.
+- **Commits y PRs:** `<tipo>: <descripcion>` en imperativo y minúscula (`feat`, `fix`, `docs`, `chore`, `refactor`, `test`). Cuerpo del PR con `.github/pull_request_template.md` y `Closes #n`.
+- **Labels:** un `tipo:` por issue y PR; `prioridad:` solo en issues. Solo los de `.github/labels.yml`.
+- **Issues:** con la skill `crear-issue`. **Implementar:** `/implement-issue <n>`. **Bugs:** skill `debug`.
+
+## Docs
+
+- `docs/README.md` — índice
+- `docs/architecture.md` — qué corre hoy (si no coincide con el código, gana el código y se corrige)
+- `docs/decisions/` — ADRs
+- `docs/convencion-nombres-github.md` — ramas, commits, PRs, labels

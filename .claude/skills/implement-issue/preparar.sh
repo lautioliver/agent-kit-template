@@ -16,10 +16,15 @@ error() { echo "NO SE PUEDE TOMAR #$N: $*" >&2; exit 1; }
 [ "$(jq -r '.pull_request // empty' <<<"$issue")" ] && error "es un PR, no un issue."
 [ "$(jq -r .state <<<"$issue")" = "open" ] || error "está cerrado."
 if [ "$(jq -r '(.sub_issues_summary.total // 0) > (.sub_issues_summary.completed // 0)' <<<"$issue")" = "true" ]; then
-  error "es una épica con sub-issues abiertos. Implementá sus sub-issues (ver .claude/skills/estado/disponibles.sh)."
+  ver=""
+  [ -f .claude/skills/estado/disponibles.sh ] && ver=" (ver .claude/skills/estado/disponibles.sh)"
+  error "es una épica con sub-issues abiertos. Implementá sus sub-issues$ver."
 fi
-bloq=$(gh api "repos/$REPO/issues/$N/dependencies/blocked_by" \
-  | jq -r '[.[] | select(.state == "open") | "#\(.number) \(.title)"] | join("; ")')
+# Las dependencias de issues son una función nueva de GitHub: si el repo no la tiene (404), se sigue sin bloqueos.
+bloq=""
+if deps=$(gh api "repos/$REPO/issues/$N/dependencies/blocked_by" 2>/dev/null); then
+  bloq=$(jq -r '[.[] | select(.state == "open") | "#\(.number) \(.title)"] | join("; ")' <<<"$deps")
+fi
 [ -n "$bloq" ] && error "está bloqueado por: $bloq"
 otros=$(jq -r --arg yo "$YO" '[.assignees[].login | select(. != $yo)] | join(", ")' <<<"$issue")
 [ -n "$otros" ] && error "ya está asignado a $otros."
@@ -37,7 +42,10 @@ echo "URL: $(jq -r .html_url <<<"$issue")"
 if padre=$(gh api "repos/$REPO/issues/$N/parent" 2>/dev/null); then
   echo "Épica: $(jq -r '"#\(.number) \(.title)"' <<<"$padre")"
 fi
-bloquea=$(gh api "repos/$REPO/issues/$N/dependencies/blocking" -q '[.[] | select(.state == "open") | "#\(.number)"] | join(", ")')
+bloquea=""
+if deps=$(gh api "repos/$REPO/issues/$N/dependencies/blocking" 2>/dev/null); then
+  bloquea=$(jq -r '[.[] | select(.state == "open") | "#\(.number)"] | join(", ")' <<<"$deps")
+fi
 [ -n "$bloquea" ] && echo "Bloquea a: $bloquea (al cerrarse este, se desbloquean)"
 echo
 jq -r '.body // "(sin cuerpo)"' <<<"$issue"

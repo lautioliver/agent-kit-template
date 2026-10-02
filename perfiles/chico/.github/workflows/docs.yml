@@ -1,0 +1,21 @@
+# .github/workflows/docs.yml — <PROYECTO> (modo chico)
+# Valida links, rutas mencionadas y ADRs de la documentación, y corre shellcheck.
+name: Docs
+
+on:
+  pull_request:
+  push:
+    branches: [<RAMA_BASE>]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar documentación
+        run: python3 scripts/agentes/check-docs.py
+      - name: Shellcheck de los scripts
+        run: git ls-files '*.sh' | xargs -r shellcheck

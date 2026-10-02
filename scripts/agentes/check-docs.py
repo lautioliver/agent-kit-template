@@ -27,11 +27,13 @@ IGNORAR_DIRS = {".git", "node_modules", ".turbo", ".next", "dist", "build", ".pn
 
 errores = []
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from mapa import glob_a_regex  # noqa: E402
-
 MAPA = json.load(open("docs/mapa-agentes.json", encoding="utf-8")) if os.path.exists("docs/mapa-agentes.json") else {}
-IGNORAR = [glob_a_regex(g) for g in MAPA.get("ignorar_check", [])]
+IGNORAR = []
+if MAPA.get("ignorar_check"):
+    # Sin mapa (modo chico) no hay rutas que ignorar ni hace falta mapa.py.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from mapa import glob_a_regex  # noqa: E402
+    IGNORAR = [glob_a_regex(g) for g in MAPA["ignorar_check"]]
 
 
 def md_files():

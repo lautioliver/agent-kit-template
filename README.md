@@ -41,6 +41,20 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
    | `develop releases` | rama → `develop` → `release/vX.Y.Z` → `main` | La app ya tiene usuarios activos: cada versión se congela y se prueba en staging antes de llegar a producción |
 
    Ejemplo con releases: `./scripts/init-plantilla.sh "Nombre del proyecto" develop releases`. El script pone el nombre, la rama base, la regla de ramas que corresponde y la fecha de hoy como fecha de las decisiones. Después se borra solo.
+
+   **Proyecto chico** (una o dos personas): agregá `--chico`, por ejemplo `./scripts/init-plantilla.sh "Nombre del proyecto" main --chico`.
+
+   | | Completo | `--chico` |
+   |---|---|---|
+   | Skills | 9 | 4: `implement-issue`, `crear-issue`, `debug`, `update-docs` |
+   | Workflows | 4 | 2: docs y sync de labels |
+   | Labels | `tipo:`, `area:`, `prioridad:`, `estado:` y especiales | 7: `tipo:` y `prioridad:` |
+   | Docs | hub con `reference/`, `development/`, `guides/` | un solo archivo de arquitectura y los ADRs |
+   | Convención de GitHub | documento con opciones y decisiones | una página con las reglas |
+   | Autonomía y rutas sensibles | `AGENTS.md` + `docs/mapa-agentes.json` | todo en `AGENTS.md`, con la checklist de migraciones |
+   | Sale | | épicas y `plan-feature`, `review-pr`, `estado`, bloqueos, labeler, formularios de issue, modo releases |
+
+   Los archivos del modo chico están en `perfiles/chico/` (más la lista `BORRAR`); el init los aplica y borra la carpeta. Lo común (skills como `debug`, `check-docs.py`, `preparar.sh`) es el mismo archivo en los dos modos, así los arreglos llegan a ambos.
 3. Completá lo que está marcado con `TODO:`. Lo más importante para los agentes es `docs/mapa-agentes.json`: poné las rutas reales de schema, auth, pagos y API pública. Hasta que no quede ningún `TODO/` ahí, el check de docs en CI falla a propósito: con rutas de ejemplo, el agente nunca detectaría que tocó algo sensible. Buscalo con `grep -rn "TODO:" .`. Lo mínimo:
    - `AGENTS.md`: qué es, stack, comandos y convenciones de código.
    - `.github/labels.yml` y `.github/labeler.yml`: los labels `area:` y las rutas de tu repo.
