@@ -52,4 +52,14 @@ La skill `crear-issue` arma el título según la convención, elige labels que e
 
 La skill registra la dependencia nativa de GitHub ("Blocked by"), pone `estado:bloqueado` y el workflow `desbloquear.yml` saca el label solo cuando se cierran todos los bloqueantes.
 
+Y para trabajos más grandes:
+
+> planificá la migración de cuentas
+
+arma una épica con sus sub-issues y los bloqueos entre ellos, te muestra el borrador en el orden en que se pueden hacer y lo crea al confirmar.
+
+> ¿qué puedo hacer ahora?
+
+lista los issues sin bloqueantes abiertos por prioridad, los bloqueados con lo que los bloquea y el avance de cada épica.
+
 Necesita `gh` instalado y autenticado (`gh auth status`).

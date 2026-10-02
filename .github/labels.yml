@@ -20,30 +20,17 @@
   description: "Documentación"
 
 # ── area: ────────────────────────────────────────────
-- name: "area:comprador"
+# TODO: una por área del producto; mismos nombres que los scopes de commit (§2).
+# Las tres de abajo existen siempre: labeler.yml las usa.
+- name: "area:api"
   color: "1D76DB"
-  description: "Vista de Comprador"
-- name: "area:asistente"
-  color: "1D76DB"
-  description: "Vista de Asistente"
-- name: "area:organizador"
-  color: "1D76DB"
-  description: "Vista de Organizador"
-- name: "area:usuario"
-  color: "1D76DB"
-  description: "Cuenta de usuario unificada"
-- name: "area:auth"
-  color: "1D76DB"
-  description: "Login, sesiones y permisos"
-- name: "area:pagos"
-  color: "1D76DB"
-  description: "Pasarela de pago, webhooks y cobros"
-- name: "area:checkout"
-  color: "1D76DB"
-  description: "Flujo de compra de entradas"
+  description: "API y lógica de negocio"
 - name: "area:infra"
   color: "1D76DB"
   description: "Deploy, base de datos, CI/CD"
+- name: "area:docs"
+  color: "1D76DB"
+  description: "Documentación, ADRs y reglas para agentes"
 
 # ── prioridad: ───────────────────────────────────────
 - name: "prioridad:critica"
