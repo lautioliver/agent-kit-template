@@ -57,3 +57,7 @@ gh pr review <n> --comment --body-file <archivo>
 ```
 
 Nunca `--approve`: aprobar es decisión de una persona. Si sos la sesión que implementó y te piden corregir, corregí en la misma rama y volvé a correr esta revisión.
+
+## Retro
+
+Al terminar, publicá una retro corta en el issue fijado "Retros del flujo con agentes": formato en `.claude/skills/mejorar-skills/plantilla-retro.md` (o `retro.sh` sin argumentos), y después `.claude/skills/mejorar-skills/retro.sh <archivo.md>`. Sé concreto y honesto: una retro que dice "todo bien" cuando hubo desvíos le quita a `/mejorar-skills` la única señal que tiene.

@@ -60,6 +60,8 @@ Qué puede hacer un agente solo y qué tiene que consultar antes. "Consultar" es
 - Poner secretos en código, logs, issues o PRs.
 - Desactivar tests, checks o validaciones para que algo pase.
 
+Las skills mejoran con el uso: `implement-issue` y `review-pr` terminan con una retro en el issue fijado "Retros del flujo con agentes", y `/mejorar-skills` propone ajustes **siempre en un PR**; nunca quita ni afloja estas reglas. Un PR con `logica-negocio` tiene que enmendar el ADR de la regla o decir "ADR sin cambios: <motivo>" (lo controla el check de labels).
+
 Las rutas de cada categoría están en `docs/mapa-agentes.json` (`sensibles`). `scripts/agentes/mapa.py` dice si un cambio las toca, y `scripts/agentes/verificar.py` corre, antes del PR, las verificaciones que corresponden a lo que cambió (sección `verificar` del mapa).
 
 ## Convenciones de GitHub (obligatorio)

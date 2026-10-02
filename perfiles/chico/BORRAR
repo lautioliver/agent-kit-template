@@ -14,3 +14,4 @@ scripts/agentes/mapa.py
 .github/ISSUE_TEMPLATE
 .claude/skills/git-workflow
 scripts/agentes/verificar.py
+.claude/skills/mejorar-skills

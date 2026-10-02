@@ -106,6 +106,10 @@ Sugerí el paso siguiente: revisar el PR con `/review-pr <n>`, idealmente desde 
 
 Y frená. El merge lo hace una persona.
 
+## Retro
+
+Al terminar, publicá una retro corta en el issue fijado "Retros del flujo con agentes": formato en `.claude/skills/mejorar-skills/plantilla-retro.md` (o `retro.sh` sin argumentos), y después `.claude/skills/mejorar-skills/retro.sh <archivo.md>`. Sé concreto y honesto: una retro que dice "todo bien" cuando hubo desvíos le quita a `/mejorar-skills` la única señal que tiene.
+
 ## Si hay que soltar el issue
 
 Si no podés terminar (bloqueo nuevo, decisión pendiente, alcance mucho mayor del que dice el issue): comentá en el issue qué hiciste y qué falta, pusheá la rama si tiene algo útil y desasignate (`gh issue edit <n> --remove-assignee @me`). Así `disponibles.sh` lo vuelve a mostrar.
