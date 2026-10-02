@@ -8,6 +8,7 @@ Revisa:
 - ADRs que no figuran en docs/README.md o docs/llms.txt.
 - Documentos obligatorios y rutas de docs/mapa-agentes.json que no existen.
 - Rutas de ejemplo (TODO/…) que quedaron en docs/mapa-agentes.json después del init.
+Las rutas de "ignorar_check" del mapa (por ejemplo, bitácoras históricas) no se validan.
 """
 import json
 import os
@@ -26,6 +27,12 @@ IGNORAR_DIRS = {".git", "node_modules", ".turbo", ".next", "dist", "build", ".pn
 
 errores = []
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from mapa import glob_a_regex  # noqa: E402
+
+MAPA = json.load(open("docs/mapa-agentes.json", encoding="utf-8")) if os.path.exists("docs/mapa-agentes.json") else {}
+IGNORAR = [glob_a_regex(g) for g in MAPA.get("ignorar_check", [])]
+
 
 def md_files():
     for base, dirs, files in os.walk("."):
@@ -34,7 +41,9 @@ def md_files():
             continue
         for f in files:
             if f.endswith(".md") or f == "llms.txt":
-                yield os.path.normpath(os.path.join(base, f))
+                ruta = os.path.normpath(os.path.join(base, f))
+                if not any(r.match(ruta) for r in IGNORAR):
+                    yield ruta
 
 
 def sin_codigo(texto):
@@ -75,8 +84,8 @@ for indice in ("docs/README.md", "docs/llms.txt"):
             if num != "000" and f not in contenido:
                 errores.append(f"{indice}: falta el ADR {f} en el índice")
 
-if os.path.exists("docs/mapa-agentes.json"):
-    mapa = json.load(open("docs/mapa-agentes.json", encoding="utf-8"))
+if MAPA:
+    mapa = MAPA
     for f in mapa.get("obligatorios", []):
         if not os.path.exists(f):
             errores.append(f"docs/mapa-agentes.json: falta el documento obligatorio {f}")
