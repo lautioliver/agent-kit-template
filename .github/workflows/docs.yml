@@ -1,0 +1,34 @@
+# .github/workflows/docs.yml — <PROYECTO>
+# La documentación es infraestructura para agentes: también se testea.
+# Valida links, rutas mencionadas, ADRs y documentos obligatorios (scripts/agentes/check-docs.py),
+# y en los PRs avisa qué docs habría que revisar según docs/mapa-agentes.json.
+name: Docs
+
+on:
+  pull_request:
+  push:
+    branches: [<RAMA_BASE>]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validar documentación
+        run: python3 scripts/agentes/check-docs.py
+      - name: Docs a revisar según el mapa (aviso, no bloquea)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.base_ref }}
+        run: |
+          salida=$(python3 scripts/agentes/mapa.py)
+          echo "$salida"
+          { echo "## Docs y rutas sensibles"; echo; echo "$salida"; } >> "$GITHUB_STEP_SUMMARY"
+          if echo "$salida" | grep -q "SIN MODIFICAR"; then
+            echo "::warning::Hay docs que el mapa sugiere revisar y el PR no modifica. Ver el resumen del job."
+          fi

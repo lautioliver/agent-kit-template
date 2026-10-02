@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Cruza los archivos cambiados con docs/mapa-agentes.json.
+
+Dice qué documentos revisar y qué rutas sensibles se tocaron.
+Uso:
+  mapa.py                      # cambios de la rama contra la base (BASE o <RAMA_BASE>)
+  mapa.py --base develop       # contra otra base
+  mapa.py --pr 42              # archivos de un PR
+  mapa.py --json               # salida en JSON
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+
+RAIZ = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip() or "."
+
+
+def glob_a_regex(glob):
+    """Glob estilo git: ** cruza directorios, * no."""
+    r, i = "", 0
+    while i < len(glob):
+        if glob.startswith("**/", i):
+            r += "(?:.*/)?"
+            i += 3
+        elif glob.startswith("**", i):
+            r += ".*"
+            i += 2
+        elif glob[i] == "*":
+            r += "[^/]*"
+            i += 1
+        else:
+            r += re.escape(glob[i])
+            i += 1
+    return re.compile(r + "$")
+
+
+def coincide(ruta, globs):
+    return [g for g in globs if glob_a_regex(g).match(ruta)]
+
+
+def archivos_cambiados(args):
+    if "--pr" in args:
+        n = args[args.index("--pr") + 1]
+        out = subprocess.run(["gh", "pr", "diff", n, "--name-only"], capture_output=True, text=True, check=True).stdout
+        return [l for l in out.splitlines() if l]
+    base = args[args.index("--base") + 1] if "--base" in args else os.environ.get("BASE", "<RAMA_BASE>")
+    ref = f"origin/{base}"
+    if subprocess.run(["git", "rev-parse", "-q", "--verify", ref], capture_output=True).returncode != 0:
+        ref = base
+    out = subprocess.run(["git", "diff", "--name-only", f"{ref}...HEAD"], capture_output=True, text=True, check=True).stdout
+    sucios = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True).stdout
+    nombres = set(out.splitlines()) | {l[3:].split(" -> ")[-1] for l in sucios.splitlines()}
+    return sorted(n for n in nombres if n)
+
+
+def main():
+    args = sys.argv[1:]
+    with open(os.path.join(RAIZ, "docs", "mapa-agentes.json")) as f:
+        mapa = json.load(f)
+    cambiados = archivos_cambiados(args)
+
+    docs = {}
+    for regla in mapa.get("docs", []):
+        tocados = [a for a in cambiados if coincide(a, regla["cuando"])]
+        if not tocados:
+            continue
+        for d in regla["revisar"]:
+            entrada = docs.setdefault(d, {"motivos": [], "archivos": [], "ya_cambiado": d in cambiados})
+            if regla["motivo"] not in entrada["motivos"]:
+                entrada["motivos"].append(regla["motivo"])
+            entrada["archivos"] += [a for a in tocados if a not in entrada["archivos"]]
+
+    sensibles = []
+    for s in mapa.get("sensibles", []):
+        tocados = [a for a in cambiados if coincide(a, s["rutas"])]
+        if tocados:
+            sensibles.append({"tipo": s["tipo"], "archivos": tocados, "skill": s.get("skill")})
+
+    if "--json" in args:
+        print(json.dumps({"cambiados": cambiados, "docs": docs, "sensibles": sensibles}, ensure_ascii=False, indent=2))
+        return
+
+    print(f"Archivos cambiados: {len(cambiados)}")
+    print("\n## Docs a revisar")
+    if not docs:
+        print("_Ninguno según el mapa._")
+    for d, e in docs.items():
+        estado = "ya modificado en este cambio" if e["ya_cambiado"] else "SIN MODIFICAR"
+        print(f"- {d} ({estado}) — {'; '.join(e['motivos'])}: {', '.join(e['archivos'][:5])}")
+    print("\n## Rutas sensibles tocadas")
+    if not sensibles:
+        print("_Ninguna._")
+    for s in sensibles:
+        extra = f" → usar la skill {s['skill']}" if s["skill"] else ""
+        print(f"- {s['tipo']}: {', '.join(s['archivos'][:5])}{extra}")
+    if sensibles:
+        print("\nTocar rutas sensibles requiere aprobación (AGENTS.md, Autonomía) y correr /security-review.")
+
+
+if __name__ == "__main__":
+    main()
