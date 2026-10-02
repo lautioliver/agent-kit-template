@@ -1,16 +1,31 @@
 #!/usr/bin/env bash
 # Reemplaza los marcadores de la plantilla y se borra solo.
-# Uso: ./scripts/init-plantilla.sh "Nombre del proyecto" [rama-base] [releases]
+# Uso: ./scripts/init-plantilla.sh "Nombre del proyecto" [main|develop] [releases] [--chico]
 #   rama-base: main (default) o develop.
 #   releases:  solo con develop. Agrega el flujo develop → release/vX.Y.Z → main
 #              para publicar versiones sin tocar producción (app con usuarios activos).
+#   --chico:   para proyectos de una o dos personas. Reemplaza varios archivos por
+#              versiones cortas (perfiles/chico/) y borra lo que resuelve problemas
+#              de equipo (épicas, revisión entre sesiones, mapa de rutas, labeler…).
 set -euo pipefail
-USO="Uso: $0 \"Nombre del proyecto\" [main|develop] [releases]"
-export P="${1:?$USO}"
-export B="${2:-main}"
-MODO="${3:-}"
+USO="Uso: $0 \"Nombre del proyecto\" [main|develop] [releases] [--chico]"
+CHICO=""
+POS=()
+for a in "$@"; do
+  case "$a" in
+    --chico) CHICO=1 ;;
+    -*) echo "$USO"; echo "Opción desconocida: $a"; exit 1 ;;
+    *) POS+=("$a") ;;
+  esac
+done
+export P="${POS[0]:?$USO}"
+export B="${POS[1]:-main}"
+MODO="${POS[2]:-}"
 if [ -n "$MODO" ] && { [ "$MODO" != "releases" ] || [ "$B" = "main" ]; }; then
   echo "$USO"; echo "'releases' solo se puede usar con la rama base develop."; exit 1
+fi
+if [ -n "$CHICO" ] && [ "$MODO" = "releases" ]; then
+  echo "$USO"; echo "'--chico' no se combina con 'releases': si necesitás releases, usá el modo completo."; exit 1
 fi
 F=$(date +%Y-%m-%d)
 export F
@@ -23,6 +38,18 @@ else
   export R="Los PRs de trabajo van a \`$B\`. \`main\` es producción y solo recibe PRs de release desde \`$B\`."
 fi
 cd "$(git rev-parse --show-toplevel)"
+if [ -n "$CHICO" ]; then
+  # Los archivos cortos pisan a los completos; después se borra lo que no aplica.
+  (cd perfiles/chico && find . -type f ! -name BORRAR) | while read -r f; do
+    mkdir -p "$(dirname "$f")"
+    cp "perfiles/chico/$f" "$f"
+  done
+  grep -v '^#' perfiles/chico/BORRAR | while read -r r; do [ -n "$r" ] && rm -rf -- "$r"; done
+  # Sin label logica-negocio: se edita en el lugar (no se copia) para que no se desactualice.
+  perl -pi -e 's/el PR lleva el label `logica-negocio`\./el PR lo dice en "Lógica de negocio afectada"./' docs/decisions/README.md
+  perl -pi -e 's/ Si sí: cuál, y agregá el label `logica-negocio`\./ Si sí: cuál, y por qué cambia./' .github/pull_request_template.md
+fi
+rm -rf perfiles
 # shellcheck disable=SC2016  # $ENV{…} lo expande perl, no bash
 grep -rlE '<PROYECTO>|<RAMA_BASE>|<FECHA>|<REGLA_RAMAS>' --exclude-dir=.git --exclude=init-plantilla.sh . \
   | xargs perl -pi -e 's/<PROYECTO>/$ENV{P}/g; s/<RAMA_BASE>/$ENV{B}/g; s/<FECHA>/$ENV{F}/g; s/<REGLA_RAMAS>/$ENV{R}/g'

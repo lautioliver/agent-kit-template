@@ -43,5 +43,5 @@
     "docs/decisions/README.md",
     "docs/development/architecture.md"
   ],
-  "ignorar_check": []
+  "ignorar_check": ["perfiles/**"]
 }
