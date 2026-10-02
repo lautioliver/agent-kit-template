@@ -44,7 +44,7 @@ Según el tipo de trabajo:
 ## 4. Tests
 
 - Agregá o ajustá tests que cubran el cambio: el bug reproducido antes del arreglo, o los criterios de aceptación de la feature.
-- Corré los comandos de test, typecheck y lint de `AGENTS.md`. Si algo falla, arreglalo; no lo saltees ni lo desactives.
+- Mientras trabajás, corré los tests que correspondan. La verificación completa va en el paso 7.
 - Si un test fallaba antes de tu cambio, verificalo en `<RAMA_BASE>` y decilo en el PR en vez de taparlo.
 
 ## 5. Autorevisión
@@ -66,7 +66,17 @@ Lo que decidas no corregir, explicalo en el PR.
 
 Seguí la skill `update-docs` (modo 1): `mapa.py` te dice qué docs revisar, y `check-docs.py` valida que no queden links ni rutas rotas. Los docs van **en el mismo PR** que el código: si se dejan para después, el próximo agente lee algo falso. Si no hace falta tocar docs, decí por qué en el PR.
 
-## 7. Abrir el PR
+## 7. Verificar
+
+Última guardia antes del PR, con todo commiteado:
+
+```bash
+python3 scripts/agentes/verificar.py
+```
+
+Según los archivos cambiados, corre lo configurado en `docs/mapa-agentes.json` (`verificar`): lint, typecheck, tests afectados, drift de migraciones, docs… Si algo falla, arreglalo y volvé a correrlo; nunca desactives una verificación ni la saques del mapa para que pase. Si avisa que alguna está **sin configurar**, decilo en el PR: ese aspecto no quedó verificado. En "Cómo probarlo" va su resumen.
+
+## 8. Abrir el PR
 
 ```bash
 git push -u origin HEAD
@@ -79,7 +89,7 @@ gh pr create --base <RAMA_BASE> --title "<tipo>(<scope>): <descripcion>" --body-
 - Labels: exactamente un `tipo:` (copialo del issue), 1–2 `area:`, ningún `prioridad:`, más `logica-negocio` o `breaking-change` si corresponden.
 - `Closes #<n>` en el cuerpo.
 
-## 8. Esperar el CI y entregar
+## 9. Esperar el CI y entregar
 
 Mirá los checks del PR (`gh pr checks <pr> --watch`). Si alguno falla por tu cambio, corregilo y pusheá de nuevo. Si falla por algo ajeno, decilo.
 

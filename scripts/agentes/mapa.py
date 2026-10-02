@@ -18,7 +18,9 @@ RAIZ = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=Tr
 
 
 def glob_a_regex(glob):
-    """Glob estilo git: ** cruza directorios, * no."""
+    """Glob estilo git: ** cruza directorios, * no. Un "?" al principio marca la ruta como
+    opcional (check-docs no falla si no existe); para el match se ignora."""
+    glob = glob[1:] if glob.startswith("?") else glob
     r, i = "", 0
     while i < len(glob):
         if glob.startswith("**/", i):

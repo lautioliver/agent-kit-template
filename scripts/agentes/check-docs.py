@@ -7,7 +7,11 @@ Revisa:
 - Menciones a ADR-NNN sin archivo en docs/decisions/.
 - ADRs que no figuran en docs/README.md o docs/llms.txt.
 - Documentos obligatorios y rutas de docs/mapa-agentes.json que no existen.
-- Rutas de ejemplo (TODO/…) que quedaron en docs/mapa-agentes.json después del init.
+- Rutas de ejemplo (TODO/…) y verificaciones sin comando que quedaron en docs/mapa-agentes.json
+  después del init.
+- Rutas del mapa (docs, sensibles, verificar) que no coinciden con ningún archivo (salvo las
+  marcadas como opcionales con "?" al principio); avisa de
+  carpetas con código que el mapa no cubre.
 Las rutas de "ignorar_check" del mapa (por ejemplo, bitácoras históricas) no se validan.
 """
 import json
@@ -29,11 +33,12 @@ errores = []
 
 MAPA = json.load(open("docs/mapa-agentes.json", encoding="utf-8")) if os.path.exists("docs/mapa-agentes.json") else {}
 IGNORAR = []
-if MAPA.get("ignorar_check"):
-    # Sin mapa (modo chico) no hay rutas que ignorar ni hace falta mapa.py.
+avisos = []
+if MAPA:
+    # Sin mapa (modo chico) no hay rutas que validar ni hace falta mapa.py.
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     from mapa import glob_a_regex  # noqa: E402
-    IGNORAR = [glob_a_regex(g) for g in MAPA["ignorar_check"]]
+    IGNORAR = [glob_a_regex(g) for g in MAPA.get("ignorar_check", [])]
 
 
 def md_files():
@@ -99,11 +104,45 @@ if MAPA:
         if pendientes:
             errores.append("docs/mapa-agentes.json: completá las rutas de ejemplo con las reales del proyecto: "
                            + ", ".join(pendientes))
+        sin_comando = [v.get("nombre", "?") for v in mapa.get("verificar", []) if v.get("correr", "").startswith("TODO")]
+        if sin_comando:
+            errores.append("docs/mapa-agentes.json: verificaciones sin comando (correr empieza con TODO): "
+                           + ", ".join(sin_comando) + ". Poné el comando del proyecto o sacá la verificación.")
     for regla in mapa.get("docs", []):
         for f in regla.get("revisar", []):
             if not os.path.exists(f):
                 errores.append(f"docs/mapa-agentes.json: '{regla.get('motivo')}' apunta a {f}, que no existe")
 
+    # Rutas del mapa que no coinciden con ningún archivo: si se renombró src/auth/ y el mapa sigue
+    # diciendo src/auth/**, el agente nunca vería que tocó algo sensible. Solo después del init.
+    if not os.path.exists("scripts/init-plantilla.sh"):
+        r = subprocess.run(["git", "ls-files"], capture_output=True, text=True)
+        repo = [l for l in r.stdout.splitlines() if l] if r.returncode == 0 else []
+        globs = [("docs", regla.get("motivo", ""), g) for regla in mapa.get("docs", []) for g in regla.get("cuando", [])]
+        globs += [("sensibles", s.get("tipo", ""), g) for s in mapa.get("sensibles", []) for g in s.get("rutas", [])]
+        globs += [("verificar", v.get("nombre", ""), g) for v in mapa.get("verificar", []) for g in v.get("cuando", [])]
+        regex = {g: glob_a_regex(g) for _, _, g in globs}
+        for seccion, nombre, g in globs:
+            if repo and not g.startswith(("TODO/", "?")) and not any(regex[g].match(a) for a in repo):
+                errores.append(f"docs/mapa-agentes.json: {seccion} '{nombre}': la ruta {g} no coincide con ningún "
+                               "archivo. Si se movió, actualizala; si no aplica al proyecto, sacala.")
+        # Carpetas de código que ninguna ruta del mapa cubre: aviso, no error.
+        codigo = re.compile(r"\.(ts|tsx|js|jsx|mjs|py|go|rb|rs|java|kt|php|cs|swift|sql)$")
+        fuera = {".github", ".claude", "docs", "scripts", "perfiles"}
+        conteo = {}
+        for a in repo:
+            if codigo.search(a) and a.split("/")[0] not in fuera and not any(rx.match(a) for rx in regex.values()):
+                carpeta = "/".join(a.split("/")[:-1][:4])  # hasta 4 niveles: apps/web/src/components
+                if carpeta.count("/") >= 1:  # los archivos de config en la raíz de un paquete no cuentan
+                    conteo[carpeta] = conteo.get(carpeta, 0) + 1
+        top = sorted(conteo.items(), key=lambda x: -x[1])[:6]
+        if top:
+            avisos.append("código que ninguna ruta del mapa cubre (si cambia, nadie avisa qué doc revisar): "
+                          + ", ".join(f"{c}/ ({n})" for c, n in top)
+                          + (f" y {len(conteo) - 6} carpetas más" if len(conteo) > 6 else ""))
+
+for a in avisos:
+    print(f"Aviso: {a}")
 errores = list(dict.fromkeys(errores))
 if errores:
     print(f"Documentación con {len(errores)} problema(s):")
