@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Lista los issues abiertos que se pueden empezar ya (sin bloqueantes abiertos),
-# ordenados por prioridad; aparte los bloqueados con lo que los bloquea, y las
-# épicas (issues con sub-issues abiertos), que se trabajan por sus sub-issues.
+# ordenados por prioridad; aparte los que ya tomó alguien (asignados), los
+# bloqueados con lo que los bloquea, y las épicas (issues con sub-issues
+# abiertos), que se trabajan por sus sub-issues.
 # Solo lee: no modifica nada.
 # Uso: disponibles.sh [owner/repo]   (default: el repo del directorio actual)
 set -euo pipefail
@@ -14,13 +15,21 @@ issues=$(gh api --paginate "repos/$REPO/issues?state=open&per_page=100" \
 ORDEN='def prio: ([.labels[].name | select(startswith("prioridad:"))][0] // "") as $p
   | {"prioridad:critica":0,"prioridad:alta":1,"prioridad:media":2,"prioridad:baja":3}[$p] // 4;
 def epica: (.sub_issues_summary.total // 0) > (.sub_issues_summary.completed // 0);
+def tomado: (.assignees | length) > 0;
 def etiqueta: ([.labels[].name | select(startswith("prioridad:") or startswith("area:"))] | join(", "));'
 
 echo "## Se pueden empezar ya"
 echo
 echo "$issues" | jq -r "$ORDEN"'
-  [.[] | select((.issue_dependencies_summary.blocked_by // 0) == 0 and (epica | not))] | sort_by(prio, .number)
+  [.[] | select((.issue_dependencies_summary.blocked_by // 0) == 0 and (epica | not) and (tomado | not))] | sort_by(prio, .number)
   | if length == 0 then "_Ninguno._" else .[] | "- #\(.number) \(.title)" + (etiqueta | if . == "" then "" else " — \(.)" end) end'
+
+echo
+echo "## En curso"
+echo
+echo "$issues" | jq -r "$ORDEN"'
+  [.[] | select((.issue_dependencies_summary.blocked_by // 0) == 0 and (epica | not) and tomado)] | sort_by(prio, .number)
+  | if length == 0 then "_Ninguno._" else .[] | "- #\(.number) \(.title) — @\([.assignees[].login] | join(", @"))" end'
 
 echo
 echo "## Bloqueados"
