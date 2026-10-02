@@ -23,7 +23,7 @@ Para "¿qué puedo hacer ahora?", "¿qué sigue?", "¿qué está bloqueado?":
 .claude/skills/estado/disponibles.sh
 ```
 
-Devuelve cuatro listas: **se pueden empezar ya** (sin bloqueantes abiertos ni asignados, por prioridad), **en curso** (asignados, con quién los tiene), **bloqueados** (con lo que los bloquea) y **épicas en curso** (con avance de sub-issues). Las épicas no aparecen como disponibles: se trabajan por sus sub-issues. Los asignados tampoco: `/implement-issue` asigna el issue al tomarlo, así dos sesiones no eligen el mismo.
+Devuelve cuatro listas: **se pueden empezar ya** (sin bloqueantes abiertos ni asignados, por prioridad), **en curso** (asignados o con un PR abierto que los cierra, con quién y qué PR), **bloqueados** (con lo que los bloquea) y **épicas en curso** (con avance de sub-issues). Las épicas no aparecen como disponibles: se trabajan por sus sub-issues. Los tomados tampoco: `/implement-issue` asigna el issue al tomarlo, y un PR abierto que lo cierra (por `Closes #n` en el cuerpo o por el número en la rama) también cuenta. Así dos sesiones no eligen el mismo.
 
 Al responder:
 - Mostrá la salida tal cual, sin inventar issues que no están.

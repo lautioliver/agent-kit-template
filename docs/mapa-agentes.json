@@ -1,5 +1,5 @@
 {
-  "_ayuda": "Mapa para agentes y CI. 'docs': qué documento revisar cuando cambian ciertos archivos (lo usan update-docs, implement-issue y review-pr). 'sensibles': rutas que exigen consultar antes de cambiarlas y correr /security-review (ver AGENTS.md, Autonomía). 'obligatorios': documentos que tienen que existir (lo valida scripts/check-docs.py). Globs estilo git: ** cualquier profundidad, * un nivel. TODO: completar con las rutas del proyecto.",
+  "_ayuda": "Mapa para agentes y CI. 'docs': qué documento revisar cuando cambian ciertos archivos (lo usan update-docs, implement-issue y review-pr). 'sensibles': rutas que exigen consultar antes de cambiarlas y correr /security-review (ver AGENTS.md, Autonomía). 'obligatorios': documentos que tienen que existir (lo valida scripts/agentes/check-docs.py). 'ignorar_check': rutas que check-docs.py no valida, como bitácoras históricas que citan archivos que ya no existen. Globs estilo git: ** cualquier profundidad, * un nivel. TODO: completar con las rutas del proyecto.",
   "docs": [
     {
       "cuando": ["TODO/schema/**", "**/migrations/**"],
@@ -42,5 +42,6 @@
     "docs/convencion-nombres-github.md",
     "docs/decisions/README.md",
     "docs/development/architecture.md"
-  ]
+  ],
+  "ignorar_check": []
 }
