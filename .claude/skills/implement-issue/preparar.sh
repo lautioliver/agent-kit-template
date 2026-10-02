@@ -23,7 +23,6 @@ bloq=$(gh api "repos/$REPO/issues/$N/dependencies/blocked_by" \
 [ -n "$bloq" ] && error "está bloqueado por: $bloq"
 otros=$(jq -r --arg yo "$YO" '[.assignees[].login | select(. != $yo)] | join(", ")' <<<"$issue")
 [ -n "$otros" ] && error "ya está asignado a $otros."
-[ -n "$(git status --porcelain)" ] && error "hay cambios sin commitear en el working tree."
 
 titulo=$(jq -r .title <<<"$issue")
 # Rama: claude/<n>-<descripcion>, minúsculas, sin tildes, solo [a-z0-9-], ≤ 50 caracteres.
@@ -51,6 +50,7 @@ if [ "$REVISAR" = "--revisar" ]; then
   exit 0
 fi
 
+[ -n "$(git status --porcelain)" ] && error "hay cambios sin commitear en el working tree."
 gh issue edit "$N" -R "$REPO" --add-assignee @me >/dev/null
 git fetch -q origin "$BASE"
 if git show-ref -q --verify "refs/heads/$RAMA"; then
