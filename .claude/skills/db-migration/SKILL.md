@@ -11,6 +11,8 @@ Los comandos concretos (generar migración, correrla local, tests) están en `AG
 
 ## 1. Plan (mostrarlo y esperar aprobación)
 
+Tocar el schema también requiere la aprobación de Autonomía: pedí las dos en el mismo mensaje, con esta tabla. Después la tabla va completa al PR.
+
 | Punto | Qué responder |
 |---|---|
 | Schema actual | Tablas/columnas/índices/constraints involucrados, tal como están hoy (leelo del código del schema, no de memoria). |

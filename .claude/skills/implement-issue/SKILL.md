@@ -24,11 +24,12 @@ Si falla, **no fuerces nada**: contale al usuario por qué y, si sirve, proponé
 ## 2. Entender antes de tocar
 
 - Leé lo que el issue enlaza: ADRs, auditorías, docs, archivos.
+- Si el issue es parte de una épica (`preparar.sh` la muestra), leé la épica entera, sobre todo **Lógica de negocio afectada** y los ADRs pendientes que menciona. Un bloqueo puede estar escrito en el texto sin estar cargado como dependencia: si la épica dice que algo requiere un ADR o una decisión que todavía no existe, decidí con el usuario si este issue cae adentro antes de empezar.
 - Leé `AGENTS.md` (convenciones de código y comandos) y lo que corresponda de `docs/development/architecture.md` y `docs/reference/`.
 - Si el issue tiene criterios de aceptación ("Listo cuando", "Criterios de aceptación"), son la definición de terminado.
 - Si el issue es ambiguo en algo que cambia el resultado, o contradice un ADR o el código, **preguntá antes de escribir código**. Si el usuario no está, comentá la duda en el issue (`gh issue comment`) y frená.
 - Si el cambio toca una regla ya definida (ADR, auditoría, plan), el PR va a llevar `logica-negocio`: anotalo desde ahora.
-- Revisá la sección **Autonomía** de `AGENTS.md`. Si el issue exige algo de "tiene que consultar" (schema, dependencias, API pública, auth, infra, reglas de negocio) y en el issue no consta la aprobación, consultá antes de empezar.
+- Revisá la sección **Autonomía** de `AGENTS.md`. Si el issue exige algo de "tiene que consultar" (schema, dependencias, API pública, auth, infra, reglas de negocio) y en el issue no consta la aprobación, consultá antes de empezar **en un solo mensaje**: qué rutas sensibles toca (`python3 scripts/agentes/mapa.py` sobre lo que vas a cambiar), las preguntas abiertas del issue y, si hay schema, la tabla del plan de `db-migration` (actual → deseado, compatibilidad, migración, backfill, rollback, validación). Una aprobación clara, no tres.
 
 ## 3. Implementar
 
@@ -46,19 +47,21 @@ Según el tipo de trabajo:
 - Agregá o ajustá tests que cubran el cambio: el bug reproducido antes del arreglo, o los criterios de aceptación de la feature.
 - Mientras trabajás, corré los tests que correspondan. La verificación completa va en el paso 7.
 - Si un test fallaba antes de tu cambio, verificalo en `<RAMA_BASE>` y decilo en el PR en vez de taparlo.
+- Si una rama del código no se puede probar en el entorno de tests (concurrencia real, un proveedor externo), no la des por probada: anotala para "Cómo probarlo" del PR como **sin test**, con el motivo.
 
 ## 5. Autorevisión
 
 Revisá el diff completo contra `<RAMA_BASE>` antes de abrir el PR:
 
 - Si está disponible el comando `/code-review`, corrélo sobre la rama y resolvé lo que encuentre.
+- Cada hallazgo que corrijas lleva un test de regresión, y comprobá que **falla sin el arreglo**: corrélo contra el código anterior (por ejemplo `git show HEAD:<archivo> > <archivo>`) y restaurá. Un test que pasa con y sin el arreglo no prueba nada.
 - Si no, revisá vos: bugs, casos borde, código muerto, secretos, archivos que no deberían estar.
 
 Además:
 ```bash
 python3 scripts/agentes/mapa.py
 ```
-Si dice que tocaste **rutas sensibles**, corré `/security-review` (si está disponible) o revisá a mano auth, permisos, inputs, secretos y exposición de datos, y confirmá que la aprobación de Autonomía consta.
+Si dice que tocaste **rutas sensibles**, corré `/security-review` (si está disponible) o revisá a mano auth, permisos, inputs, secretos y exposición de datos, y confirmá que la aprobación de Autonomía consta. Además revisá a mano las **invariantes de los ADRs** que toca el cambio (lo que no puede pasar nunca: dos ingresos con la misma entrada, un doble cobro…): una revisión de seguridad genérica no las conoce, y es donde suelen estar los errores graves.
 
 Lo que decidas no corregir, explicalo en el PR.
 
@@ -74,7 +77,7 @@ Seguí la skill `update-docs` (modo 1): `mapa.py` te dice qué docs revisar, y `
 python3 scripts/agentes/verificar.py
 ```
 
-Según los archivos cambiados, corre lo configurado en `docs/mapa-agentes.json` (`verificar`): lint, typecheck, tests afectados, drift de migraciones, docs… Si algo falla, arreglalo y volvé a correrlo; nunca desactives una verificación ni la saques del mapa para que pase. Si avisa que alguna está **sin configurar**, decilo en el PR: ese aspecto no quedó verificado. En "Cómo probarlo" va su resumen.
+Según los archivos cambiados, corre lo configurado en `docs/mapa-agentes.json` (`verificar`): lint, typecheck, tests afectados, drift de migraciones, docs… Si algo falla, arreglalo y volvé a correrlo; nunca desactives una verificación ni la saques del mapa para que pase. Si `verificar.py` o la sección `verificar` del mapa todavía no existen en la rama base (por ejemplo, porque el PR que los agrega no se mergeó), corré a mano lint, typecheck, tests y los controles de `AGENTS.md`, y decilo en el PR. Si avisa que alguna está **sin configurar**, decilo en el PR: ese aspecto no quedó verificado. En "Cómo probarlo" va su resumen.
 
 ## 8. Abrir el PR
 

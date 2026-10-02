@@ -30,6 +30,7 @@ Si está disponible `/code-review`, corrélo sobre el PR para bugs, regresiones 
 |---|---|
 | ¿Hace lo que pide el issue, y solo eso? | Issue vs diff. Criterios de aceptación cumplidos. |
 | ¿Cambia una regla de negocio? ¿Está declarado? | ADRs y auditorías vs diff. Si cambia algo definido y no tiene `logica-negocio` ni lo explica, es hallazgo **bloqueante**. |
+| ¿Respeta las invariantes de los ADRs que toca? | Para cada ADR relacionado, qué no puede pasar nunca (dos ingresos, doble cobro, una ventana que se estira…) y si el diff abre un camino para que pase. Es hallazgo **bloqueante** aunque `/security-review` no encuentre nada: las invariantes de negocio no son categorías de seguridad genéricas. |
 | ¿Respeta la autonomía del agente? | AGENTS.md, Autonomía. Schema, dependencias, API pública, auth, infra: ¿hubo aprobación (en el issue o el PR)? |
 | ¿Toca rutas sensibles? | `mapa.py --pr <n>` → si sí, correr `/security-review` (o revisar a mano auth, inputs, permisos, secretos, exposición de datos). |
 | ¿Hay migración? | Plan de `db-migration` en el PR, con rollback. |
