@@ -16,7 +16,8 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
 | Skills de Claude Code | Ver [El flujo con agentes](#el-flujo-con-agentes) |
 | Autonomía del agente | `AGENTS.md` → qué puede hacer solo, qué tiene que consultar y qué nunca |
 | Mapa para agentes | `docs/mapa-agentes.json` → qué docs revisar según lo que cambia, rutas sensibles, docs obligatorios |
-| Docs testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py` → links, rutas y ADRs rotos |
+| Docs testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py` → links, rutas y ADRs rotos, rutas del mapa que ya no existen |
+| Verificación antes del PR | `scripts/agentes/verificar.py` → según lo que cambió, corre lint, typecheck, tests afectados, drift de migraciones… (sección `verificar` del mapa) |
 
 ## Requisitos
 
@@ -59,7 +60,7 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
    **Si el proyecto chico crece:** `python3 scripts/crecer.py` (con `--releases` si la base es `develop` y querés ese flujo) lo pasa al modo completo. Clona la plantilla, la inicializa con los datos de `.agent-kit.json` y agrega lo que falta. Los archivos que el proyecto nunca tocó se reemplazan por la versión completa; los que modificó **no se pisan**: la versión completa queda en `.agent-kit/pendientes/` para integrarla. La arquitectura que escribió el proyecto chico pasa a `docs/development/architecture.md`. No commitea: revisás el diff y abrís un PR.
 
    `.agent-kit.json` lo escribe el init en los dos modos: proyecto, rama base, modo, fecha y la huella de cada archivo. Commitealo.
-3. Completá lo que está marcado con `TODO:`. Lo más importante para los agentes es `docs/mapa-agentes.json`: poné las rutas reales de schema, auth, pagos y API pública. Hasta que no quede ningún `TODO/` ahí, el check de docs en CI falla a propósito: con rutas de ejemplo, el agente nunca detectaría que tocó algo sensible. Buscalo con `grep -rn "TODO:" .`. Lo mínimo:
+3. Completá lo que está marcado con `TODO:`. Lo más importante para los agentes es `docs/mapa-agentes.json`: poné las rutas reales de schema, auth, pagos y API pública, y los comandos de `verificar`. Las rutas con `?` adelante son alternativas de stack opcionales; las propias van sin `?`, así el check falla si dejan de existir. Hasta que no quede ningún `TODO/` ahí, el check de docs en CI falla a propósito: con rutas de ejemplo, el agente nunca detectaría que tocó algo sensible. Buscalo con `grep -rn "TODO:" .`. Lo mínimo:
    - `AGENTS.md`: qué es, stack, comandos y convenciones de código.
    - `.github/labels.yml` y `.github/labeler.yml`: los labels `area:` y las rutas de tu repo.
    - `docs/convencion-nombres-github.md` §2: los scopes de commit.

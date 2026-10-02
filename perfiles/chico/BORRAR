@@ -13,3 +13,4 @@ scripts/agentes/mapa.py
 .github/workflows/pr-title.yml
 .github/ISSUE_TEMPLATE
 .claude/skills/git-workflow
+scripts/agentes/verificar.py

@@ -1,8 +1,8 @@
 {
-  "_ayuda": "Mapa para agentes y CI. 'docs': qué documento revisar cuando cambian ciertos archivos (lo usan update-docs, implement-issue y review-pr). 'sensibles': rutas que exigen consultar antes de cambiarlas y correr /security-review (ver AGENTS.md, Autonomía). 'obligatorios': documentos que tienen que existir (lo valida scripts/agentes/check-docs.py). 'ignorar_check': rutas que check-docs.py no valida, como bitácoras históricas que citan archivos que ya no existen. Globs estilo git: ** cualquier profundidad, * un nivel. TODO: completar con las rutas del proyecto.",
+  "_ayuda": "Mapa para agentes y CI. 'docs': qué documento revisar cuando cambian ciertos archivos (lo usan update-docs, implement-issue y review-pr). 'sensibles': rutas que exigen consultar antes de cambiarlas y correr /security-review (ver AGENTS.md, Autonomía). 'verificar': qué correr antes del PR según lo que cambió (scripts/agentes/verificar.py). 'obligatorios': documentos que tienen que existir (lo valida scripts/agentes/check-docs.py). 'ignorar_check': rutas que check-docs.py no valida, como bitácoras históricas que citan archivos que ya no existen. Globs estilo git: ** cualquier profundidad, * un nivel. Una ruta que empieza con ? es opcional: check-docs no falla si no coincide con ningún archivo (sirve para alternativas de stack, como package.json o *.lock). Las rutas propias del proyecto van sin ?: si dejan de existir, el check falla. TODO: completar con las rutas del proyecto.",
   "docs": [
     {
-      "cuando": ["TODO/schema/**", "**/migrations/**"],
+      "cuando": ["TODO/schema/**", "?**/migrations/**"],
       "revisar": ["docs/reference/domain.md", "docs/development/architecture.md"],
       "motivo": "cambió el modelo de datos"
     },
@@ -17,23 +17,31 @@
       "motivo": "cambió la responsabilidad de un módulo"
     },
     {
-      "cuando": ["package.json", "**/package.json", ".github/workflows/**"],
+      "cuando": ["?package.json", "?**/package.json", "?.github/workflows/**"],
       "revisar": ["AGENTS.md", "docs/development/setup.md"],
       "motivo": "cambió un comando, una dependencia o el CI"
     },
     {
-      "cuando": ["infra/**", "Dockerfile", "**/*.toml"],
+      "cuando": ["?infra/**", "?Dockerfile", "?**/*.toml"],
       "revisar": ["docs/development/deploy.md"],
       "motivo": "cambió la infraestructura o el deploy"
     }
   ],
   "sensibles": [
-    {"tipo": "schema", "rutas": ["TODO/schema/**", "**/migrations/**"], "skill": "db-migration"},
-    {"tipo": "auth", "rutas": ["TODO/auth/**", "**/middleware/**"]},
+    {"tipo": "schema", "rutas": ["TODO/schema/**", "?**/migrations/**"], "skill": "db-migration"},
+    {"tipo": "auth", "rutas": ["TODO/auth/**", "?**/middleware/**"]},
     {"tipo": "dinero", "rutas": ["TODO/payments/**"]},
-    {"tipo": "dependencias", "rutas": ["package.json", "**/package.json", "*.lock", "pnpm-lock.yaml"]},
-    {"tipo": "infra", "rutas": ["infra/**", ".github/workflows/**", "Dockerfile"]},
+    {"tipo": "dependencias", "rutas": ["?package.json", "?**/package.json", "?*.lock", "?pnpm-lock.yaml"]},
+    {"tipo": "infra", "rutas": ["?infra/**", "?.github/workflows/**", "?Dockerfile"]},
     {"tipo": "api-publica", "rutas": ["TODO/public-api/**"]}
+  ],
+  "verificar": [
+    {"nombre": "docs", "siempre": true, "correr": "python3 scripts/agentes/check-docs.py"},
+    {"nombre": "lint", "siempre": true, "correr": "TODO: comando de lint (por ejemplo: npm run lint)"},
+    {"nombre": "typecheck", "siempre": true, "correr": "TODO: comando de typecheck (por ejemplo: npx tsc --noEmit)"},
+    {"nombre": "tests", "siempre": true, "correr": "TODO: tests, idealmente solo los afectados (por ejemplo: npx vitest related {archivos} --run)"},
+    {"nombre": "migraciones", "cuando": ["TODO/schema/**", "?**/migrations/**"], "correr": "TODO: verificar que el schema y las migraciones coinciden (generar y comprobar que no queda nada sin commitear)"},
+    {"nombre": "contrato-api", "cuando": ["TODO/public-api/**"], "correr": "TODO: comparar el contrato público contra la base (por ejemplo: un diff de OpenAPI)"}
   ],
   "obligatorios": [
     "AGENTS.md",
