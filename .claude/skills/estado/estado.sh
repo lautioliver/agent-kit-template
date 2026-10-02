@@ -3,7 +3,7 @@
 # (git, GitHub, docs). No se guarda: siempre está al día. Solo lee.
 # Uso: estado.sh
 set -uo pipefail
-cd "$(git rev-parse --show-toplevel)"
+cd "$(git rev-parse --show-toplevel)" || exit 1
 REPO=$(gh repo view --json nameWithOwner,defaultBranchRef -q '.nameWithOwner')
 DEFAULT=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
 git fetch -q --tags origin 2>/dev/null || true
@@ -11,13 +11,13 @@ git fetch -q --tags origin 2>/dev/null || true
 echo "# Estado de $REPO — $(date +%Y-%m-%d)"
 echo
 echo "## Versión y ramas"
-echo "- Última versión: $(git describe --tags --abbrev=0 origin/$DEFAULT 2>/dev/null || echo 'sin tags')"
+echo "- Última versión: $(git describe --tags --abbrev=0 "origin/$DEFAULT" 2>/dev/null || echo 'sin tags')"
 echo "- Rama por defecto: $DEFAULT"
 regla=$(grep -m1 '^\- \*\*Rama base:\*\*' AGENTS.md 2>/dev/null | sed 's/^- \*\*Rama base:\*\* //')
 [ -n "$regla" ] && echo "- Flujo: $regla"
 rel=$(git branch -r --list 'origin/release/*' | sed 's#origin/##' | xargs)
 [ -n "$rel" ] && echo "- Releases abiertas: $rel"
-echo "- Último commit en $DEFAULT: $(git log -1 --format='%h %s (%cr)' origin/$DEFAULT 2>/dev/null)"
+echo "- Último commit en $DEFAULT: $(git log -1 --format='%h %s (%cr)' "origin/$DEFAULT" 2>/dev/null)"
 
 echo
 echo "## Arquitectura"
@@ -45,7 +45,7 @@ gh issue list --state open --label "prioridad:critica" --limit 20 --json number,
 
 echo
 echo "## Decisiones recientes"
-recientes=$(git log --since="60 days ago" --diff-filter=AM --name-only --format= origin/$DEFAULT -- 'docs/decisions/ADR-*.md' 2>/dev/null | sort -u | grep -v ADR-000)
+recientes=$(git log --since="60 days ago" --diff-filter=AM --name-only --format= "origin/$DEFAULT" -- 'docs/decisions/ADR-*.md' 2>/dev/null | sort -u | grep -v ADR-000)
 if [ -z "$recientes" ]; then echo "_Ningún ADR nuevo o enmendado en 60 días._"; else
   for f in $recientes; do [ -f "$f" ] && echo "- $(head -1 "$f" | sed 's/^# //') ($(git log -1 --format=%cr -- "$f"))"; done
 fi

@@ -40,16 +40,36 @@ def coincide(ruta, globs):
     return [g for g in globs if glob_a_regex(g).match(ruta)]
 
 
+def salir(mensaje):
+    """Error explicado, sin traceback: un agente que ve un stack trace tiende a improvisar."""
+    print(f"mapa.py: {mensaje}", file=sys.stderr)
+    sys.exit(2)
+
+
+def existe(ref):
+    return subprocess.run(["git", "rev-parse", "-q", "--verify", f"{ref}^{{commit}}"],
+                          capture_output=True).returncode == 0
+
+
 def archivos_cambiados(args):
     if "--pr" in args:
         n = args[args.index("--pr") + 1]
-        out = subprocess.run(["gh", "pr", "diff", n, "--name-only"], capture_output=True, text=True, check=True).stdout
-        return [l for l in out.splitlines() if l]
+        r = subprocess.run(["gh", "pr", "diff", n, "--name-only"], capture_output=True, text=True)
+        if r.returncode != 0:
+            salir(f"no pude leer el PR #{n} ({r.stderr.strip() or 'gh falló'}). ¿Existe y está autenticado gh?")
+        return [l for l in r.stdout.splitlines() if l]
     base = args[args.index("--base") + 1] if "--base" in args else os.environ.get("BASE", "<RAMA_BASE>")
-    ref = f"origin/{base}"
-    if subprocess.run(["git", "rev-parse", "-q", "--verify", ref], capture_output=True).returncode != 0:
-        ref = base
-    out = subprocess.run(["git", "diff", "--name-only", f"{ref}...HEAD"], capture_output=True, text=True, check=True).stdout
+    if base.startswith("<"):
+        salir(f"la rama base no está configurada ({base}): la plantilla no se inicializó. "
+              "Pasá --base <rama> o definí BASE.")
+    ref = f"origin/{base}" if existe(f"origin/{base}") else base
+    if not existe(ref):
+        salir(f"no encuentro la rama '{base}' ni 'origin/{base}'. "
+              f"Corré 'git fetch origin {base}' o pasá --base <rama>.")
+    r = subprocess.run(["git", "diff", "--name-only", f"{ref}...HEAD"], capture_output=True, text=True)
+    if r.returncode != 0:
+        salir(f"git diff contra '{ref}' falló: {r.stderr.strip()}. ¿Tienen historia en común? Probá con --base.")
+    out = r.stdout
     sucios = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True).stdout
     nombres = set(out.splitlines()) | {l[3:].split(" -> ")[-1] for l in sucios.splitlines()}
     return sorted(n for n in nombres if n)
