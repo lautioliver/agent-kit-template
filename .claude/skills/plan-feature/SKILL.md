@@ -55,7 +55,8 @@ La división en PRs, en orden, con sus bloqueos.
 Con el plan aprobado:
 - Cada issue = un PR que se revisa solo y deja el sistema funcionando. Típicamente 3 a 8.
 - Bloqueos solo donde de verdad hay orden (schema → API → pantalla). Lo paralelo, sin bloqueo.
-- Si hay decisiones pendientes o un ADR por escribir, son el primer issue y bloquean al resto.
+- Si hay decisiones pendientes o un ADR por escribir, son el primer issue y **se cargan como bloqueo** (`bloqueado_por`) de los issues que dependen de esa decisión. Que la épica lo diga en el texto no alcanza: `preparar.sh` solo ve los bloqueos cargados.
+- Ningún issue sale con valores sin definir ("una ventana razonable", "un límite adecuado"): o el plan los fija, o el issue lleva una sección **Decisiones abiertas** con la pregunta concreta para el equipo.
 - Las migraciones destructivas en dos pasos (expand / contract) son dos issues.
 
 ## 4. Crear
