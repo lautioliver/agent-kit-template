@@ -142,8 +142,8 @@ if MAPA:
                           + ", ".join(f"{c}/ ({n})" for c, n in top)
                           + (f" y {len(conteo) - 6} carpetas más" if len(conteo) > 6 else ""))
 
-# Skills largas: el agente se saltea pasos justamente por la cantidad. El máximo lo usa
-# ajuste no entra, hay que sacar algo o pasarlo a script (regla de /mejorar-skills en el modo completo).
+# Skills largas: el agente se saltea pasos justamente por la cantidad. Si un ajuste
+# no entra en el máximo, hay que sacar algo o pasarlo a un script.
 MAX_SKILL = 120
 if os.path.isdir(".claude/skills"):
     for nombre in sorted(os.listdir(".claude/skills")):
