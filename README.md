@@ -13,7 +13,10 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
 | Labels | `.github/labels.yml` (fuente), `.github/labeler.yml` (auto-etiquetado de PRs), `.github/workflows/labels.yml` (sync + labeler + check) |
 | PRs | `.github/pull_request_template.md` |
 | Issues | `.github/ISSUE_TEMPLATE/*.yml` (formularios con labels automáticos), `.github/workflows/desbloquear.yml` (saca `estado:bloqueado` al cerrarse los bloqueantes) |
-| Skills de Claude Code | `.claude/skills/crear-issue` (abrir issues y marcar bloqueos desde el chat), `.claude/skills/git-workflow` |
+| Skills de Claude Code | Ver [El flujo con agentes](#el-flujo-con-agentes) |
+| Autonomía del agente | `AGENTS.md` → qué puede hacer solo, qué tiene que consultar y qué nunca |
+| Mapa para agentes | `docs/mapa-agentes.json` → qué docs revisar según lo que cambia, rutas sensibles, docs obligatorios |
+| Docs testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py` → links, rutas y ADRs rotos |
 
 ## Cómo usarla
 
@@ -33,7 +36,7 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
    | `develop releases` | rama → `develop` → `release/vX.Y.Z` → `main` | La app ya tiene usuarios activos: cada versión se congela y se prueba en staging antes de llegar a producción |
 
    Ejemplo con releases: `./scripts/init-plantilla.sh "Nombre del proyecto" develop releases`. El script pone el nombre, la rama base, la regla de ramas que corresponde y la fecha de hoy como fecha de las decisiones. Después se borra solo.
-3. Completá lo que está marcado con `TODO:`. Buscalo con `grep -rn "TODO:" .`. Lo mínimo:
+3. Completá lo que está marcado con `TODO:`. Lo más importante para los agentes es `docs/mapa-agentes.json`: poné las rutas reales de schema, auth, pagos y API pública. Buscalo con `grep -rn "TODO:" .`. Lo mínimo:
    - `AGENTS.md`: qué es, stack, comandos y convenciones de código.
    - `.github/labels.yml` y `.github/labeler.yml`: los labels `area:` y las rutas de tu repo.
    - `docs/convencion-nombres-github.md` §2: los scopes de commit.
@@ -63,3 +66,27 @@ arma una épica con sus sub-issues y los bloqueos entre ellos, te muestra el bor
 lista los issues sin bloqueantes abiertos por prioridad, los bloqueados con lo que los bloquea y el avance de cada épica.
 
 Necesita `gh` instalado y autenticado (`gh auth status`).
+
+## El flujo con agentes
+
+```
+idea → /plan-feature → épica + issues con bloqueos
+     → /implement-issue <n>
+         [debug si es bug · db-migration si toca schema · tests · autorevisión · update-docs]
+     → PR → /review-pr <n> (otra sesión) [+ /security-review si toca rutas sensibles]
+     → merge (una persona)
+```
+
+| Skill | Para qué |
+|---|---|
+| `/plan-feature` | Investiga código, arquitectura y ADRs, arma un plan técnico y lo convierte en épica + issues. No escribe código. |
+| `crear-issue` | Issues sueltos, bloqueos entre issues, auditoría → issues. `disponibles.sh` responde "¿qué puedo hacer ahora?". |
+| `/implement-issue <n>` | Del issue al PR: toma el issue, rama, código, tests, autorevisión, docs, PR. No mergea. |
+| `debug` | Síntoma → evidencia → causa raíz → arreglo → test de regresión. |
+| `db-migration` | Plan con compatibilidad, backfill y rollback antes de tocar el schema. |
+| `update-docs` | Qué docs quedaron viejos por un cambio (según el mapa) y corregirlos en el mismo PR. |
+| `/review-pr <n>` | Revisión con foco en lo propio del proyecto: reglas de negocio, ADRs, autonomía, docs, tests, rutas sensibles. No aprueba. |
+| `/estado` | Resumen del proyecto generado en el momento: versión, trabajo, épicas, PRs, deuda, decisiones, migraciones. |
+| `git-workflow` | Ramas, commits y PRs. |
+
+Dos puntos de control quedan siempre en manos de personas: **aprobar el plan** y **mergear**.

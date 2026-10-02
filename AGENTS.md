@@ -33,6 +33,35 @@ Siempre:
 - Nunca secretos en logs, código o repo. `.env*` están ignorados.
 - Si un documento y el código no coinciden, gana el código y se actualiza el documento.
 
+## Autonomía del agente (obligatorio)
+
+Qué puede hacer un agente solo y qué tiene que consultar antes. "Consultar" es preguntarle al usuario en el chat, o comentar en el issue y frenar si no hay nadie. Que algo sea la solución más fácil para cerrar la tarea no lo autoriza.
+
+**Puede hacer solo:**
+- Modificar código dentro del alcance del issue.
+- Agregar o ajustar tests.
+- Refactors internos que no cambian comportamiento ni interfaces.
+- Actualizar docs para que reflejen lo que cambió.
+- Crear ramas `claude/…`, commitear y abrir PRs (nunca mergearlos).
+
+**Tiene que consultar antes:**
+- Cambiar el schema de la base o escribir migraciones → skill `db-migration`.
+- Agregar, quitar o subir de versión mayor una dependencia.
+- Cambiar una API pública o un contrato que consumen terceros.
+- Tocar auth, permisos, sesiones o manejo de secretos.
+- Cambiar una regla de negocio ya definida (ADR, auditoría, plan) → label `logica-negocio`.
+- Tocar infraestructura, deploy o CI.
+- Tomar una decisión difícil de revertir → proponer un ADR.
+- Ampliar el alcance más allá de lo que pide el issue.
+
+**Nunca:**
+- Borrar datos ni correr migraciones contra entornos compartidos o producción.
+- Mergear PRs, crear tags o publicar releases sin un pedido explícito.
+- Poner secretos en código, logs, issues o PRs.
+- Desactivar tests, checks o validaciones para que algo pase.
+
+Las rutas de cada categoría están en `docs/mapa-agentes.json` (`sensibles`). `scripts/agentes/mapa.py` dice si un cambio las toca.
+
 ## Convenciones de GitHub (obligatorio)
 
 Fuente de verdad: `docs/convencion-nombres-github.md`. Labels: `.github/labels.yml`. Solo lo marcado como decidido en su §12 es obligatorio. Lo que no esté decidido o cubierto se le pregunta al equipo antes de inventar un formato.
@@ -54,6 +83,7 @@ Nada entra a las ramas troncales sin PR.
 - `docs/README.md` — hub (cómo leer, capas de verdad)
 - `docs/llms.txt` — índice compacto para modelos
 - `docs/convencion-nombres-github.md` — ramas, commits, PRs, issues, labels
+- `docs/mapa-agentes.json` — qué docs revisar según lo que cambia, rutas sensibles, docs obligatorios
 - `docs/reference/` — glosario, dominio, superficies, módulos, recorridos
 - `docs/development/` — setup, arquitectura, visión, roadmap, horizonte, deploy, auditorías
 - `docs/guides/` — integraciones y guías de uso

@@ -27,10 +27,10 @@ BLOQUES=$(grep -rl 'releases:inicio' --exclude-dir=.git --exclude=init-plantilla
 if [ "$MODO" = "releases" ]; then
   # Se queda el contenido; solo se sacan los marcadores.
   for f in $BLOQUES; do perl -ni -e 'print unless /<!-- releases:(inicio|fin) -->/' "$f"; done
-  perl -pi -e "s/branches: \[$B\]/branches: [main, $B, 'release\/**']/" .github/workflows/labels.yml
+  perl -pi -e "s/branches: \[$B\]/branches: [main, $B, 'release\/**']/" .github/workflows/labels.yml .github/workflows/docs.yml
 else
   for f in $BLOQUES; do perl -0pi -e 's/\n<!-- releases:inicio -->.*?<!-- releases:fin -->\n//s' "$f"; done
-  [ "$B" != "main" ] && perl -pi -e "s/branches: \[$B\]/branches: [main, $B]/" .github/workflows/labels.yml
+  [ "$B" != "main" ] && perl -pi -e "s/branches: \[$B\]/branches: [main, $B]/" .github/workflows/labels.yml .github/workflows/docs.yml
 fi
 rm -- scripts/init-plantilla.sh
 echo "Listo. Pendientes (TODO:):"

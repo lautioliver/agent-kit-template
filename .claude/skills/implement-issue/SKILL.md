@@ -28,8 +28,14 @@ Si falla, **no fuerces nada**: contale al usuario por qué y, si sirve, proponé
 - Si el issue tiene criterios de aceptación ("Listo cuando", "Criterios de aceptación"), son la definición de terminado.
 - Si el issue es ambiguo en algo que cambia el resultado, o contradice un ADR o el código, **preguntá antes de escribir código**. Si el usuario no está, comentá la duda en el issue (`gh issue comment`) y frená.
 - Si el cambio toca una regla ya definida (ADR, auditoría, plan), el PR va a llevar `logica-negocio`: anotalo desde ahora.
+- Revisá la sección **Autonomía** de `AGENTS.md`. Si el issue exige algo de "tiene que consultar" (schema, dependencias, API pública, auth, infra, reglas de negocio) y en el issue no consta la aprobación, consultá antes de empezar.
 
 ## 3. Implementar
+
+Según el tipo de trabajo:
+- **Bug** (`tipo:bug`) → seguí la skill `debug`: reproducir y encontrar la causa raíz antes de escribir el arreglo.
+- **Cambio de schema o migraciones** → seguí la skill `db-migration`: el plan con rollback va antes del código.
+- Lo demás, directo.
 
 - Seguí las convenciones de `AGENTS.md` y el estilo del código que rodea al cambio.
 - Hacé solo lo que pide el issue. Lo que encuentres fuera de alcance va a un issue nuevo (skill `crear-issue`), no a este PR.
@@ -48,18 +54,17 @@ Revisá el diff completo contra `<RAMA_BASE>` antes de abrir el PR:
 - Si está disponible el comando `/code-review`, corrélo sobre la rama y resolvé lo que encuentre.
 - Si no, revisá vos: bugs, casos borde, código muerto, secretos, archivos que no deberían estar.
 
+Además:
+```bash
+python3 scripts/agentes/mapa.py
+```
+Si dice que tocaste **rutas sensibles**, corré `/security-review` (si está disponible) o revisá a mano auth, permisos, inputs, secretos y exposición de datos, y confirmá que la aprobación de Autonomía consta.
+
 Lo que decidas no corregir, explicalo en el PR.
 
 ## 6. Docs
 
-Si el cambio modifica algo que **corre** (comportamiento, endpoints, tablas, pantallas, comandos), actualizá en el mismo PR (ver "Cómo mantener esta sección" en `docs/README.md`):
-
-- `docs/development/architecture.md` y lo que corresponda de `docs/reference/`.
-- `AGENTS.md` si cambia una convención o un comando.
-- `docs/README.md` y `docs/llms.txt` si agregaste un documento con contenido.
-- Un ADR nuevo si tomaste una decisión difícil de revertir (ver `docs/decisions/README.md`). En ese caso, mejor frenar y consultarlo antes.
-
-Si no hace falta tocar docs, decilo en el PR.
+Seguí la skill `update-docs` (modo 1): `mapa.py` te dice qué docs revisar, y `check-docs.py` valida que no queden links ni rutas rotas. Los docs van **en el mismo PR** que el código: si se dejan para después, el próximo agente lee algo falso. Si no hace falta tocar docs, decí por qué en el PR.
 
 ## 7. Abrir el PR
 
@@ -83,6 +88,8 @@ Respondé con:
 - Qué cambió, en dos o tres líneas.
 - Qué decisiones tomaste que el revisor tiene que mirar.
 - Qué issues se van a desbloquear al mergear (lo imprimió `preparar.sh` en "Bloquea a").
+
+Sugerí el paso siguiente: revisar el PR con `/review-pr <n>`, idealmente desde **otra sesión** (quien implementó tiende a leer lo que quiso escribir).
 
 Y frená. El merge lo hace una persona.
 

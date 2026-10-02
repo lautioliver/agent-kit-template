@@ -71,6 +71,9 @@ Regla: si un documento de producto y el código no coinciden, **gana** [architec
 - [`AGENTS.md`](../AGENTS.md) — convenciones cortas para quien toca el repo
 - [`llms.txt`](llms.txt) — índice compacto para modelos
 - [`convencion-nombres-github.md`](convencion-nombres-github.md) — ramas, commits, PRs, issues y labels ([`.github/labels.yml`](../.github/labels.yml))
+- [`mapa-agentes.json`](mapa-agentes.json) — qué docs revisar según lo que cambia, rutas sensibles y docs obligatorios
+- Skills en [`../.claude/skills/`](../.claude/skills/): `plan-feature`, `crear-issue`, `implement-issue`, `debug`, `db-migration`, `update-docs`, `review-pr`, `estado`, `git-workflow`
+- Los docs se validan en CI: [`../scripts/agentes/check-docs.py`](../scripts/agentes/check-docs.py)
 
 ---
 

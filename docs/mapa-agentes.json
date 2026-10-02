@@ -1,0 +1,46 @@
+{
+  "_ayuda": "Mapa para agentes y CI. 'docs': qué documento revisar cuando cambian ciertos archivos (lo usan update-docs, implement-issue y review-pr). 'sensibles': rutas que exigen consultar antes de cambiarlas y correr /security-review (ver AGENTS.md, Autonomía). 'obligatorios': documentos que tienen que existir (lo valida scripts/check-docs.py). Globs estilo git: ** cualquier profundidad, * un nivel. TODO: completar con las rutas del proyecto.",
+  "docs": [
+    {
+      "cuando": ["TODO/schema/**", "**/migrations/**"],
+      "revisar": ["docs/reference/domain.md", "docs/development/architecture.md"],
+      "motivo": "cambió el modelo de datos"
+    },
+    {
+      "cuando": ["TODO/api/routes/**"],
+      "revisar": ["docs/development/architecture.md", "docs/reference/surfaces.md"],
+      "motivo": "cambió un endpoint o una pantalla"
+    },
+    {
+      "cuando": ["TODO/modules/**"],
+      "revisar": ["docs/reference/modules.md"],
+      "motivo": "cambió la responsabilidad de un módulo"
+    },
+    {
+      "cuando": ["package.json", "**/package.json", ".github/workflows/**"],
+      "revisar": ["AGENTS.md", "docs/development/setup.md"],
+      "motivo": "cambió un comando, una dependencia o el CI"
+    },
+    {
+      "cuando": ["infra/**", "Dockerfile", "**/*.toml"],
+      "revisar": ["docs/development/deploy.md"],
+      "motivo": "cambió la infraestructura o el deploy"
+    }
+  ],
+  "sensibles": [
+    {"tipo": "schema", "rutas": ["TODO/schema/**", "**/migrations/**"], "skill": "db-migration"},
+    {"tipo": "auth", "rutas": ["TODO/auth/**", "**/middleware/**"]},
+    {"tipo": "dinero", "rutas": ["TODO/payments/**"]},
+    {"tipo": "dependencias", "rutas": ["package.json", "**/package.json", "*.lock", "pnpm-lock.yaml"]},
+    {"tipo": "infra", "rutas": ["infra/**", ".github/workflows/**", "Dockerfile"]},
+    {"tipo": "api-publica", "rutas": ["TODO/public-api/**"]}
+  ],
+  "obligatorios": [
+    "AGENTS.md",
+    "docs/README.md",
+    "docs/llms.txt",
+    "docs/convencion-nombres-github.md",
+    "docs/decisions/README.md",
+    "docs/development/architecture.md"
+  ]
+}
