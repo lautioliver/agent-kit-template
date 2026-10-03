@@ -96,7 +96,7 @@ Necesita `gh` instalado y autenticado (`gh auth status`).
 ```
 idea → /plan-feature → épica + issues con bloqueos
      → /implement-issue <n>
-         [debug si es bug · db-migration si toca schema · tests · autorevisión · update-docs]
+         [tests en rojo desde los criterios → código en verde · debug · db-migration · autorevisión · update-docs]
      → PR → /review-pr <n> (otra sesión) [+ /security-review si toca rutas sensibles]
      → merge (una persona)
      → retro en el issue fijado → /mejorar-skills propone ajustes en un PR
@@ -106,7 +106,7 @@ idea → /plan-feature → épica + issues con bloqueos
 |---|---|
 | `/plan-feature` | Investiga código, arquitectura y ADRs, arma un plan técnico y lo convierte en épica + issues. No escribe código. |
 | `crear-issue` | Issues sueltos, auditoría → issues, bloqueos entre issues existentes. |
-| `/implement-issue <n>` | Del issue al PR: toma el issue, rama, código, tests, autorevisión, docs, PR. No mergea. |
+| `/implement-issue <n>` | Del issue al PR con TDD: tests desde los criterios de aceptación en rojo (`rojo.sh` comprueba que fallen por una aserción), código hasta verde, autorevisión, docs, PR. No mergea. |
 | `debug` | Síntoma → evidencia → causa raíz → arreglo → test de regresión. |
 | `db-migration` | Plan con compatibilidad, backfill y rollback antes de tocar el schema. |
 | `update-docs` | Qué docs quedaron viejos por un cambio (según el mapa) y corregirlos en el mismo PR. |

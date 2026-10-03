@@ -34,7 +34,7 @@ Si está disponible `/code-review`, corrélo sobre el PR para bugs, regresiones 
 | ¿Respeta la autonomía del agente? | AGENTS.md, Autonomía. Schema, dependencias, API pública, auth, infra: ¿hubo aprobación (en el issue o el PR)? |
 | ¿Toca rutas sensibles? | `mapa.py --pr <n>` → si sí, correr `/security-review` (o revisar a mano auth, inputs, permisos, secretos, exposición de datos). |
 | ¿Hay migración? | Plan de `db-migration` en el PR, con rollback. |
-| ¿Tests? | ¿Cubren el cambio? En un bug, ¿hay test de regresión que fallaba antes? |
+| ¿Tests (TDD)? | ¿Salen de los criterios de aceptación? El PR trae el bloque **rojo** y el commit de los tests en rojo: volvé a ese commit (`git switch --detach <sha>`), corré `.claude/skills/implement-issue/rojo.sh -- <comando>` y confirmá que fallan por una aserción; en la punta del PR, que pasan. Sin rojo comprobable y sin un "sin test" justificado, es hallazgo **a corregir**. |
 | ¿Docs al día? | `mapa.py` marca docs **SIN MODIFICAR**: ¿hacía falta tocarlos? ¿Lo nuevo contradice `architecture.md`? |
 | ¿Convenciones? | Título, labels, cuerpo del PR, `Closes #n`, convenciones de código de AGENTS.md. |
 

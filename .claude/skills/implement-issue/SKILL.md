@@ -31,30 +31,33 @@ Si falla, **no fuerces nada**: contale al usuario por qué y, si sirve, proponé
 - Si el cambio toca una regla ya definida (ADR, auditoría, plan), el PR va a llevar `logica-negocio`: anotalo desde ahora.
 - Revisá la sección **Autonomía** de `AGENTS.md`. Si el issue exige algo de "tiene que consultar" (schema, dependencias, API pública, auth, infra, reglas de negocio) y en el issue no consta la aprobación, consultá antes de empezar **en un solo mensaje**: qué rutas sensibles toca (`python3 scripts/agentes/mapa.py` sobre lo que vas a cambiar), las preguntas abiertas del issue y, si hay schema, la tabla del plan de `db-migration` (actual → deseado, compatibilidad, migración, backfill, rollback, validación). Una aprobación clara, no tres.
 
-## 3. Implementar
+## 3. Tests primero (rojo)
 
-Según el tipo de trabajo:
-- **Bug** (`tipo:bug`) → seguí la skill `debug`: reproducir y encontrar la causa raíz antes de escribir el arreglo.
-- **Cambio de schema o migraciones** → seguí la skill `db-migration`: el plan con rollback va antes del código.
-- Lo demás, directo.
+TDD: los tests salen de los **criterios de aceptación** del issue, no del código que vas a escribir. Uno o más por criterio.
 
-- Seguí las convenciones de `AGENTS.md` y el estilo del código que rodea al cambio.
-- Hacé solo lo que pide el issue. Lo que encuentres fuera de alcance va a un issue nuevo (skill `crear-issue`), no a este PR.
-- Commits chicos con Conventional Commits (`docs/convencion-nombres-github.md` §2); en el último o en el cuerpo del PR, `Closes #<n>`.
+- **Bug** (`tipo:bug`) → skill `debug`: el test rojo reproduce el bug. **Schema** → skill `db-migration`: el plan con rollback va antes.
+- Si el test necesita algo que no existe (una función, un campo), agregá lo mínimo para que cargue: la firma o un stub que devuelva algo incorrecto. Nada de lógica.
+- Corrélos y confirmá que fallan **por la razón correcta**:
+  ```bash
+  .claude/skills/implement-issue/rojo.sh -- <comando de test, el de `AGENTS.md`, acotado a lo que probás>
+  ```
+  Si pasan, no prueban nada: reescribilos. Si fallan por un import o un símbolo inexistente, no cuenta: completá el stub. Cada falla tiene que ser una aserción de un criterio.
+- **Commiteá los tests en rojo** antes de implementar (`test(<scope>): …`), así el revisor puede volver a ese commit y verlos fallar. Guardá el bloque que deja `rojo.sh` para el PR.
+- Sin comportamiento que probar (docs, config) o con una parte que no se puede probar acá (concurrencia real, un proveedor externo): decilo en el PR como **sin test**, con el motivo.
 
-## 4. Tests
+## 4. Implementar (verde)
 
-- Agregá o ajustá tests que cubran el cambio: el bug reproducido antes del arreglo, o los criterios de aceptación de la feature.
-- Mientras trabajás, corré los tests que correspondan. La verificación completa va en el paso 7.
-- Si un test fallaba antes de tu cambio, verificalo en `<RAMA_BASE>` y decilo en el PR en vez de taparlo.
-- Si una rama del código no se puede probar en el entorno de tests (concurrencia real, un proveedor externo), no la des por probada: anotala para "Cómo probarlo" del PR como **sin test**, con el motivo.
+- Lo mínimo para que los tests pasen, con las convenciones de `AGENTS.md` y el estilo del código que rodea al cambio. Después refactorizá con los tests en verde.
+- Hacé solo lo que pide el issue. Lo que encuentres fuera de alcance va a un issue nuevo (skill `crear-issue`).
+- Commits chicos con Conventional Commits; `Closes #<n>` en el cuerpo del PR.
+- Si un test fallaba antes de tu cambio (no uno de los tuyos), verificalo en `<RAMA_BASE>` y decilo en el PR.
 
 ## 5. Autorevisión
 
 Revisá el diff completo contra `<RAMA_BASE>` antes de abrir el PR:
 
 - Si está disponible el comando `/code-review`, corrélo sobre la rama y resolvé lo que encuentre.
-- Cada hallazgo que corrijas lleva un test de regresión, y comprobá que **falla sin el arreglo**: corrélo contra el código anterior (por ejemplo `git show HEAD:<archivo> > <archivo>`) y restaurá. Un test que pasa con y sin el arreglo no prueba nada.
+- Cada hallazgo que corrijas sigue el mismo ciclo: test que reproduce el hallazgo, `rojo.sh` contra el código actual, arreglo, verde.
 - Si no, revisá vos: bugs, casos borde, código muerto, secretos, archivos que no deberían estar.
 
 Además:
@@ -88,7 +91,7 @@ gh pr create --base <RAMA_BASE> --title "<tipo>(<scope>): <descripcion>" --body-
 ```
 
 - Título: Conventional Commits, ≤ 72 caracteres (lo valida `pr-title.yml`).
-- Cuerpo: `.github/pull_request_template.md` completo. En "Cómo probarlo", los comandos que corriste y su resultado.
+- Cuerpo: `.github/pull_request_template.md` completo. En "Cómo probarlo", los comandos que corriste y su resultado. En "Cómo probarlo", el bloque **rojo** de `rojo.sh` y el commit de los tests en rojo: sin eso, el revisor no puede comprobar que los tests prueban algo.
 - Labels: exactamente un `tipo:` (copialo del issue), 1–2 `area:`, ningún `prioridad:`, más `logica-negocio` o `breaking-change` si corresponden.
 - `Closes #<n>` en el cuerpo.
 

@@ -23,20 +23,25 @@ Valida que esté abierto, que no lo tenga otra persona y que no haya cambios sin
 - Si el issue es parte de una épica (`preparar.sh` la muestra; o si el issue dice "Después de #n"), leé la épica entera, sobre todo **Lógica de negocio afectada** y los ADRs pendientes que menciona. Un bloqueo puede estar escrito en el texto sin estar cargado como dependencia: si la épica dice que algo requiere un ADR o una decisión que todavía no existe, decidí con el usuario si este issue cae adentro antes de empezar.
 - Si es ambiguo en algo que cambia el resultado, o pide algo de la lista **"Consulta antes"** de `AGENTS.md` sin aprobación en el issue, preguntá antes de escribir código, **en un solo mensaje**: qué toca, las preguntas abiertas y, si hay base de datos, el plan de "Si toca la base de datos" con su rollback.
 
-## 3. Implementar
+## 3. Tests primero (rojo)
 
-- **Bug** (`tipo:bug`) → skill `debug`: causa raíz antes que arreglo.
-- **Base de datos** → la sección "Si toca la base de datos" de `AGENTS.md`: plan con rollback aprobado antes de la migración.
+Los tests salen de los **criterios de aceptación** del issue, antes de escribir el código. Si necesitan algo que no existe, solo la firma o un stub. Corrélos:
+
+```bash
+.claude/skills/implement-issue/rojo.sh -- <comando de test de AGENTS.md>
+```
+
+Tienen que fallar **por una aserción** del criterio: si pasan, no prueban nada; si fallan por un import o un símbolo inexistente, completá el stub. **Bug** → skill `debug`: el test rojo reproduce el bug. Commiteá los tests en rojo (`test: …`) antes de implementar. Si una parte no se puede probar (concurrencia real, un proveedor externo), anotala en el PR como **sin test**.
+
+## 4. Implementar (verde)
+
+- Lo mínimo para que los tests pasen; después refactor en verde. **Base de datos** → "Si toca la base de datos" de `AGENTS.md` antes.
 - Solo lo que pide el issue. Lo demás, a un issue nuevo (`crear-issue`).
-- Commits con la convención (`<tipo>: <descripcion>`).
-
-## 4. Tests
-
-Agregá o ajustá tests que cubran el cambio (en un bug, uno que fallaba antes). Corré lint, typecheck y tests de `AGENTS.md`; si algo falla, arreglalo, no lo desactives. Si una rama no se puede probar (concurrencia real, un proveedor externo), anotala en el PR como **sin test**.
+- Corré lint, typecheck y tests de `AGENTS.md`; si algo falla, arreglalo, no lo desactives.
 
 ## 5. Autorevisión
 
-Leé el diff completo (`git diff <RAMA_BASE>...HEAD`) como si fuera de otra persona: bugs, casos borde, código muerto, secretos, archivos de más. Si está disponible `/code-review`, corrélo. Cada hallazgo que corrijas lleva un test que **falla sin el arreglo** (comprobalo contra el código anterior). Revisá también que el cambio no rompa lo que un ADR dice que no puede pasar nunca. Si tocaste algo de "Consulta antes" y está `/security-review`, corrélo también.
+Leé el diff completo (`git diff <RAMA_BASE>...HEAD`) como si fuera de otra persona: bugs, casos borde, código muerto, secretos, archivos de más. Si está disponible `/code-review`, corrélo. Cada hallazgo que corrijas sigue el mismo ciclo: test, `rojo.sh`, arreglo, verde. Revisá también que el cambio no rompa lo que un ADR dice que no puede pasar nunca. Si tocaste algo de "Consulta antes" y está `/security-review`, corrélo también.
 
 ## 6. Docs
 
@@ -49,7 +54,7 @@ git push -u origin HEAD
 gh pr create --base <RAMA_BASE> --title "<tipo>: <descripcion>" --body-file <archivo> --label "tipo:..."
 ```
 
-Cuerpo con `.github/pull_request_template.md`, los comandos que corriste en "Cómo probarlo" y `Closes #<n>`. Mirá el CI (`gh pr checks --watch`) y corregí lo que falle por tu cambio.
+Cuerpo con `.github/pull_request_template.md`: en "Cómo probarlo", el bloque rojo de `rojo.sh`, el commit de los tests en rojo y los comandos que corriste; `Closes #<n>`. Mirá el CI (`gh pr checks --watch`) y corregí lo que falle por tu cambio.
 
 ## 8. Entregar
 
