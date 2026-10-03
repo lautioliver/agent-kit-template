@@ -31,19 +31,20 @@ if grep -Eq "$mala" "$salida"; then
 fi
 
 resumen=$(grep -E '✗|×|FAIL|AssertionError|Expected|Received|expected .* to' "$salida" | sed 's/\x1b\[[0-9;]*m//g' | head -40)
+fallas="${resumen:-$(tail -20 "$salida")}"
 pr="${salida}.md"
 {
   echo "<details><summary>Rojo antes de implementar</summary>"
   echo
   echo '```'
   echo "\$ $*"
-  echo "${resumen:-$(tail -20 "$salida")}"
+  echo "$fallas"
   echo '```'
   echo
   echo "</details>"
 } >"$pr"
 echo "En rojo. Fallas:"
-echo "${resumen:-$(tail -20 "$salida")}" | sed 's/^/  /'
+while IFS= read -r linea; do printf '  %s\n' "$linea"; done <<<"$fallas"
 echo
 echo "Confirmá que cada falla es una aserción de un criterio de aceptación."
 echo "Bloque para \"Cómo probarlo\" del PR: $pr"
