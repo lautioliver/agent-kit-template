@@ -47,20 +47,22 @@ No es para:
    - `logica-negocio` — si pide cambiar una regla ya definida en un ADR, auditoría o plan. Citá cuál en el cuerpo.
    - `breaking-change` — si rompe un contrato público.
 
+   **Responsable:** `python3 scripts/agentes/equipo.py sugerir --labels "<labels separados por coma>"` devuelve a quién asignarlo según `.github/equipo.json` (por área y carga). Si no devuelve nada, el equipo está vacío: el issue queda sin asignar (sugerí `/add-member`). Si el usuario pidió otra persona, gana el usuario.
+
 6. **Escribir el cuerpo** con las secciones de la plantilla elegida, como Markdown (`## Qué pasa`, `## Qué debería pasar`…). Reglas:
    - Links a archivos con ruta relativa del repo y, si sirve, línea.
    - Si sale de una auditoría o ADR, el link al documento y el ID del hallazgo o regla.
    - Nunca secretos, tokens ni datos personales reales.
    - Al final: `_Abierto desde el chat con Claude Code a pedido de @<usuario>._` (`gh api user -q .login`).
 
-7. **Mostrar el borrador y esperar confirmación.** Abrir un issue publica contenido en el repo. Mostrá título, labels, cuerpo y **bloqueos** (`#B bloqueado por #A`) de cada issue y pedí un "sí" explícito. Con varios issues, mostralos todos juntos y confirmá una vez la tanda.
+7. **Mostrar el borrador y esperar confirmación.** Abrir un issue publica contenido en el repo. Mostrá título, labels, **responsable**, cuerpo y **bloqueos** (`#B bloqueado por #A`) de cada issue y pedí un "sí" explícito. Con varios issues, mostralos todos juntos y confirmá una vez la tanda.
 
 8. **Crear.** Escribí el cuerpo a un archivo temporal para no romper el escapado:
    ```bash
    gh issue create --title "<título>" --body-file <archivo> \
-     --label "tipo:bug" --label "area:api" --label "estado:a-triar"
+     --label "tipo:bug" --label "area:api" --label "estado:a-triar" --assignee "<responsable>"
    ```
-   Opcionales, solo si el usuario los pidió: `--assignee @me`, `--milestone "<nombre>"`, `--project "<nombre>"`.
+   Sin responsable, omití `--assignee`. Opcionales, solo si el usuario los pidió: `--milestone "<nombre>"`, `--project "<nombre>"`.
 
 9. **Sub-issues** (vincular un issue a una épica que ya existe; para armar una épica nueva con varios issues, usá `plan-feature`):
    ```bash

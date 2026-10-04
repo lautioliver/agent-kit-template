@@ -20,12 +20,13 @@ Requiere `gh` autenticado (`gh auth status`). Los labels válidos son solo los d
 
 4. **Título** en imperativo, sin prefijo ni punto final: `Agregar login con Google`. En bugs vale el síntoma.
 5. **Prioridad** solo si el usuario la dio o es obvia (rompe algo en uso → `prioridad:alta`).
-6. **Cuerpo:** las secciones del tipo, links a archivos con ruta relativa, nada de secretos ni datos personales.
-7. **Mostrar el borrador y esperar un "sí".** Abrir un issue publica contenido.
-8. **Crear** con el cuerpo en un archivo temporal:
+6. **Responsable:** `python3 scripts/agentes/equipo.py sugerir --labels "<labels separados por coma>"` devuelve a quién asignarlo según `.github/equipo.json` (por área y carga). Si no devuelve nada, el equipo está vacío: el issue queda sin asignar (sugerí `/add-member`). Si el usuario pidió otra persona, gana el usuario.
+7. **Cuerpo:** las secciones del tipo, links a archivos con ruta relativa, nada de secretos ni datos personales.
+8. **Mostrar el borrador (con el responsable) y esperar un "sí".** Abrir un issue publica contenido.
+9. **Crear** con el cuerpo en un archivo temporal:
    ```bash
-   gh issue create --title "<título>" --body-file <archivo> --label "tipo:bug" --label "prioridad:alta"
+   gh issue create --title "<título>" --body-file <archivo> --label "tipo:bug" --label "prioridad:alta" --assignee "<responsable>"
    ```
-9. **Responder** con el link, o con el error si falló.
+10. **Responder** con el link, o con el error si falló.
 
 Si un issue depende de otro, decilo en el cuerpo: `Después de #12: <por qué>`.

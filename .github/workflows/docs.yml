@@ -21,6 +21,8 @@ jobs:
           fetch-depth: 0
       - name: Validar documentación
         run: python3 scripts/agentes/check-docs.py
+      - name: Tests de los scripts de agentes
+        run: python3 -m unittest discover -s scripts/agentes -p 'test_*.py'
       - name: Shellcheck de los scripts
         run: git ls-files '*.sh' | xargs shellcheck
       - name: Docs a revisar según el mapa (aviso, no bloquea)
