@@ -21,7 +21,8 @@ if [ "$codigo" -eq 0 ]; then
 fi
 
 # Fallas que no son del comportamiento: el test ni llegó a correr la aserción.
-mala='Cannot find module|Failed to resolve import|ERR_MODULE_NOT_FOUND|SyntaxError|ReferenceError|is not defined|is not a function|is not a constructor|Transform failed|error TS[0-9]{4}'
+# JS/TS y Python. Sumá los de tu stack si hace falta.
+mala='Cannot find module|Failed to resolve import|ERR_MODULE_NOT_FOUND|SyntaxError|ReferenceError|is not defined|is not a function|is not a constructor|Transform failed|error TS[0-9]{4}|ModuleNotFoundError|ImportError|NameError|IndentationError|has no attribute'
 if grep -Eq "$mala" "$salida"; then
   echo "Los tests fallan, pero por una razón que no es el comportamiento:"
   grep -E "$mala" "$salida" | sort -u | head -5 | sed 's/^/  /'
