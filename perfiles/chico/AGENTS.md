@@ -41,6 +41,7 @@ Detalle en `docs/convencion-nombres-github.md`.
 - **Rama:** <REGLA_RAMAS> Nombres `<tipo>/<n°issue>-<descripcion>`; si la crea un agente, `claude/<n°issue>-<descripcion>`.
 - **Commits y PRs:** `<tipo>: <descripcion>` en imperativo y minúscula (`feat`, `fix`, `docs`, `chore`, `refactor`, `test`). Cuerpo del PR con `.github/pull_request_template.md` y `Closes #n`.
 - **Labels:** un `tipo:` por issue y PR; `prioridad:` solo en issues. Solo los de `.github/labels.yml`.
+- **Equipo:** los issues nuevos se asignan solos a un integrante (por área y carga). El equipo se cambia con `/add-member` y `/remove-member`; no edites el archivo a mano. Asignado = responsable; en curso = con PR abierto.
 - **Issues:** con la skill `crear-issue`. **Implementar:** `/implement-issue <n>`. **Bugs:** skill `debug`.
 
 ## Docs

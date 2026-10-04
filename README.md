@@ -64,8 +64,9 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
    - `AGENTS.md`: qué es, stack, comandos y convenciones de código.
    - `.github/labels.yml` y `.github/labeler.yml`: los labels `area:` y las rutas de tu repo.
    - `docs/convencion-nombres-github.md` §2: los scopes de commit.
-4. Corré el workflow **Labels** a mano (Actions → Labels → Run workflow) para crear los labels en el repo.
-5. Si usás Cursor, copiá o enlazá las skills: `ln -s ../.claude/skills .cursor/skills`.
+4. Cargá al equipo: `/add-member @usuario` por cada integrante, con las áreas que cubre. Desde ahí, cada issue que creen los agentes nace asignado (ver [Equipo y asignación](#equipo-y-asignación)).
+5. Corré el workflow **Labels** a mano (Actions → Labels → Run workflow) para crear los labels en el repo.
+6. Si usás Cursor, copiá o enlazá las skills: `ln -s ../.claude/skills .cursor/skills`.
 
 ## Abrir issues desde el chat
 
@@ -114,9 +115,23 @@ idea → /plan-feature → épica + issues con bloqueos
 | `/mejorar-skills` | Junta las retros (issue fijado "Retros del flujo con agentes") y las señales objetivas (fallas de CI en ramas de agentes, reverts) y propone ajustes a las skills en un PR. Nunca afloja controles. |
 | `/estado` | Resumen del proyecto generado en el momento (versión, trabajo, épicas, PRs, deuda, decisiones, migraciones) y "¿qué puedo hacer ahora?" (`disponibles.sh`). |
 | `git-workflow` | Ramas, commits y PRs. |
+| `/add-member`, `/remove-member` | Agregar, editar, pausar o quitar integrantes del equipo que recibe los issues. |
 
 Dos puntos de control quedan siempre en manos de personas: **aprobar el plan** y **mergear**.
 
 **Las skills mejoran con el uso, pero no se reescriben solas.** Cada `implement-issue` y `review-pr` deja una retro; `/mejorar-skills` busca patrones (al menos dos casos o uno grave), prefiere convertirlos en scripts o checks antes que en más texto, y siempre propone en un PR. Las skills tienen un máximo de 120 líneas (lo controla `check-docs.py`) para que no crezcan con cada ajuste. Se puede programar para que corra una vez por semana.
 
 Dos checks del workflow de labels salieron de ese circuito en un repo real: un PR con `logica-negocio` tiene que tocar `docs/decisions/` (o decir "ADR sin cambios: <motivo>"), y un PR que llega sin `tipo:` lo copia del issue que cierra.
+
+## Equipo y asignación
+
+`.github/equipo.json` lista a los integrantes (usuario de GitHub, nombre, áreas `area:` que cubren, activo o pausado). Lo leen solo los scripts que crean issues: `crear-issue` y `planificar.py` (épicas). Cada issue nuevo se asigna así:
+
+1. Entre los activos, los que cubren alguna `area:` del issue.
+2. Si nadie la cubre (o el issue no tiene área), todos los activos.
+3. Gana el de menos issues abiertos asignados; en una épica, la carga se reparte también entre los issues del mismo plan. Empate: el primero del archivo.
+
+Sin integrantes, los issues quedan sin asignar. El equipo se cambia con `/add-member` y `/remove-member` (`scripts/agentes/equipo.py`), que validan que el usuario exista y tenga acceso al repo; `check-docs.py` controla que las áreas sigan existiendo en `labels.yml`.
+
+**Asignado significa responsable**, no "lo está trabajando": `disponibles.sh` muestra primero lo tuyo, considera "en curso" lo que tiene un PR abierto y separa lo que ya se mergeó a `develop` pero espera release. `preparar.sh` no deja tomar un issue cuyo responsable es otra persona.
+
