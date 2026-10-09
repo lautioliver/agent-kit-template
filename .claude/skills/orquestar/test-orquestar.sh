@@ -151,6 +151,11 @@ grep -q 'cd "$raiz" && .*retro.sh' "$R"; afirmar $? "revisor: guarda la retro de
 (cd "$RAIZ" && git check-ignore -q .claude/worktrees/agente-x); afirmar $? ".claude/worktrees/ está ignorado (el aislamiento de Claude Code no ensucia el checkout)"
 grep -qx '.claude/skills/orquestar' "$RAIZ/perfiles/chico/BORRAR" 2>/dev/null || ! [ -d "$RAIZ/perfiles" ]; afirmar $? "el modo chico borra la skill orquestar"
 
+# 4. El máximo de subagentes implementando a la vez (decisión 3 de #33) es 4, en todos los lugares.
+O="$RAIZ/.claude/skills/orquestar/SKILL.md"
+grep -q 'Nunca más de 4 implementando' "$O" && grep -q 'máximo de 4' "$O" && grep -q 'hasta \*\*4\*\*' "$O"; afirmar $? "orquestar: el máximo de implementadores a la vez es 4"
+! grep -Eq 'más de 3|máximo de 3|hasta \*\*3\*\*' "$O" && grep -q 'Reparte hasta 4 issues' "$RAIZ/README.md"; afirmar $? "ningún lugar sigue diciendo 3 para ese máximo"
+
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
 echo "Todos los tests pasan."
