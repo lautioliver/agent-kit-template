@@ -41,7 +41,7 @@ PY
 P="$TMP/proj"
 mkdir -p "$P/docs"
 git init -q -b main "$P"
-printf '{"sensibles": [{"tipo": "auth", "rutas": ["src/auth/**"]}, {"tipo": "dinero", "rutas": ["?src/pagos/**"]}]}\n' >"$P/docs/mapa-agentes.json"
+printf '{"sensibles": [{"tipo": "auth", "rutas": ["src/auth/**"]}, {"tipo": "dinero", "rutas": ["?src/pagos/**"]}, {"tipo": "dependencias", "rutas": ["?package.json", "?*.lock"]}, {"tipo": "infra", "rutas": ["?Dockerfile"]}]}\n' >"$P/docs/mapa-agentes.json"
 mkdir -p "$P/scripts"; cp -R "$RAIZ/scripts/agentes" "$P/scripts/"
 (cd "$P" && git add -A && git commit -qm base)
 
@@ -68,6 +68,21 @@ issue 8 open "tipo:docs" "Documentar la carpeta src/pagos/ (sin tocar código)."
 s=$(ruteo 8); es "$(head -1 <<<"$s")" = sonnet; afirmar $? "una carpeta sensible sin backticks también cuenta"
 issue 9 open "" "Sin labels."
 s=$(ruteo 9); es "$(head -1 <<<"$s")" = sonnet; afirmar $? "sin tipo: → sonnet"
+issue 20 open "tipo:task" "Actualizar lodash en package.json."
+s=$(ruteo 20); es "$(head -1 <<<"$s")" = sonnet; afirmar $? "una ruta sensible sin barra (package.json) → sonnet"
+issue 21 open "tipo:task" "Ajustar el Dockerfile."
+s=$(ruteo 21); es "$(head -1 <<<"$s")" = sonnet; afirmar $? "Dockerfile nombrado → sonnet"
+issue 22 open "tipo:task" "Regenerar yarn.lock."
+s=$(ruteo 22); es "$(head -1 <<<"$s")" = sonnet; afirmar $? "un archivo que coincide con *.lock → sonnet"
+issue 23 open "tipo:docs" "Documentar la carpeta src/auth"
+s=$(ruteo 23); es "$(head -1 <<<"$s")" = sonnet; afirmar $? "una carpeta sensible sin barra final → sonnet"
+issue 24 open "tipo:bug,tipo:docs" "Doble tipo."
+s=$(ruteo 24); es "$(head -1 <<<"$s")" = sonnet; afirmar $? "con un tipo: pesado además del liviano → sonnet"
+issue 25 open "tipo:docs" "Explicar el package manager y la arquitectura."
+s=$(ruteo 25); es "$(head -1 <<<"$s")" = haiku; afirmar $? "palabras sueltas que no son rutas sensibles no cambian el ruteo"
+mkdir -p "$TMP/sin-repo"; printf '#!/bin/sh\necho "no git remotes found" >&2; exit 1\n' >"$TMP/sin-repo/gh"; chmod +x "$TMP/sin-repo/gh"
+s=$(cd "$P" && PATH="$TMP/sin-repo:$PATH" python3 "$AQUI/ruteo.py" 1 2>&1); c=$?
+! es "$c" -eq 0 && grep -qi "repo" <<<"$s"; afirmar $? "si gh no encuentra el repo, lo dice (no un 404 del issue)"
 mv "$P/docs/mapa-agentes.json" "$TMP/mapa.json"
 s=$(ruteo 1); es "$(head -1 <<<"$s")" = sonnet; afirmar $? "sin mapa no se pueden descartar rutas sensibles → sonnet"
 mv "$TMP/mapa.json" "$P/docs/mapa-agentes.json"
@@ -96,6 +111,18 @@ s=$(cd "$P" && "$AQUI/limpiar.sh" --borrar 2>&1); c=$?
 ! es "$c" -eq 0 && es -d "$WT/10" && grep -q "retros-pendientes" <<<"$s"; afirmar $? "con retros pendientes no borra y dice por qué"
 rm -rf "$P/.git/retros-pendientes"
 
+# Si no puede leer un issue, no lo da por "nada que limpiar": lo dice y sale con error.
+mkdir -p "$WT"; git -C "$P" worktree add -q -b claude/14-x "$WT/14" 2>/dev/null
+s=$(cd "$P" && "$AQUI/limpiar.sh" 2>&1); c=$?
+! es "$c" -eq 0 && grep -q "#14" <<<"$s"; afirmar $? "si no puede leer el estado de un issue, lo dice y sale con error"
+git -C "$P" worktree remove "$WT/14"
+
+# Un worktree que no se puede borrar (bloqueado) se reporta y el script sale con error.
+git -C "$P" worktree lock "$WT/13"
+s=$(cd "$P" && "$AQUI/limpiar.sh" --borrar 2>&1); c=$?
+! es "$c" -eq 0 && grep -q "no se pudo borrar.*$WT/13" <<<"$s" && ! es -d "$WT/10"; afirmar $? "un worktree que no se puede borrar se reporta, y los demás se borran"
+git -C "$P" worktree unlock "$WT/13"
+
 s=$(cd "$P" && "$AQUI/limpiar.sh" --borrar 2>&1); c=$?
 afirmar $c "limpiar.sh --borrar termina bien"
 ! es -d "$WT/10" && ! es -d "$WT/13"; afirmar $? "--borrar borra los worktrees limpios de issues cerrados"
@@ -104,6 +131,13 @@ git -C "$P" rev-parse -q --verify claude/10-x >/dev/null; afirmar $? "--borrar d
 
 # 3. Lo que hace falta para correr en paralelo (criterios de #37).
 ! grep -q 'push -u' "$RAIZ/.claude/skills/implement-issue/SKILL.md"; afirmar $? "implement-issue pushea sin -u (el -u escribe .git/config y choca en paralelo)"
+! grep -Eq 'pushe[aá] de nuevo[^`]*$' "$RAIZ/.claude/skills/implement-issue/SKILL.md" && grep -q 'git push origin HEAD' "$RAIZ/.claude/agents/implementador.md"; afirmar $? "cada push dice git push origin HEAD (la rama no tiene upstream)"
+grep -q 'revisor.*checkout principal.*retro' "$RAIZ/docs/agentes/contrato-subagentes.md"; afirmar $? "el contrato dice que el revisor guarda la retro desde el checkout principal"
+M="$RAIZ/docs/mapa-agentes.json"
+for f in .claude/skills/implement-issue/SKILL.md .gitignore perfiles/chico/BORRAR; do
+  python3 -c "import json,sys; v=[x for x in json.load(open('$M'))['verificar'] if x['nombre']=='orquestar'][0]; sys.exit(0 if any(g.lstrip('?')=='$f' for g in v['cuando']) else 1)"
+  afirmar $? "la verificación orquestar del mapa corre cuando cambia $f"
+done
 R="$RAIZ/.claude/agents/revisor.md"
 grep -q 'refs/revision/<pr>-<sufijo>' "$R" && grep -q -- '-revision-<pr>-<sufijo>' "$R"; afirmar $? "revisor: ref y worktree con sufijo único (dos revisiones del mismo PR no chocan)"
 # shellcheck disable=SC2016  # $raiz literal del markdown
