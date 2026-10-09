@@ -162,8 +162,10 @@ if os.path.exists("AGENTS.md"):
             continue
         for patron in re.findall(r"`([^`\s]+)`", linea):
             ejemplo = patron.replace("*", "")  # .env* → .env
+            if not ejemplo:
+                continue
             r = subprocess.run(["git", "check-ignore", "-q", "--no-index", ejemplo], capture_output=True)
-            if ejemplo and r.returncode == 1:
+            if r.returncode == 1:
                 errores.append(f"AGENTS.md:{n}: dice que `{patron}` está ignorado, pero {ejemplo} no lo está. "
                                "Agregalo a .gitignore o corregí la frase.")
 
