@@ -57,6 +57,10 @@ printf -- '---\nname: x\ndescription: d\nmodel: haiku\n---\nVer %s.\n' "$CONTRAT
 salida=$(check); grep -q "$AGENTES/x.md.*tools" <<<"$salida"; afirmar $? "check-docs rechaza un subagente sin tools"
 printf -- '---\nname: x\ndescription: d\ntools: Read\nmodel: haiku\n---\nSin contrato.\n' >"$TMP/r/$AGENTES/x.md"
 salida=$(check); grep -q "$AGENTES/x.md.*contrato" <<<"$salida"; afirmar $? "check-docs rechaza un subagente que no remite al contrato"
+printf -- '---\r\nname: x\r\ndescription: d\r\ntools: Read\r\nmodel: haiku\r\n---\r\nVer %s.\r\n' "$CONTRATO" >"$TMP/r/$AGENTES/x.md"
+check >/dev/null; afirmar $? "check-docs acepta un subagente con fin de línea CRLF"
+printf -- '---\nname: "x"\ndescription: d\ntools: Read\nmodel: "haiku"\n---\nVer %s.\n' "$CONTRATO" >"$TMP/r/$AGENTES/x.md"
+check >/dev/null; afirmar $? "check-docs acepta valores entre comillas"
 
 # 5. El modo chico no deja los subagentes.
 grep -qx "$AGENTES" "$RAIZ/perfiles/chico/BORRAR"; afirmar $? "el modo chico borra $AGENTES"
