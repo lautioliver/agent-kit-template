@@ -10,8 +10,11 @@ sys.path.insert(0, AQUI)
 from barandas import motivo  # noqa: E402
 
 
+TAGS = {"v1.0.0", "1.0.0", "2024.10"}
+
+
 def frena(comando, rama="claude/1-x"):
-    return motivo(comando, rama_actual=lambda cwd: rama)
+    return motivo(comando, rama_actual=lambda cwd: rama, es_tag=lambda nombre, cwd: nombre in TAGS)
 
 
 class Bloquea(unittest.TestCase):
@@ -88,6 +91,60 @@ class Bloquea(unittest.TestCase):
             return "main" if cwd and cwd.endswith("principal") else "claude/1-x"
         self.assertIsNotNone(motivo("cd /r/principal && git push", rama_actual=rama, cwd="/r/wt"))
         self.assertIsNone(motivo("git push", rama_actual=rama, cwd="/r/wt"))
+
+
+class CasosDeLaRevision(unittest.TestCase):
+    """Hallazgos de /code-review: lo que se escapaba y lo que frenaba de más."""
+
+    def test_un_apostrofo_no_desactiva_el_hook(self):
+        for c in ("gh pr merge 5 # it's ready", "# let's merge\ngh pr merge 5", "echo $'a\\'b'; gh pr merge 1",
+                  "echo \"it's\"; gh pr merge 1"):
+            self.assertIsNotNone(frena(c), c)
+
+    def test_un_cd_a_un_directorio_que_no_existe_no_rompe_el_hook(self):
+        def rama(cwd):
+            if cwd and not __import__("os").path.isdir(cwd):
+                raise FileNotFoundError(cwd)
+            return "main"
+        self.assertIsNotNone(motivo('cd "$CLAUDE_PROJECT_DIR" && git push origin HEAD', rama_actual=rama, cwd="/tmp"))
+        self.assertIsNotNone(motivo("mkdir w && cd w && git push", rama_actual=rama, cwd="/tmp"))
+
+    def test_continuacion_de_linea(self):
+        self.assertIsNotNone(frena("git push origin \\\n  main"))
+
+    def test_shells_y_envoltorios_con_opciones(self):
+        for c in ("bash -lc 'gh pr merge 1'", "timeout 60 git push origin main", "nice -n 10 git push origin main",
+                  "echo 1 | xargs -n 1 gh pr merge", "sudo -u x git push origin main", "env -u VAR gh pr merge 1"):
+            self.assertIsNotNone(frena(c), c)
+
+    def test_metodo_pegado_a_la_opcion(self):
+        self.assertIsNotNone(frena("gh api -XPUT repos/a/b/pulls/1/merge"))
+        self.assertIsNotNone(frena("gh api -XDELETE repos/a/b/branches/main/protection"))
+
+    def test_mover_una_rama_troncal_por_la_api(self):
+        self.assertIsNotNone(frena("gh api -X PATCH repos/a/b/git/refs/heads/main -f sha=abc -F force=true"))
+        self.assertIsNone(frena("gh api -X PATCH repos/a/b/git/refs/heads/claude/1-x -f sha=abc"))
+
+    def test_tags_con_cualquier_nombre(self):
+        self.assertIsNotNone(frena("git push origin 1.0.0"))
+        self.assertIsNotNone(frena("git push origin tag 2024.10"))
+        self.assertIsNone(frena("git push origin v2-docs"))
+
+    def test_no_verify_abreviado_o_por_config(self):
+        for c in ("git commit --no-verif -m x", "git push --no-veri origin x", "git -c core.hooksPath=/dev/null commit -m x"):
+            self.assertIsNotNone(frena(c), c)
+        for c in ("git commit -uno -m x", "git log --grep=x -- --no-verify", "git grep -- --no-verify",
+                  "git commit -am 'sin -n'", "git tag --sort version:refname"):
+            self.assertIsNone(frena(c), c)
+
+    def test_here_string_y_heredoc_con_guion(self):
+        self.assertIsNotNone(frena('cat <<< "x"\ngh pr merge 1'))
+        self.assertIsNone(frena("cat > b.md <<'END-MSG'\ngit push origin main\nEND-MSG"))
+
+    def test_opciones_con_valor_y_comentarios_en_el_push(self):
+        self.assertIsNotNone(frena("git push -o ci.skip origin", rama="main"))
+        self.assertIsNotNone(frena("git push origin $(git branch --show-current)", rama="main"))
+        self.assertIsNone(frena("git push origin feat # not main"))
 
 
 class Permite(unittest.TestCase):

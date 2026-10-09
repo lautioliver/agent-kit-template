@@ -197,7 +197,7 @@ def analizar_gh(args):
     return None
 
 
-def motivo(comando, rama_actual=None, cwd=None):
+def motivo(comando, rama_actual=None, cwd=None, es_tag=None):
     """Por qué hay que frenar el comando, o None si puede correr."""
     if rama_actual is None:
         rama_actual = rama_de
