@@ -56,6 +56,8 @@ Mostrale los hallazgos al usuario. Publicarlos en el PR es un comentario visible
 gh pr review <n> --comment --body-file <archivo>
 ```
 
+Si te lanzó otro agente y no podés preguntarle al usuario, no publiques: devolvé los hallazgos y el borrador a quien te lanzó, que es quien le pide la confirmación.
+
 Nunca `--approve`: aprobar es decisión de una persona. Si sos la sesión que implementó y te piden corregir, corregí en la misma rama y volvé a correr esta revisión.
 
 ## Retro

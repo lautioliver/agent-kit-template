@@ -1,130 +1,241 @@
+<p align="right"><b>🇦🇷 Español</b> · <a href="README.en.md">🇬🇧 English</a></p>
+
 <!-- marca:inicio -->
-<p align="center"><img src=".github/marca/dron-con-correa.svg" width="200" alt="Barrilete, un dron atado a una correa con dos nudos"></p>
-<p align="center"><b>Los agentes vuelan. Vos tenés la rienda.</b></p>
-<p align="center"><a href=".github/marca/README.md">Marca</a></p>
+<p align="center"><img src=".github/marca/dron-con-correa.svg" width="240" alt="Barrilete, un dron atado a una correa con dos nudos"></p>
+<h3 align="center">Los agentes vuelan. Vos tenés la rienda.</h3>
+<p align="center">
+  <a href="#empezar"><img src="https://img.shields.io/badge/🚀_empezar-B4122B?style=for-the-badge" alt="Empezar"></a>
+  <a href="#el-flujo"><img src="https://img.shields.io/badge/🪁_el_flujo-FFB020?style=for-the-badge" alt="El flujo"></a>
+  <a href="#skills"><img src="https://img.shields.io/badge/🧰_skills-2B59FF?style=for-the-badge" alt="Skills"></a>
+  <a href=".github/marca/README.md"><img src="https://img.shields.io/badge/🎨_marca-14161A?style=for-the-badge" alt="Marca"></a>
+</p>
 <!-- marca:fin -->
 
-# Plantilla de repo: reglas para agentes + documentación
+# agent-kit-template
 
-Repo plantilla para arrancar proyectos con una estructura de documentación y reglas para LLMs lista para usar.
+<p>
+  <img src="https://img.shields.io/badge/Claude_Code-listo-D97757?logo=claude&logoColor=white" alt="Claude Code">
+  <img src="https://img.shields.io/badge/Cursor-compatible-14161A?logo=cursor&logoColor=white" alt="Cursor">
+  <img src="https://img.shields.io/badge/GitHub_Actions-CI-2088FF?logo=githubactions&logoColor=white" alt="GitHub Actions">
+  <img src="https://img.shields.io/badge/gh_CLI-issues_y_PRs-181717?logo=github&logoColor=white" alt="GitHub CLI">
+  <img src="https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white" alt="Python 3">
+  <img src="https://img.shields.io/badge/Bash-scripts-4EAA25?logo=gnubash&logoColor=white" alt="Bash">
+  <img src="https://img.shields.io/badge/Conventional_Commits-1.0-FE5196?logo=conventionalcommits&logoColor=white" alt="Conventional Commits">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licencia-MIT-FFB020" alt="MIT"></a>
+</p>
 
-## Qué trae
+Plantilla de repo para trabajar con agentes de código **sin perder el control**: reglas claras, documentación que se testea y un flujo de issue a PR donde **las personas aprueban el plan y mergean**.
 
-| Pieza | Archivos |
-|---|---|
-| Reglas para agentes | `AGENTS.md` (fuente), `CLAUDE.md` (apunta a AGENTS.md), `llms.txt`, `docs/llms.txt` |
-| Hub de documentación | `docs/README.md` + `reference/`, `development/`, `guides/`, `decisions/` |
-| ADRs | `docs/decisions/README.md` (cómo se escriben) + `ADR-000-plantilla.md` |
-| Convenciones de GitHub | `docs/convencion-nombres-github.md` (ramas, commits, PRs, issues, labels) |
-| Labels | `.github/labels.yml` (fuente), `.github/labeler.yml` (auto-etiquetado de PRs), `.github/workflows/labels.yml` (sync + labeler + check) |
-| PRs | `.github/pull_request_template.md` |
-| Issues | `.github/ISSUE_TEMPLATE/*.yml` (formularios con labels automáticos), `.github/workflows/desbloquear.yml` (saca `estado:bloqueado` al cerrarse los bloqueantes) |
-| Skills de Claude Code | Ver [El flujo con agentes](#el-flujo-con-agentes) |
-| Autonomía del agente | `AGENTS.md` → qué puede hacer solo, qué tiene que consultar y qué nunca |
-| Mapa para agentes | `docs/mapa-agentes.json` → qué docs revisar según lo que cambia, rutas sensibles, docs obligatorios |
-| Docs testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py` → links, rutas y ADRs rotos, rutas del mapa que ya no existen |
-| Verificación antes del PR | `scripts/agentes/verificar.py` → según lo que cambió, corre lint, typecheck, tests afectados, drift de migraciones… (sección `verificar` del mapa) |
-| Marca | `.github/marca/` → Barrilete: ícono, estados, paleta y social preview de la plantilla (el init la borra) |
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🧭 Reglas para agentes</h3>
+      <code>AGENTS.md</code> dice qué puede hacer un agente solo, qué tiene que consultar y qué nunca.
+    </td>
+    <td width="50%" valign="top">
+      <h3>🧰 Skills para todo el ciclo</h3>
+      Planificar, abrir issues, implementar con TDD, revisar PRs, debuggear y migrar la base.
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>✅ Docs como infraestructura</h3>
+      CI valida links, rutas y ADRs, y avisa qué docs revisar según lo que cambió.
+    </td>
+    <td width="50%" valign="top">
+      <h3>🔁 Mejora con el uso</h3>
+      Cada corrida deja una retro, y los ajustes a las skills llegan siempre en un PR.
+    </td>
+  </tr>
+</table>
 
-## Requisitos
+<a name="empezar"></a>
 
-- **GitHub con sub-issues y dependencias de issues** ("Blocked by" / "Blocking") habilitados. Son funciones nuevas de GitHub: si el repo o el plan no las tiene, las skills avisan con el error (404/422) y dejan el bloqueo escrito en el cuerpo del issue, pero `planificar.py`, `disponibles.sh`, `preparar.sh` y el workflow `desbloquear.yml` pierden la parte automática.
-- `gh` autenticado, `jq` y `python3` en la máquina donde corre el agente.
-- Que los agentes puedan pushear a la rama `agentes/retros`, donde guardan las retros. Si protegés ramas con un patrón amplio (`*`), excluila; si no, `retro.sh` deja las retros en `.git/retros-pendientes/`.
+## 🚀 Empezar
 
-## Cómo usarla
+> [!TIP]
+> Necesitás `gh` autenticado (`gh auth status`), `jq` y `python3`. Ver [Requisitos](#requisitos).
 
-1. En GitHub: **Use this template → Create a new repository**.
-2. Cloná el repo nuevo y corré:
+1. En GitHub: **Use this template → Create a new repository**, y cloná el repo nuevo.
+2. Inicializalo:
 
    ```bash
    ./scripts/init-plantilla.sh "Nombre del proyecto" main
    ```
 
-   El segundo argumento es la rama base de los PRs:
-
-   | Opción | Flujo | Cuándo |
-   |---|---|---|
-   | `main` | rama → `main` | Proyecto nuevo, sin usuarios todavía |
-   | `develop` | rama → `develop` → `main` | Separar integración de producción |
-   | `develop releases` | rama → `develop` → `release/vX.Y.Z` → `main` | La app ya tiene usuarios activos: cada versión se congela y se prueba en staging antes de llegar a producción |
-
-   Ejemplo con releases: `./scripts/init-plantilla.sh "Nombre del proyecto" develop releases`. El script pone el nombre, la rama base, la regla de ramas que corresponde y la fecha de hoy como fecha de las decisiones. Después se borra solo.
-
-   **Proyecto chico** (una o dos personas): agregá `--chico`, por ejemplo `./scripts/init-plantilla.sh "Nombre del proyecto" main --chico`.
-
-   | | Completo | `--chico` |
-   |---|---|---|
-   | Skills | 9 | 4: `implement-issue`, `crear-issue`, `debug`, `update-docs` |
-   | Workflows | 4 | 2: docs y sync de labels |
-   | Labels | `tipo:`, `area:`, `prioridad:`, `estado:` y especiales | 7: `tipo:` y `prioridad:` |
-   | Docs | hub con `reference/`, `development/`, `guides/` | un solo archivo de arquitectura y los ADRs |
-   | Convención de GitHub | documento con opciones y decisiones | una página con las reglas |
-   | Autonomía y rutas sensibles | `AGENTS.md` + `docs/mapa-agentes.json` | todo en `AGENTS.md`, con la checklist de migraciones |
-   | Sale | | épicas y `plan-feature`, `review-pr`, `estado`, bloqueos, labeler, formularios de issue, modo releases |
-
-   Los archivos del modo chico están en `perfiles/chico/` (más la lista `BORRAR`); el init los aplica y borra la carpeta. Lo común (skills como `debug`, `check-docs.py`, `preparar.sh`) es el mismo archivo en los dos modos, así los arreglos llegan a ambos.
-
-   **Si el proyecto chico crece:** `python3 scripts/crecer.py` (con `--releases` si la base es `develop` y querés ese flujo) lo pasa al modo completo. Clona la plantilla, la inicializa con los datos de `.agent-kit.json` y agrega lo que falta. Los archivos que el proyecto nunca tocó se reemplazan por la versión completa; los que modificó **no se pisan**: la versión completa queda en `.agent-kit/pendientes/` para integrarla. La arquitectura que escribió el proyecto chico pasa a `docs/development/architecture.md`. No commitea: revisás el diff y abrís un PR.
-
-   `.agent-kit.json` lo escribe el init en los dos modos: proyecto, rama base, modo, fecha y la huella de cada archivo. Commitealo.
-3. Completá lo que está marcado con `TODO:`. Lo más importante para los agentes es `docs/mapa-agentes.json`: poné las rutas reales de schema, auth, pagos y API pública, y los comandos de `verificar`. Las rutas con `?` adelante son alternativas de stack opcionales; las propias van sin `?`, así el check falla si dejan de existir. Hasta que no quede ningún `TODO/` ahí, el check de docs en CI falla a propósito: con rutas de ejemplo, el agente nunca detectaría que tocó algo sensible. Buscalo con `grep -rn "TODO:" .`. Lo mínimo:
+   Pone el nombre, la rama base, la regla de ramas y la fecha en todos los archivos, escribe `.agent-kit.json` (commitealo) y se borra solo. Para elegir otra rama base o el modo chico, ver [Modos](#modos).
+3. Completá los `TODO:` (`grep -rn "TODO:" .`). Lo mínimo:
    - `AGENTS.md`: qué es, stack, comandos y convenciones de código.
+   - `docs/mapa-agentes.json`: las rutas reales de schema, auth, pagos y API pública, y los comandos de `verificar`.
    - `.github/labels.yml` y `.github/labeler.yml`: los labels `area:` y las rutas de tu repo.
    - `docs/convencion-nombres-github.md` §2: los scopes de commit.
-4. Corré el workflow **Labels** a mano (Actions → Labels → Run workflow) para crear los labels en el repo.
-5. Si usás Cursor, copiá o enlazá las skills: `ln -s ../.claude/skills .cursor/skills`.
+4. Creá los labels: **Actions → Labels → Run workflow**.
+5. ¿Usás Cursor? Enlazá las skills: `ln -s ../.claude/skills .cursor/skills`.
 
-## Abrir issues desde el chat
+> [!IMPORTANT]
+> El check de docs falla a propósito mientras queden rutas `TODO/` en `docs/mapa-agentes.json`: con rutas de ejemplo, un agente nunca detectaría que tocó algo sensible. Las rutas con `?` adelante son alternativas de stack opcionales; las propias van sin `?`, así el check falla si dejan de existir.
 
-Con Claude Code en el repo, pedilo en lenguaje natural:
+<a name="el-flujo"></a>
 
-> abrí un issue: el QR no valida sin conexión, es urgente
+## 🪁 El flujo
 
-La skill `crear-issue` arma el título según la convención, elige labels que existan en `labels.yml`, busca duplicados, te muestra el borrador y lo crea con `gh` cuando lo confirmás. También sirve para pasar una auditoría a issues (un issue por hallazgo) y para marcar bloqueos:
+```mermaid
+flowchart LR
+    idea([💡 idea]) --> plan["🗺️ /plan-feature<br/>épica + issues"]
+    plan --> ok1{{"🙋 aprobás el plan"}}
+    ok1 --> impl["🛠️ /implement-issue n<br/>tests en rojo → verde"]
+    impl --> pr(["📬 PR"])
+    pr --> rev["👀 /review-pr n<br/>otra sesión"]
+    rev --> ok2{{"🙋 mergeás"}}
+    ok2 --> retro["🔁 retro → /mejorar-skills<br/>ajustes en un PR"]
+    retro -.-> plan
 
-> la migración de pagos depende de que se cierre #25
-
-La skill registra la dependencia nativa de GitHub ("Blocked by"), pone `estado:bloqueado` y el workflow `desbloquear.yml` saca el label solo cuando se cierran todos los bloqueantes.
-
-Y para trabajos más grandes:
-
-> planificá la migración de cuentas
-
-arma una épica con sus sub-issues y los bloqueos entre ellos, te muestra el borrador en el orden en que se pueden hacer y lo crea al confirmar.
-
-> ¿qué puedo hacer ahora?
-
-lista los issues sin bloqueantes abiertos por prioridad, los bloqueados con lo que los bloquea y el avance de cada épica.
-
-Necesita `gh` instalado y autenticado (`gh auth status`).
-
-## El flujo con agentes
-
-```
-idea → /plan-feature → épica + issues con bloqueos
-     → /implement-issue <n>
-         [tests en rojo desde los criterios → código en verde · debug · db-migration · autorevisión · update-docs]
-     → PR → /review-pr <n> (otra sesión) [+ /security-review si toca rutas sensibles]
-     → merge (una persona)
-     → retro en la rama agentes/retros → /mejorar-skills propone ajustes y lecciones en un PR
+    classDef agente fill:#14161A,stroke:#14161A,color:#FFFFFF
+    classDef persona fill:#FFB020,stroke:#14161A,stroke-width:2px,color:#14161A
+    classDef pr fill:#2B59FF,stroke:#14161A,color:#FFFFFF
+    classDef aprende fill:#B4122B,stroke:#14161A,color:#FFFFFF
+    classDef idea fill:#E9ECF1,stroke:#5A6270,color:#14161A
+    class plan,impl,rev agente
+    class ok1,ok2 persona
+    class pr pr
+    class retro aprende
+    class idea idea
 ```
 
-| Skill | Para qué |
+Los agentes hacen el trabajo. Los dos nudos de la correa, **aprobar el plan** y **mergear** 🟡, quedan siempre en manos de personas.
+
+Durante `/implement-issue` se usan, según haga falta, `debug`, `db-migration` y `update-docs`. Si el PR toca rutas sensibles, la revisión suma `/security-review`.
+
+<!-- marca:inicio -->
+<table align="center">
+  <tr>
+    <td align="center"><img src=".github/marca/estados/planificando.svg" width="96" alt=""><br><b>planificando</b><br><sub><code>/plan-feature</code></sub></td>
+    <td align="center"><img src=".github/marca/estados/trabajando.svg" width="96" alt=""><br><b>trabajando</b><br><sub><code>/implement-issue</code></sub></td>
+    <td align="center"><img src=".github/marca/estados/bloqueado.svg" width="96" alt=""><br><b>bloqueado</b><br><sub><code>estado:bloqueado</code></sub></td>
+    <td align="center"><img src=".github/marca/estados/pr-listo.svg" width="96" alt=""><br><b>PR listo</b><br><sub>esperando tu merge</sub></td>
+  </tr>
+</table>
+<!-- marca:fin -->
+
+### 💬 Pedíselo en el chat
+
+| Decís | Pasa |
 |---|---|
-| `/plan-feature` | Investiga código, arquitectura y ADRs, arma un plan técnico y lo convierte en épica + issues. No escribe código. |
-| `crear-issue` | Issues sueltos, auditoría → issues, bloqueos entre issues existentes. |
-| `/implement-issue <n>` | Del issue al PR con TDD: tests desde los criterios de aceptación en rojo (`rojo.sh` comprueba que fallen por una aserción), código hasta verde, autorevisión, docs, PR. No mergea. |
-| `debug` | Síntoma → evidencia → causa raíz → arreglo → test de regresión. |
-| `db-migration` | Plan con compatibilidad, backfill y rollback antes de tocar el schema. |
-| `update-docs` | Qué docs quedaron viejos por un cambio (según el mapa) y corregirlos en el mismo PR. |
-| `/review-pr <n>` | Revisión con foco en lo propio del proyecto: reglas de negocio, ADRs, autonomía, docs, tests, rutas sensibles. No aprueba. |
-| `/mejorar-skills` | Junta las retros (rama `agentes/retros`, un archivo por retro) y las señales objetivas (fallas de CI en ramas de agentes, reverts) y propone ajustes a las skills en un PR. Nunca afloja controles. |
-| `/estado` | Resumen del proyecto generado en el momento (versión, trabajo, épicas, PRs, deuda, decisiones, migraciones) y "¿qué puedo hacer ahora?" (`disponibles.sh`). |
-| `git-workflow` | Ramas, commits y PRs. |
+| 📝 *abrí un issue: el QR no valida sin conexión, es urgente* | `crear-issue` arma título y labels según la convención, busca duplicados, te muestra el borrador y lo crea cuando confirmás. |
+| 🔗 *la migración de pagos depende de que se cierre el issue 25* | Registra el bloqueo nativo de GitHub ("Blocked by") y pone `estado:bloqueado`. El workflow `desbloquear.yml` lo saca cuando se cierran los bloqueantes. |
+| 🗺️ *planificá la migración de cuentas* | `plan-feature` investiga el código y arma una épica con sub-issues y bloqueos, en el orden en que se pueden hacer. |
+| 🔎 *pasá esta auditoría a issues* | Un issue por hallazgo, con el link al documento. |
+| 📊 *¿qué puedo hacer ahora?* | `estado` lista lo que está libre por prioridad, lo bloqueado con su motivo y el avance de cada épica. |
 
-Dos puntos de control quedan siempre en manos de personas: **aprobar el plan** y **mergear**.
+<a name="skills"></a>
 
-**Las skills mejoran con el uso, pero no se reescriben solas.** Cada `implement-issue` y `review-pr` deja una retro en la rama `agentes/retros` (solo git, no ensucia los PRs ni depende de GitHub); `/mejorar-skills` busca patrones (al menos dos casos o uno grave), prefiere convertirlos en scripts o checks antes que en más texto, y siempre propone en un PR. Lo que sirve pero no alcanza para cambiar una skill va a `docs/agentes/lecciones.md`, que `implement-issue` lee antes de empezar: los agentes aprenden de lo consolidado y revisado, nunca de retros crudas. Las skills tienen un máximo de 120 líneas (lo controla `check-docs.py`) para que no crezcan con cada ajuste. Se puede programar para que corra una vez por semana.
+## 🧰 Skills
 
-Dos checks del workflow de labels salieron de ese circuito en un repo real: un PR con `logica-negocio` tiene que tocar `docs/decisions/` (o decir "ADR sin cambios: <motivo>"), y un PR que llega sin `tipo:` lo copia del issue que cierra.
+Viven en `.claude/skills/`.
+
+| | Skill | Para qué |
+|---|---|---|
+| 🗺️ | `/plan-feature` | Investiga código, arquitectura y ADRs, arma un plan técnico y lo convierte en épica + issues. No escribe código. |
+| 📝 | `crear-issue` | Issues sueltos, auditoría → issues, bloqueos entre issues existentes. |
+| 🛠️ | `/implement-issue <n>` | Del issue al PR con TDD: tests en rojo desde los criterios de aceptación (`rojo.sh` comprueba que fallen por una aserción), código hasta verde, autorevisión, docs y PR. No mergea. |
+| 🐛 | `debug` | Síntoma → evidencia → causa raíz → arreglo → test de regresión. |
+| 🗄️ | `db-migration` | Plan con compatibilidad, backfill y rollback antes de tocar el schema. |
+| 📚 | `update-docs` | Qué docs quedaron viejos por un cambio (según el mapa) y corregirlos en el mismo PR. |
+| 👀 | `/review-pr <n>` | Revisión con foco en lo propio del proyecto: reglas de negocio, ADRs, autonomía, docs, tests y rutas sensibles. No aprueba. |
+| 📊 | `/estado` | Resumen generado en el momento (versión, trabajo, épicas, PRs, deuda, decisiones, migraciones) y "¿qué puedo hacer ahora?". |
+| 🔁 | `/mejorar-skills` | Junta las retros y las señales objetivas (fallas de CI en ramas de agentes, reverts) y propone ajustes a las skills en un PR. Nunca afloja controles. |
+| 🌿 | `git-workflow` | Ramas, commits y PRs. |
+
+### 🌱 Cómo aprenden
+
+> [!NOTE]
+> Las skills mejoran con el uso, pero **no se reescriben solas**.
+
+1. Cada `implement-issue` y `review-pr` deja una retro en la rama `agentes/retros`. Es solo git: no ensucia los PRs ni depende de GitHub.
+2. `/mejorar-skills` busca patrones (al menos dos casos, o uno grave) y prefiere convertirlos en scripts o checks antes que en más texto. Siempre propone en un PR, y se puede programar para que corra una vez por semana.
+3. Lo que sirve pero no alcanza para cambiar una skill va a `docs/agentes/lecciones.md`, que `implement-issue` lee antes de empezar. Los agentes aprenden de lo consolidado y revisado, nunca de retros crudas.
+
+Las skills tienen un máximo de 120 líneas, que controla `check-docs.py`. Dos checks del workflow de labels salieron de este circuito en un repo real: un PR con `logica-negocio` tiene que tocar `docs/decisions/` (o decir `ADR sin cambios: <motivo>`), y un PR que llega sin `tipo:` lo copia del issue que cierra.
+
+<a name="que-trae"></a>
+
+## 📦 Qué trae
+
+| | Pieza | Dónde |
+|---|---|---|
+| 🧭 | Reglas para agentes | `AGENTS.md` (fuente), `CLAUDE.md` (lo importa), `llms.txt`, `docs/llms.txt` |
+| 🚦 | Autonomía del agente | `AGENTS.md`: qué puede hacer solo, qué tiene que consultar y qué nunca |
+| 🗺️ | Mapa para agentes | `docs/mapa-agentes.json`: qué docs revisar según lo que cambia, rutas sensibles, docs obligatorios |
+| 📚 | Hub de documentación | `docs/README.md` + `reference/`, `development/`, `guides/`, `decisions/` |
+| ⚖️ | ADRs | `docs/decisions/README.md` (cómo se escriben) + `ADR-000-plantilla.md` |
+| 🌿 | Convenciones de GitHub | `docs/convencion-nombres-github.md`: ramas, commits, PRs, issues, labels |
+| 🏷️ | Labels | `.github/labels.yml` (fuente), `.github/labeler.yml` (auto-etiquetado), `.github/workflows/labels.yml` (sync + labeler + checks) |
+| 📬 | Issues y PRs | `.github/ISSUE_TEMPLATE/` (formularios con labels), `.github/pull_request_template.md`, `.github/workflows/desbloquear.yml` |
+| ✅ | Docs y scripts testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py`: links, rutas y ADRs rotos, rutas del mapa que ya no existen, lo que `AGENTS.md` dice ignorado y no lo está; shellcheck y los `test-*.sh`, aislados de la config de git |
+| 🔒 | Secretos fuera del repo | `.gitignore`: `.env*` (salvo `.env.example`) y lo que generan los scripts de agentes |
+| 🧪 | Verificación antes del PR | `scripts/agentes/verificar.py`: según lo que cambió, corre lint, typecheck, tests afectados, drift de migraciones… |
+| 🎨 | Marca | `.github/marca/`: Barrilete, la identidad de la plantilla (el init la borra) |
+
+<a name="modos"></a>
+
+## ⚙️ Modos
+
+### 🌳 Rama base
+
+El segundo argumento del init define a dónde van los PRs:
+
+| Comando | Flujo | Cuándo |
+|---|---|---|
+| `init-plantilla.sh "X" main` | rama → `main` | 🌱 Proyecto nuevo, sin usuarios todavía |
+| `init-plantilla.sh "X" develop` | rama → `develop` → `main` | 🔀 Separar integración de producción |
+| `init-plantilla.sh "X" develop releases` | rama → `develop` → `release/vX.Y.Z` → `main` | 🚢 Ya hay usuarios activos: cada versión se congela y se prueba en staging antes de llegar a producción |
+
+### 🐣 Completo o chico
+
+Para proyectos de una o dos personas, agregá `--chico`: `./scripts/init-plantilla.sh "X" main --chico`.
+
+| | 🦅 Completo | 🐣 `--chico` |
+|---|---|---|
+| Skills | 10 | 4: `implement-issue`, `crear-issue`, `debug`, `update-docs` |
+| Workflows | 4 | 2: docs y sync de labels |
+| Labels | `tipo:`, `area:`, `prioridad:`, `estado:` y especiales | 7: `tipo:` y `prioridad:` |
+| Docs | hub con `reference/`, `development/`, `guides/` | un archivo de arquitectura y los ADRs |
+| Convención de GitHub | documento con opciones y decisiones | una página con las reglas |
+| Autonomía y rutas sensibles | `AGENTS.md` + `docs/mapa-agentes.json` | todo en `AGENTS.md`, con la checklist de migraciones |
+| No trae | | épicas y `plan-feature`, `review-pr`, `estado`, bloqueos, labeler, formularios de issue, modo releases |
+
+<details>
+<summary><b>📈 Si el proyecto chico crece</b></summary>
+
+`python3 scripts/crecer.py` lo pasa al modo completo (con `--releases` si la base es `develop` y querés ese flujo). Clona la plantilla, la inicializa con los datos de `.agent-kit.json` y agrega lo que falta:
+
+- Los archivos que el proyecto nunca tocó se reemplazan por la versión completa.
+- Los que modificó **no se pisan**: la versión completa queda en `.agent-kit/pendientes/` para integrarla.
+- La arquitectura del proyecto chico pasa a `docs/development/architecture.md`.
+
+No commitea: revisás el diff y abrís un PR.
+
+Los archivos del modo chico están en `perfiles/chico/` (más la lista `BORRAR`). Lo común a los dos modos (skills como `debug`, `check-docs.py`, `preparar.sh`) es el mismo archivo, así los arreglos llegan a ambos.
+
+</details>
+
+<a name="requisitos"></a>
+
+## 🔧 Requisitos
+
+- `gh` autenticado, `jq` y `python3` en la máquina donde corre el agente.
+- **Sub-issues y dependencias de issues** ("Blocked by" / "Blocking") habilitados en GitHub. Sin ellos, las skills avisan con el error (404/422) y dejan el bloqueo escrito en el cuerpo del issue, pero `planificar.py`, `disponibles.sh`, `preparar.sh` y `desbloquear.yml` pierden la parte automática.
+- Que los agentes puedan pushear a la rama `agentes/retros`. Si protegés ramas con un patrón amplio (`*`), excluila. Si no pueden, `retro.sh` deja las retros en `.git/retros-pendientes/`.
+
+## 📄 Licencia
+
+[MIT](LICENSE) © 2026 Lautaro Zahir Oliver.
+
+<!-- marca:inicio -->
+---
+
+<p align="center">
+  <img src=".github/marca/barrilete-32.svg" width="32" alt=""><br>
+  <sub>Hecho en Salta 🇦🇷 · <a href=".github/marca/README.md">Barrilete</a> cuida que la correa no se suelte.</sub>
+</p>
+<!-- marca:fin -->

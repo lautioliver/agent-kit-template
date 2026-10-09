@@ -10,7 +10,7 @@ y {archivos} (los archivos cambiados que coinciden, entre comillas).
 Un "correr" que empieza con "TODO" se informa como sin configurar y no se ejecuta.
 
 Uso:
-  verificar.py                 # contra la rama base (BASE o <RAMA_BASE>)
+  verificar.py                 # contra la rama base (BASE, <RAMA_BASE> o la del remoto)
   verificar.py --base develop
   verificar.py --listar        # muestra qué correría, sin correr nada
 Sale con 1 si alguna verificación falla.
@@ -23,11 +23,10 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from mapa import RAIZ, archivos_cambiados, coincide, existe  # noqa: E402
+from mapa import RAIZ, archivos_cambiados, coincide, existe, rama_base  # noqa: E402
 
 
-def referencia_base(args):
-    base = args[args.index("--base") + 1] if "--base" in args else os.environ.get("BASE", "<RAMA_BASE>")
+def referencia_base(args, base):
     return f"origin/{base}" if existe(f"origin/{base}") else base
 
 
@@ -43,8 +42,13 @@ def main():
         print("verificar.py: el mapa no tiene sección 'verificar'.", file=sys.stderr)
         sys.exit(2)
 
+    rama = rama_base(args)
+    if "--base" in args:  # se reemplaza por la resuelta, para no avisar dos veces
+        i = args.index("--base")
+        args = args[:i] + args[i + 2:]
+    args += ["--base", rama]
     cambiados = archivos_cambiados(args)  # sale con un mensaje claro si la base no existe
-    base = referencia_base(args)
+    base = referencia_base(args, rama)
 
     plan = []
     for r in reglas:

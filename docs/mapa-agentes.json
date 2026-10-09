@@ -123,11 +123,34 @@
       "correr": "bash .claude/skills/implement-issue/test-preparar.sh"
     },
     {
+      "nombre": "rojo",
+      "cuando": [
+        ".claude/skills/implement-issue/rojo.sh",
+        ".claude/skills/implement-issue/test-rojo.sh"
+      ],
+      "correr": "bash .claude/skills/implement-issue/test-rojo.sh"
+    },
+    {
       "nombre": "retros",
       "cuando": [
         ".claude/skills/mejorar-skills/**"
       ],
       "correr": "bash .claude/skills/mejorar-skills/test-retros.sh"
+    },
+    {
+      "nombre": "base",
+      "cuando": [
+        "scripts/agentes/**"
+      ],
+      "correr": "bash scripts/agentes/test-base.sh"
+    },
+    {
+      "nombre": "init",
+      "cuando": [
+        "?scripts/init-plantilla.sh",
+        "?scripts/test-init.sh"
+      ],
+      "correr": "bash scripts/test-init.sh"
     },
     {
       "nombre": "lint",

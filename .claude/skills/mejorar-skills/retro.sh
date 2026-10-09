@@ -88,7 +88,8 @@ else
   elif [[ "$pr" =~ ^[0-9]+$ ]]; then n="pr$pr"
   else echo "retro.sh: falta 'issue: <n>', 'pr: <n>' o (en orquestar) 'corrida: <AAAAMMDD-HHMM>' en el frontmatter." >&2; exit 1
   fi
-  sha=$(git log -1 --format=%H -- ".claude/skills/$skill/SKILL.md"); sha="${sha:-desconocido}"
+  # En un repo sin commits git log falla: la retro se guarda igual, con skill_sha desconocido.
+  sha=$(git log -1 --format=%H -- ".claude/skills/$skill/SKILL.md" 2>/dev/null || true); sha="${sha:-desconocido}"
   # Modelo y rol: si faltan o están vacíos, la retro igual se guarda como desconocido / sesion
   # (sesiones anteriores a #35, o una plantilla copiada sin completar).
   modelo=$(campo modelo "$fm"); modelo="${modelo:-desconocido}"
@@ -98,7 +99,7 @@ else
   case "$rol" in implementador|implementador-liviano|revisor)
     agente_sha=$(campo agente_sha "$fm")
     if [ -z "$agente_sha" ]; then
-      agente_sha=$(git log -1 --format=%H -- ".claude/agents/$rol.md"); agente_sha="${agente_sha:-desconocido}"
+      agente_sha=$(git log -1 --format=%H -- ".claude/agents/$rol.md" 2>/dev/null || true); agente_sha="${agente_sha:-desconocido}"
     fi;;
   esac
   # Retro normalizada: modelo, rol y agente_sha se escriben una sola vez, ya normalizados.
