@@ -22,8 +22,12 @@ mkdir -p "$P"
 (
   cd "$P" && git init -q -b main
   echo 0.1.0 >VERSION
-  for f in viejo viejo2 borrado; do echo "$f v0.1" >".claude/skills/debug/$f.md"; done
+  for f in viejo viejo2 borrado cambiado; do echo "$f v0.1" >".claude/skills/debug/$f.md"; done
+  echo "echo modo" >.claude/skills/debug/modo.sh && chmod 644 .claude/skills/debug/modo.sh
   git add -A && git commit -qm v0.1.0 && git tag v0.1.0
+  # Un commit después del tag, sin cambiar VERSION: así nace un proyecto creado desde main.
+  echo "cambiado posterior" >.claude/skills/debug/cambiado.md
+  git commit -qam posterior && git branch posterior
   echo 0.2.0 >VERSION
   printf '\n## 0.2.0\n\n- Cambio de prueba.\n' >>CHANGELOG.md
   echo "Línea nueva de la plantilla v0.2." >>.claude/skills/debug/SKILL.md
@@ -32,14 +36,16 @@ mkdir -p "$P"
   echo "nuevo v0.2" >.claude/skills/debug/nuevo.md
   echo "borrado v0.2" >.claude/skills/debug/borrado.md
   git rm -q .claude/skills/debug/viejo.md .claude/skills/debug/viejo2.md
+  echo "cambiado v0.2" >.claude/skills/debug/cambiado.md
+  chmod 755 .claude/skills/debug/modo.sh
   git add -A && git commit -qm v0.2.0 && git tag v0.2.0
 ) >/dev/null 2>&1
 
 # Proyecto iniciado con v0.1.0: <modo> en <dir>.
 proyecto() {
-  local dir=$1 modo=$2
+  local dir=$1 modo=$2 ref=${3:-v0.1.0}
   mkdir -p "$dir"
-  git -C "$P" archive v0.1.0 | tar -xf - -C "$dir"
+  git -C "$P" archive "$ref" | tar -xf - -C "$dir"
   local extra=(); [ "$modo" = chico ] && extra=(--chico)
   (cd "$dir" && git init -q -b main && git add -A && git commit -qm plantilla \
     && ./scripts/init-plantilla.sh Demo main ${extra[@]+"${extra[@]}"} && git add -A && git commit -qm init) >/dev/null 2>&1
@@ -79,6 +85,8 @@ es -f "$D/.claude/skills/debug/nuevo.md"; afirmar $? "agrega un archivo nuevo de
 afirmar $? "conserva y avisa un archivo que la plantilla sacó pero el proyecto modificó"
 ! [ -e "$D/.claude/skills/debug/borrado.md" ]; afirmar $? "no vuelve a traer un archivo que el proyecto borró"
 grep -q '"version": "0.2.0"' "$D/.agent-kit.json"; afirmar $? "registra la versión nueva en .agent-kit.json"
+es -x "$D/.claude/skills/debug/modo.sh"; afirmar $? "aplica un cambio de permisos (ejecutable) aunque el contenido sea igual"
+grep -qi "integr" <<<"$s" && grep -qi "próxima" <<<"$s"; afirmar $? "con conflictos, avisa que hay que integrarlos ahora (la próxima actualización parte de la versión nueva)"
 grep -q "Cambio de prueba" <<<"$s"; afirmar $? "muestra el changelog de las versiones nuevas"
 es "$(git -C "$D" rev-parse HEAD)" = "$antes" && es -n "$(git -C "$D" status --porcelain)"
 afirmar $? "no commitea: los cambios quedan en el working tree"
@@ -89,6 +97,37 @@ afirmar $? "los archivos traídos tienen los datos del proyecto, no los marcador
 s=$(cd "$D" && python3 scripts/actualizar.py --plantilla "$P" 2>&1); c=$?
 [ "$c" -eq 0 ] && grep -qi "ya está" <<<"$s" && [ -z "$(git -C "$D" status --porcelain)" ]
 afirmar $? "si ya está en la última versión, no cambia nada"
+
+# Lo que la revisión marcó: versiones más viejas, pendientes viejos, rutas relativas, versiones raras.
+s=$(cd "$D" && python3 scripts/actualizar.py --plantilla "$P" --version v0.1.0 2>&1); c=$?
+[ "$c" -ne 0 ] && grep -qi "más vieja" <<<"$s" && grep -q '"version": "0.2.0"' "$D/.agent-kit.json"
+afirmar $? "no vuelve a una versión más vieja"
+s=$(cd "$D" && python3 scripts/actualizar.py --plantilla 2>&1); c=$?
+[ "$c" -ne 0 ] && grep -q "Uso:" <<<"$s"; afirmar $? "una opción sin valor muestra el uso, sin traceback"
+
+D="$TMP/pendientes"
+proyecto "$D" completo
+mkdir -p "$D/.agent-kit/pendientes" && echo viejo >"$D/.agent-kit/pendientes/x.md"
+s=$(cd "$D" && python3 scripts/actualizar.py --plantilla "$P" 2>&1); c=$?
+[ "$c" -ne 0 ] && grep -q "pendientes" <<<"$s" && ! grep -q "Línea nueva" "$D/.claude/skills/debug/SKILL.md"
+afirmar $? "no actualiza si quedan pendientes de una actualización anterior"
+
+D="$TMP/relativa"
+proyecto "$D" completo
+s=$(cd "$D/scripts" && python3 actualizar.py --plantilla "../../plantilla" 2>&1); c=$?
+afirmar "$c" "--plantilla relativa se resuelve desde donde se corre"
+
+D="$TMP/rara"
+proyecto "$D" completo
+(cd "$D" && perl -pi -e 's/"version": "0.1.0"/"version": "0.1.0-rc.1"/' .agent-kit.json && git commit -qam rc) >/dev/null 2>&1
+s=$(cd "$D" && python3 scripts/actualizar.py --plantilla "$P" 2>&1); c=$?
+[ "$c" -eq 0 ] && grep -q '"version": "0.2.0"' "$D/.agent-kit.json"; afirmar $? "una versión con sufijo (0.1.0-rc.1) no rompe a mitad de camino"
+
+D="$TMP/posterior"
+proyecto "$D" completo posterior
+s=$(cd "$D" && python3 scripts/actualizar.py --plantilla "$P" 2>&1); c=$?
+grep -q "cambiado v0.2" "$D/.claude/skills/debug/cambiado.md" && ! [ -e "$D/.agent-kit/pendientes/.claude/skills/debug/cambiado.md" ]
+afirmar $? "un proyecto creado desde main después del tag: lo que no tocó se reemplaza, no va a pendientes"
 
 # Modo chico.
 D="$TMP/chico"
