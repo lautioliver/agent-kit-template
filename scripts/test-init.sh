@@ -42,7 +42,11 @@ for modo in completo chico; do
   fi
   (cd "$p" && python3 scripts/agentes/check-docs.py >/dev/null 2>&1)
   es -z "$(cd "$p" && git status --porcelain)"; afirmar $? "[$modo] después de correr los scripts, git status queda limpio"
+  if [ -f "$p/docs/mapa-agentes.json" ]; then
+    ! grep -q '"nombre": "init"' "$p/docs/mapa-agentes.json"; afirmar $? "[$modo] el init saca del mapa la verificación init (su test ya no existe)"
+  fi
 done
+grep -q '"nombre": "init"' "$RAIZ/docs/mapa-agentes.json"; afirmar $? "la plantilla sin inicializar conserva la verificación init"
 
 # Los test-*.sh que deja el init pasan en el proyecto nuevo (los corre el CI), con cualquier rama base.
 for combinacion in "completo main" "chico main" "completo develop" "chico develop"; do
@@ -59,6 +63,13 @@ done
 p="$TMP/completo"
 s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1)
 ! grep -q 'ignorad' <<<"$s"; afirmar $? "check-docs.py no se queja si lo que AGENTS.md dice ignorado lo está"
+# Una frase que dice que algo NO está ignorado no es una afirmación de que lo esté.
+cp "$p/AGENTS.md" "$TMP/AGENTS.md"
+# shellcheck disable=SC2016  # backticks de Markdown literales
+echo '- `dist/` no está ignorado: se commitea.' >>"$p/AGENTS.md"
+s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1)
+! grep -q 'dist/' <<<"$s"; afirmar $? "check-docs.py no se queja de una frase que dice que algo no está ignorado"
+cp "$TMP/AGENTS.md" "$p/AGENTS.md"
 (cd "$p" && git rm -q .gitignore)
 s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1); c=$?
 [ "$c" -ne 0 ] && grep -q 'AGENTS.md.*\.env.*ignorad' <<<"$s"; afirmar $? "check-docs.py falla si AGENTS.md dice que .env* está ignorado y no lo está"
