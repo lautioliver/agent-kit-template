@@ -146,6 +146,7 @@ They live in `.claude/skills/`.
 | 📚 | `update-docs` | Finds docs a change made stale (using the map) and fixes them in the same PR. |
 | 👀 | `/review-pr <n>` | A review focused on what's specific to the project: business rules, ADRs, autonomy, docs, tests and sensitive paths. Never approves. |
 | 📊 | `/estado` | An on-the-spot summary (version, work, epics, PRs, debt, decisions, migrations) and "what can I work on now?". |
+| 🎛️ | `/orquestar` | Splits up to 3 available issues among subagents working in parallel (Haiku or Sonnet per `ruteo.py`, Opus reviews), each in its own worktree, and gathers PRs, questions and escalations in a single message. Never merges or posts without confirmation. |
 | 🔁 | `/mejorar-skills` | Gathers retros and objective signals (CI failures on agent branches, reverts) and proposes skill changes in a PR. Never loosens controls. |
 | 🌿 | `git-workflow` | Branches, commits and PRs. |
 
@@ -198,13 +199,13 @@ For one- or two-person projects, add `--chico`: `./scripts/init-plantilla.sh "X"
 
 | | 🦅 Full | 🐣 `--chico` |
 |---|---|---|
-| Skills | 10 | 4: `implement-issue`, `crear-issue`, `debug`, `update-docs` |
+| Skills | 11 | 4: `implement-issue`, `crear-issue`, `debug`, `update-docs` |
 | Workflows | 4 | 2: docs and label sync |
 | Labels | `tipo:`, `area:`, `prioridad:`, `estado:` and specials | 7: `tipo:` and `prioridad:` |
 | Docs | hub with `reference/`, `development/`, `guides/` | one architecture file plus the ADRs |
 | GitHub conventions | document with options and decisions | a single page with the rules |
 | Autonomy and sensitive paths | `AGENTS.md` + `docs/mapa-agentes.json` | all in `AGENTS.md`, with the migrations checklist |
-| Left out | | epics and `plan-feature`, `review-pr`, `estado`, blockers, labeler, issue forms, releases mode |
+| Left out | | epics and `plan-feature`, `review-pr`, `estado`, blockers, labeler, issue forms, releases mode, subagents and `orquestar` |
 
 The small mode keeps only the Spanish README.
 

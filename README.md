@@ -143,6 +143,7 @@ Viven en `.claude/skills/`.
 | 📚 | `update-docs` | Qué docs quedaron viejos por un cambio (según el mapa) y corregirlos en el mismo PR. |
 | 👀 | `/review-pr <n>` | Revisión con foco en lo propio del proyecto: reglas de negocio, ADRs, autonomía, docs, tests y rutas sensibles. No aprueba. |
 | 📊 | `/estado` | Resumen generado en el momento (versión, trabajo, épicas, PRs, deuda, decisiones, migraciones) y "¿qué puedo hacer ahora?". |
+| 🎛️ | `/orquestar` | Reparte hasta 3 issues disponibles entre subagentes en paralelo (Haiku o Sonnet según `ruteo.py`, Opus revisa), cada uno en su worktree, y junta PRs, consultas y escalados en un solo mensaje. No mergea ni publica sin confirmación. |
 | 🔁 | `/mejorar-skills` | Junta las retros y las señales objetivas (fallas de CI en ramas de agentes, reverts) y propone ajustes a las skills en un PR. Nunca afloja controles. |
 | 🌿 | `git-workflow` | Ramas, commits y PRs. |
 
@@ -156,7 +157,7 @@ En `.claude/agents/`, cada rol con su modelo:
 | 🪶 | `implementador-liviano` | Haiku | Issues chicos sin rutas sensibles ni lógica de negocio. Si se encuentra con algo de eso, frena y escala. |
 | 👀 | `revisor` | Opus | `review-pr` desde otro contexto, en un worktree propio. No publica: devuelve los hallazgos. |
 
-Comparten las reglas y el formato de salida de `docs/agentes/contrato-subagentes.md`, y cada uno trabaja en su propio worktree (`preparar.sh <n> --worktree`). `check-docs.py` valida que cada uno tenga modelo, herramientas y el contrato.
+Los lanza `/orquestar` desde la sesión principal. Comparten las reglas y el formato de salida de `docs/agentes/contrato-subagentes.md`, y cada uno trabaja en su propio worktree (`preparar.sh <n> --worktree`). `check-docs.py` valida que cada uno tenga modelo, herramientas y el contrato.
 
 ### 🌱 Cómo aprenden
 
@@ -209,13 +210,13 @@ Para proyectos de una o dos personas, agregá `--chico`: `./scripts/init-plantil
 
 | | 🦅 Completo | 🐣 `--chico` |
 |---|---|---|
-| Skills | 10 | 4: `implement-issue`, `crear-issue`, `debug`, `update-docs` |
+| Skills | 11 | 4: `implement-issue`, `crear-issue`, `debug`, `update-docs` |
 | Workflows | 4 | 2: docs y sync de labels |
 | Labels | `tipo:`, `area:`, `prioridad:`, `estado:` y especiales | 7: `tipo:` y `prioridad:` |
 | Docs | hub con `reference/`, `development/`, `guides/` | un archivo de arquitectura y los ADRs |
 | Convención de GitHub | documento con opciones y decisiones | una página con las reglas |
 | Autonomía y rutas sensibles | `AGENTS.md` + `docs/mapa-agentes.json` | todo en `AGENTS.md`, con la checklist de migraciones |
-| No trae | | épicas y `plan-feature`, `review-pr`, `estado`, bloqueos, labeler, formularios de issue, modo releases, subagentes |
+| No trae | | épicas y `plan-feature`, `review-pr`, `estado`, bloqueos, labeler, formularios de issue, modo releases, subagentes y `orquestar` |
 
 <details>
 <summary><b>📈 Si el proyecto chico crece</b></summary>

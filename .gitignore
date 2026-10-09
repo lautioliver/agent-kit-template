@@ -7,3 +7,6 @@
 __pycache__
 *.pyc
 .agent-kit/
+
+# Worktrees del aislamiento de Claude Code (subagentes)
+.claude/worktrees/
