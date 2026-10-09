@@ -72,8 +72,9 @@ A repo template for working with coding agents **without losing control**: clear
    - `docs/mapa-agentes.json`: the real paths for schema, auth, payments and public API, plus the `verificar` commands.
    - `.github/labels.yml` and `.github/labeler.yml`: the `area:` labels and your repo's paths.
    - `docs/convencion-nombres-github.md` §2: commit scopes.
-4. Create the labels: **Actions → Labels → Run workflow**.
-5. Using Cursor? Link the skills: `ln -s ../.claude/skills .cursor/skills`.
+4. Load the team: `/add-member @user` for each member, with the areas they cover. From then on, every issue the agents create is born assigned (see [Team and assignment](#team)).
+5. Create the labels: **Actions → Labels → Run workflow**.
+6. Using Cursor? Link the skills: `ln -s ../.claude/skills .cursor/skills`.
 
 > [!IMPORTANT]
 > The docs check fails on purpose while `docs/mapa-agentes.json` still has `TODO/` paths: with example paths, an agent would never notice it touched something sensitive. Paths starting with `?` are optional stack alternatives; your own paths go without `?`, so the check fails if they stop existing.
@@ -129,6 +130,7 @@ During `/implement-issue`, `debug`, `db-migration` and `update-docs` come in as 
 | 🗺️ *plan the accounts migration* | `plan-feature` researches the code and builds an epic with sub-issues and blockers, in the order they can be done. |
 | 🔎 *turn this audit into issues* | One issue per finding, linking back to the document. |
 | 📊 *what can I work on now?* | `estado` lists what's free by priority, what's blocked and why, and the progress of each epic. |
+| 👥 *add @ana to the team, she covers payments* | `/add-member` checks the user and the areas and adds them to `.github/equipo.json`. From then on, issues in that area are born assigned to whoever has the least load. |
 
 <a name="skills"></a>
 
@@ -149,6 +151,7 @@ They live in `.claude/skills/`.
 | 🎛️ | `/orquestar` | Splits up to 3 available issues among subagents working in parallel (Haiku or Sonnet per `ruteo.py`, Opus reviews), each in its own worktree, and gathers PRs, questions and escalations in a single message. Never merges or posts without confirmation. |
 | 🔁 | `/mejorar-skills` | Gathers retros and objective signals (CI failures on agent branches, reverts) and proposes skill changes in a PR. Never loosens controls. |
 | 🌿 | `git-workflow` | Branches, commits and PRs. |
+| 👥 | `/add-member`, `/remove-member` | Add, edit, pause or remove the team members who receive issues. |
 
 ### 🌱 How they learn
 
@@ -160,6 +163,20 @@ They live in `.claude/skills/`.
 3. Whatever is useful but not enough to change a skill goes to `docs/agentes/lecciones.md`, which `implement-issue` reads before starting. Agents learn from consolidated, reviewed lessons, never from raw retros.
 
 Skills are capped at 120 lines, enforced by `check-docs.py`. Two checks in the labels workflow came out of this loop on a real repo: a PR labeled `logica-negocio` must touch `docs/decisions/` (or say `ADR sin cambios: <motivo>`), and a PR that arrives without a `tipo:` label copies it from the issue it closes.
+
+<a name="team"></a>
+
+### 👥 Team and assignment
+
+`.github/equipo.json` lists the members (GitHub user, name, the `area:` labels they cover, active or paused). Only the scripts that create issues read it: `crear-issue` and `planificar.py` (epics). Each new issue is assigned like this:
+
+1. Among active members, those who cover one of the issue's `area:` labels.
+2. If nobody covers it (or the issue has no area), all active members.
+3. The one with the fewest open assigned issues wins; in an epic, the load is also spread across the issues of the same plan. Tie: the first one in the file.
+
+With no members, issues stay unassigned. The team is changed with `/add-member` and `/remove-member` (`scripts/agentes/equipo.py`), which check that the user exists and has access to the repo; `check-docs.py` checks that the areas still exist in `labels.yml`.
+
+**Assigned means owner**, not "working on it": `disponibles.sh` shows your issues first, treats as "in progress" what has an open PR, and separates what was merged to `develop` but awaits a release. `preparar.sh` won't let you take an issue owned by someone else.
 
 <a name="whats-included"></a>
 
@@ -177,6 +194,7 @@ Skills are capped at 120 lines, enforced by `check-docs.py`. Two checks in the l
 | 📬 | Issues and PRs | `.github/ISSUE_TEMPLATE/` (forms with labels), `.github/pull_request_template.md`, `.github/workflows/desbloquear.yml` |
 | ✅ | Docs tested in CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py`: broken links, paths and ADRs, map paths that no longer exist |
 | 🧪 | Pre-PR verification | `scripts/agentes/verificar.py`: based on what changed, runs lint, typecheck, affected tests, migration drift… |
+| 👥 | Team | `.github/equipo.json` + `scripts/agentes/equipo.py`: who receives issues, by area |
 | 🎨 | Brand | `.github/marca/`: Barrilete, the template's identity (init removes it) |
 
 <a name="modes"></a>
@@ -199,7 +217,7 @@ For one- or two-person projects, add `--chico`: `./scripts/init-plantilla.sh "X"
 
 | | 🦅 Full | 🐣 `--chico` |
 |---|---|---|
-| Skills | 11 | 4: `implement-issue`, `crear-issue`, `debug`, `update-docs` |
+| Skills | 13 | 6: `implement-issue`, `crear-issue`, `debug`, `update-docs`, `add-member`, `remove-member` |
 | Workflows | 4 | 2: docs and label sync |
 | Labels | `tipo:`, `area:`, `prioridad:`, `estado:` and specials | 7: `tipo:` and `prioridad:` |
 | Docs | hub with `reference/`, `development/`, `guides/` | one architecture file plus the ADRs |

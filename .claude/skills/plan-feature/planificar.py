@@ -17,6 +17,8 @@ Formato de plan.json:
 }
 - "epica" es opcional. Si está, cada issue queda como sub-issue de la épica.
 - "bloqueado_por" acepta claves del mismo plan o números de issues que ya existen.
+- "asignado" (opcional) fija el responsable; si falta, se elige del equipo (.github/equipo.json):
+  por área y carga, repartiendo también entre los issues del mismo plan.
 """
 import json
 import os
@@ -54,6 +56,30 @@ def labels_validos():
 def gh_raiz():
     r = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True)
     return r.stdout.strip() or "."
+
+
+def responsables(plan, orden):
+    """Responsable de la épica y de cada issue: el del plan, o el que elige el equipo.
+
+    La carga se suma a medida que se asigna, así un plan grande no cae entero en una persona.
+    """
+    raiz = gh_raiz()
+    sys.path.insert(0, os.path.join(raiz, "scripts", "agentes"))
+    try:
+        import equipo
+    except ImportError:
+        return {}
+    integrantes = equipo.leer().get("integrantes", [])
+    activos = [i["login"] for i in integrantes if i.get("activo", True)]
+    carga = equipo.carga_actual(activos) if activos else {}
+    asignados = {}
+    todos = ([("épica", plan["epica"])] if plan.get("epica") else []) + [(i["clave"], i) for i in orden]
+    for clave, item in todos:
+        login = item.get("asignado") or equipo.elegir(integrantes, item.get("labels", []), carga)
+        if login:
+            asignados[clave] = login.lstrip("@")
+            carga[asignados[clave]] = carga.get(asignados[clave], 0) + 1
+    return asignados
 
 
 def orden_topologico(issues):
@@ -129,17 +155,19 @@ def bloqueantes_abiertos(issue, externos):
             if not isinstance(b, int) or externos[b]["state"] == "open"]
 
 
-def mostrar_borrador(plan, orden, externos, avisos):
+def mostrar_borrador(plan, orden, externos, avisos, asignados):
+    def quien(clave):
+        return f"  → @{asignados[clave]}" if clave in asignados else "  → sin asignar"
     if plan.get("epica"):
         e = plan["epica"]
-        print(f"Épica: {e['titulo']}  [{', '.join(e.get('labels', []))}]\n")
+        print(f"Épica: {e['titulo']}  [{', '.join(e.get('labels', []))}]{quien('épica')}\n")
     print("Issues, en el orden en que se pueden hacer:\n")
     for n, i in enumerate(orden, 1):
         labels = list(i.get("labels", []))
         bloq = bloqueantes_abiertos(i, externos)
         if bloq and "estado:bloqueado" not in labels:
             labels.append("estado:bloqueado")
-        print(f"{n}. [{i['clave']}] {i['titulo']}  [{', '.join(labels)}]")
+        print(f"{n}. [{i['clave']}] {i['titulo']}  [{', '.join(labels)}]{quien(i['clave'])}")
         if bloq:
             nombres = [f"#{b}" if isinstance(b, int) else b for b in bloq]
             motivo = f" — {i['motivo']}" if i.get("motivo") else ""
@@ -148,7 +176,7 @@ def mostrar_borrador(plan, orden, externos, avisos):
         print(f"\nAviso: {a}")
 
 
-def crear_issue(repo, titulo, cuerpo, labels):
+def crear_issue(repo, titulo, cuerpo, labels, asignado=None):
     with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as f:
         f.write(cuerpo)
         ruta = f.name
@@ -156,6 +184,8 @@ def crear_issue(repo, titulo, cuerpo, labels):
         args = ["issue", "create", "-R", repo, "--title", titulo, "--body-file", ruta]
         for l in labels:
             args += ["--label", l]
+        if asignado:
+            args += ["--assignee", asignado]
         url = gh(*args)
     finally:
         os.unlink(ruta)
@@ -170,7 +200,7 @@ def firma():
         return ""
 
 
-def crear(plan, orden, externos, repo):
+def crear(plan, orden, externos, repo, asignados):
     creados = {}  # clave -> (numero, url)
     ids = {}      # numero -> id interno
     pie = firma()
@@ -184,7 +214,8 @@ def crear(plan, orden, externos, repo):
         epica = None
         if plan.get("epica"):
             e = plan["epica"]
-            epica = crear_issue(repo, e["titulo"], e.get("cuerpo", "") + pie, e.get("labels", []))
+            epica = crear_issue(repo, e["titulo"], e.get("cuerpo", "") + pie, e.get("labels", []),
+                                asignados.get("épica"))
             print(f"Épica #{epica[0]}: {epica[1]}")
 
         for i in orden:
@@ -197,7 +228,7 @@ def crear(plan, orden, externos, repo):
                     labels.append("estado:bloqueado")
                 motivo = f": {i['motivo']}" if i.get("motivo") else ""
                 cuerpo += f"\n\nBloqueado por {', '.join(f'#{n}' for n in numeros)}{motivo}"
-            numero, url = crear_issue(repo, i["titulo"], cuerpo + pie, labels)
+            numero, url = crear_issue(repo, i["titulo"], cuerpo + pie, labels, asignados.get(i["clave"]))
             creados[i["clave"]] = (numero, url)
             if epica:
                 gh("api", f"repos/{repo}/issues/{epica[0]}/sub_issues", "-X", "POST",
@@ -206,7 +237,8 @@ def crear(plan, orden, externos, repo):
                 gh("api", f"repos/{repo}/issues/{numero}/dependencies/blocked_by", "-X", "POST",
                    "-F", f"issue_id={id_de(n)}")
             extra = f" (bloqueado por {', '.join(f'#{n}' for n in numeros)})" if numeros else ""
-            print(f"#{numero} {i['titulo']}{extra}: {url}")
+            quien = f" → @{asignados[i['clave']]}" if i["clave"] in asignados else ""
+            print(f"#{numero} {i['titulo']}{extra}{quien}: {url}")
     except RuntimeError as err:
         print(f"\nError: {err}", file=sys.stderr)
         if creados:
@@ -247,10 +279,11 @@ def main():
         for e in errores:
             print(f"- {e}", file=sys.stderr)
         sys.exit(1)
+    asignados = responsables(plan, orden)
     if borrador:
-        mostrar_borrador(plan, orden, externos, avisos)
+        mostrar_borrador(plan, orden, externos, avisos, asignados)
     else:
-        crear(plan, orden, externos, obtener_repo())
+        crear(plan, orden, externos, obtener_repo(), asignados)
 
 
 if __name__ == "__main__":

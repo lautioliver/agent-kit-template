@@ -69,8 +69,9 @@ Plantilla de repo para trabajar con agentes de código **sin perder el control**
    - `docs/mapa-agentes.json`: las rutas reales de schema, auth, pagos y API pública, y los comandos de `verificar`.
    - `.github/labels.yml` y `.github/labeler.yml`: los labels `area:` y las rutas de tu repo.
    - `docs/convencion-nombres-github.md` §2: los scopes de commit.
-4. Creá los labels: **Actions → Labels → Run workflow**.
-5. ¿Usás Cursor? Enlazá las skills: `ln -s ../.claude/skills .cursor/skills`.
+4. Cargá al equipo: `/add-member @usuario` por cada integrante, con las áreas que cubre. Desde ahí, cada issue que creen los agentes nace asignado (ver [Equipo y asignación](#equipo)).
+5. Creá los labels: **Actions → Labels → Run workflow**.
+6. ¿Usás Cursor? Enlazá las skills: `ln -s ../.claude/skills .cursor/skills`.
 
 > [!IMPORTANT]
 > El check de docs falla a propósito mientras queden rutas `TODO/` en `docs/mapa-agentes.json`: con rutas de ejemplo, un agente nunca detectaría que tocó algo sensible. Las rutas con `?` adelante son alternativas de stack opcionales; las propias van sin `?`, así el check falla si dejan de existir.
@@ -126,6 +127,7 @@ Durante `/implement-issue` se usan, según haga falta, `debug`, `db-migration` y
 | 🗺️ *planificá la migración de cuentas* | `plan-feature` investiga el código y arma una épica con sub-issues y bloqueos, en el orden en que se pueden hacer. |
 | 🔎 *pasá esta auditoría a issues* | Un issue por hallazgo, con el link al documento. |
 | 📊 *¿qué puedo hacer ahora?* | `estado` lista lo que está libre por prioridad, lo bloqueado con su motivo y el avance de cada épica. |
+| 👥 *sumá a @ana al equipo, cubre pagos* | `/add-member` valida el usuario y las áreas y lo agrega a `.github/equipo.json`. Desde ahí, los issues de esa área nacen asignados a quien tenga menos carga. |
 
 <a name="skills"></a>
 
@@ -146,6 +148,7 @@ Viven en `.claude/skills/`.
 | 🎛️ | `/orquestar` | Reparte hasta 3 issues disponibles entre subagentes en paralelo (Haiku o Sonnet según `ruteo.py`, Opus revisa), cada uno en su worktree, y junta PRs, consultas y escalados en un solo mensaje. No mergea ni publica sin confirmación. |
 | 🔁 | `/mejorar-skills` | Junta las retros y las señales objetivas (fallas de CI en ramas de agentes, reverts) y propone ajustes a las skills en un PR. Nunca afloja controles. |
 | 🌿 | `git-workflow` | Ramas, commits y PRs. |
+| 👥 | `/add-member`, `/remove-member` | Agregar, editar, pausar o quitar integrantes del equipo que recibe los issues. |
 
 ### 🤖 Subagentes por modelo
 
@@ -170,6 +173,20 @@ Los lanza `/orquestar` desde la sesión principal. Comparten las reglas y el for
 
 Las skills tienen un máximo de 120 líneas, que controla `check-docs.py`. Dos checks del workflow de labels salieron de este circuito en un repo real: un PR con `logica-negocio` tiene que tocar `docs/decisions/` (o decir `ADR sin cambios: <motivo>`), y un PR que llega sin `tipo:` lo copia del issue que cierra.
 
+<a name="equipo"></a>
+
+### 👥 Equipo y asignación
+
+`.github/equipo.json` lista a los integrantes (usuario de GitHub, nombre, áreas `area:` que cubren, activo o pausado). Lo leen solo los scripts que crean issues: `crear-issue` y `planificar.py` (épicas). Cada issue nuevo se asigna así:
+
+1. Entre los activos, los que cubren alguna `area:` del issue.
+2. Si nadie la cubre (o el issue no tiene área), todos los activos.
+3. Gana el de menos issues abiertos asignados; en una épica, la carga se reparte también entre los issues del mismo plan. Empate: el primero del archivo.
+
+Sin integrantes, los issues quedan sin asignar. El equipo se cambia con `/add-member` y `/remove-member` (`scripts/agentes/equipo.py`), que validan que el usuario exista y tenga acceso al repo; `check-docs.py` controla que las áreas sigan existiendo en `labels.yml`.
+
+**Asignado significa responsable**, no "lo está trabajando": `disponibles.sh` muestra primero lo tuyo, considera "en curso" lo que tiene un PR abierto y separa lo que ya se mergeó a `develop` pero espera release. `preparar.sh` no deja tomar un issue cuyo responsable es otra persona.
+
 <a name="que-trae"></a>
 
 ## 📦 Qué trae
@@ -188,6 +205,7 @@ Las skills tienen un máximo de 120 líneas, que controla `check-docs.py`. Dos c
 | ✅ | Docs y scripts testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py`: links, rutas y ADRs rotos, rutas del mapa que ya no existen, lo que `AGENTS.md` dice ignorado y no lo está; shellcheck y los `test-*.sh`, aislados de la config de git |
 | 🔒 | Secretos fuera del repo | `.gitignore`: `.env*` (salvo `.env.example`) y lo que generan los scripts de agentes |
 | 🧪 | Verificación antes del PR | `scripts/agentes/verificar.py`: según lo que cambió, corre lint, typecheck, tests afectados, drift de migraciones… |
+| 👥 | Equipo | `.github/equipo.json` + `scripts/agentes/equipo.py`: quién recibe los issues según sus áreas |
 | 🎨 | Marca | `.github/marca/`: Barrilete, la identidad de la plantilla (el init la borra) |
 
 <a name="modos"></a>
@@ -210,7 +228,7 @@ Para proyectos de una o dos personas, agregá `--chico`: `./scripts/init-plantil
 
 | | 🦅 Completo | 🐣 `--chico` |
 |---|---|---|
-| Skills | 11 | 4: `implement-issue`, `crear-issue`, `debug`, `update-docs` |
+| Skills | 13 | 6: `implement-issue`, `crear-issue`, `debug`, `update-docs`, `add-member`, `remove-member` |
 | Workflows | 4 | 2: docs y sync de labels |
 | Labels | `tipo:`, `area:`, `prioridad:`, `estado:` y especiales | 7: `tipo:` y `prioridad:` |
 | Docs | hub con `reference/`, `development/`, `guides/` | un archivo de arquitectura y los ADRs |

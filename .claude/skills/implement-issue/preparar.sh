@@ -65,7 +65,8 @@ if deps=$(gh api "repos/$REPO/issues/$N/dependencies/blocked_by" 2>/dev/null); t
 fi
 [ -n "$bloq" ] && error "está bloqueado por: $bloq"
 otros=$(jq -r --arg yo "$YO" '[.assignees[].login | select(. != $yo)] | join(", ")' <<<"$issue")
-[ -n "$otros" ] && error "ya está asignado a $otros."
+# Asignado = responsable (crear-issue lo asigna según .github/equipo.json): es de esa persona.
+[ -n "$otros" ] && error "es de $otros (responsable). Pedíselo o reasignalo: gh issue edit $N --remove-assignee <login> --add-assignee @me"
 
 titulo=$(jq -r .title <<<"$issue")
 # Rama: claude/<n>-<descripcion>, minúsculas, sin tildes, solo [a-z0-9-], ≤ 50 caracteres.

@@ -78,6 +78,7 @@ Fuente de verdad: `docs/convencion-nombres-github.md`. Labels: `.github/labels.y
 - **Cuerpo del PR:** `.github/pull_request_template.md` (Qué cambia / Por qué / Lógica de negocio afectada / Cómo probarlo / `Closes #n`).
 - **Labels:** prefijo `grupo:valor` (`tipo:`, `area:`, `prioridad:`, `estado:`, más `logica-negocio` y `breaking-change`). Solo los de `.github/labels.yml`; no crear otros.
 - **Lógica de negocio:** si el PR cambia una regla ya definida (ADR, auditoría o plan), va el label `logica-negocio` y se explica en el PR.
+- **Equipo:** los issues nuevos se asignan solos a un integrante (por área y carga). El equipo se cambia con `/add-member` y `/remove-member`; no edites el archivo a mano. Asignado = responsable; en curso = con PR abierto.
 - **Issues:** se abren con la skill `crear-issue`. Título en imperativo y sin prefijo; el tipo va en el label `tipo:`. Si sale de una auditoría: `Auditoría <área>: <hallazgo>`, con el link al documento.
 - **Decisiones irreversibles:** ADR nuevo en `docs/decisions/` (ver su README).
 

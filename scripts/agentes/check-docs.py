@@ -16,6 +16,7 @@ Revisa:
 - Skills (.claude/skills/*/SKILL.md) de más de 120 líneas, y docs/agentes/lecciones.md de más de 40.
 - Subagentes (.claude/agents/*.md) sin name, description o tools, con un model que no es opus,
   sonnet ni haiku, o que no remiten al contrato común (docs/agentes/contrato-subagentes.md).
+- Integrantes de .github/equipo.json repetidos o con áreas que no están en labels.yml.
 Las rutas de "ignorar_check" del mapa (por ejemplo, bitácoras históricas) no se validan.
 """
 import json
@@ -144,6 +145,27 @@ if MAPA:
             avisos.append("código que ninguna ruta del mapa cubre (si cambia, nadie avisa qué doc revisar): "
                           + ", ".join(f"{c}/ ({n})" for c, n in top)
                           + (f" y {len(conteo) - 6} carpetas más" if len(conteo) > 6 else ""))
+
+# Equipo (.github/equipo.json): las áreas tienen que existir en labels.yml (los labels pueden
+# cambiar después de cargar a alguien) y cada integrante aparece una sola vez.
+if os.path.exists(".github/equipo.json"):
+    equipo = json.load(open(".github/equipo.json", encoding="utf-8"))
+    nombres_labels = set()
+    if os.path.exists(".github/labels.yml"):
+        for linea in open(".github/labels.yml", encoding="utf-8"):
+            if linea.strip().startswith("- name:"):
+                nombres_labels.add(linea.split(":", 1)[1].strip().strip('"').strip("'"))
+    vistos = set()
+    for i in equipo.get("integrantes", []):
+        login = (i.get("login") or "").lower()
+        if not login:
+            errores.append(".github/equipo.json: hay un integrante sin login")
+        elif login in vistos:
+            errores.append(f".github/equipo.json: @{login} aparece más de una vez")
+        vistos.add(login)
+        for a in i.get("areas", []):
+            if nombres_labels and a not in nombres_labels:
+                errores.append(f".github/equipo.json: @{login} tiene el área {a}, que no está en .github/labels.yml")
 
 # Skills largas: el agente se saltea pasos justamente por la cantidad. Si un ajuste
 # no entra en el máximo, hay que sacar algo o pasarlo a un script.

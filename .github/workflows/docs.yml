@@ -21,6 +21,8 @@ jobs:
           fetch-depth: 0
       - name: Validar documentación
         run: python3 scripts/agentes/check-docs.py
+      - name: Tests de los scripts de agentes
+        run: python3 -m unittest discover -s scripts/agentes -p 'test_*.py'
       - name: Instalar shellcheck 0.11.0
         # Versión fija (la de ubuntu-latest es más vieja y reporta otros códigos que la local).
         # Para subirla: cambiar la versión y el sha256 (está en la release de koalaman/shellcheck).

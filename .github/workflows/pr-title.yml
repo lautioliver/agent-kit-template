@@ -11,7 +11,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  check:
+  pr-title:
     runs-on: ubuntu-latest
     steps:
       # No hace checkout del código del PR: seguro con pull_request_target.

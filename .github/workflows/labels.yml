@@ -73,7 +73,7 @@ jobs:
             }
             core.info('No encontré un issue con tipo: (Closes #n o el número en la rama).');
 
-  check:
+  labels:
     needs: [labeler]
     # always(): corre aunque labeler se haya salteado (labeled/unlabeled/edited).
     if: ${{ always() && github.event_name == 'pull_request_target' }}
