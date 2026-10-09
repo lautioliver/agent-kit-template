@@ -7,7 +7,8 @@ name: Docs
 on:
   pull_request:
   push:
-    branches: [<RAMA_BASE>]
+    # main: para la plantilla misma. El init lo deja en [<RAMA_BASE>].
+    branches: [main, <RAMA_BASE>]
 
 permissions:
   contents: read
