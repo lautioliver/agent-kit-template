@@ -28,8 +28,10 @@ resumen: <qué cambió o qué encontraste, hasta 3 líneas>
 para el revisor: <decisiones que alguien tiene que mirar, o "nada">
 consultas: <preguntas concretas, o "ninguna">
 motivo: <solo en escalar, soltado o bloqueantes>
-retro: <ruta en agentes/retros>
+retro: <rama>:<ruta>, tal como la imprime retro.sh
 ```
+
+El campo `retro:` copia lo que imprime `retro.sh` después de `Guardado en`: la rama y la ruta separadas por `:`, por ejemplo `agentes/retros:retros/2026-10-09-implement-issue-87.md`. Así se abre con `git show agentes/retros:retros/…`. No es una ruta del árbol de trabajo: `agentes/retros/retros/…` no existe.
 
 El revisor agrega al final `revision:` con el texto de la revisión listo para publicar (Markdown).
 
