@@ -156,6 +156,14 @@ git -C "$P" rev-parse -q --verify claude/15-x >/dev/null && git --git-dir="$TMP/
 es -d "$WT/11" && es -f "$WT/12/sucio.txt"; afirmar $? "--borrar no toca el abierto ni el que tiene cambios"
 git -C "$P" rev-parse -q --verify claude/10-x >/dev/null; afirmar $? "--borrar deja la rama (solo saca el worktree)"
 
+# Issue cerrado al abrir el PR (costumbre de algunos proyectos): mientras el PR siga abierto, el worktree no se toca.
+git -C "$P" worktree add -q -b claude/30-x "$WT/30" main 2>/dev/null
+issue 30 closed "tipo:task" "Cerrado con el PR en revisión."; pr 30 130 OPEN
+s=$(cd "$P" && "$AQUI/limpiar.sh" 2>&1)
+! grep -q "$WT/30" <<<"$s"; afirmar $? "no lista el worktree de un issue cerrado con el PR abierto"
+(cd "$P" && "$AQUI/limpiar.sh" --borrar >/dev/null 2>&1)
+es -d "$WT/30"; afirmar $? "--borrar no saca el worktree de un PR abierto"
+
 # Una rama de PR cerrado que todavía tiene worktree: git branch -D falla hasta sacarlo, así que
 # los comandos para borrar ramas salen después de sacar los worktrees, y sin --borrar lo avisa.
 git -C "$P" worktree add -q -b claude/21-x "$WT/21" main 2>/dev/null
@@ -222,6 +230,13 @@ if(!m||!r) process.exit(1);
 const ok=b=>eval(m[1]).test(b)||eval(r[1]).test(b);
 const casos=[["Closes #1",1],["Refs #77",1],["texto\nRefs: #3\n",1],["  Ref #2",1],["ver ref #38 de pasada",0],["prefs #4",0],["Refs 77",0]];
 process.exit(casos.every(([b,e])=>ok(b)===!!e)?0:1);' "$L" 2>/dev/null; afirmar $? "check de labels: Refs #n solo en su propia línea, Closes en cualquier parte"
+node -e '
+const src=require("fs").readFileSync(process.argv[1],"utf8");
+const m=src.match(/if \(!(\/<summary>Rojo antes de implementar.*\/i)\.test\(body\)\)/);
+if(!m) process.exit(1);
+const ok=b=>eval(m[1]).test(b);
+const casos=[["sin test: es solo docs",1],["sin tests: es config",1],["Sin test\nes solo docs",1],["<summary>Rojo antes de implementar</summary>",1],["sin test",0],["testear sin testigo",0]];
+process.exit(casos.every(([b,e])=>ok(b)===!!e)?0:1);' "$L" 2>/dev/null; afirmar $? "check de labels: acepta sin test o sin tests, con el motivo en la misma línea o en la siguiente"
 if [ -d "$RAIZ/perfiles/chico" ]; then
   grep -qi 'que el issue lo pida no es la aprobación' "$RAIZ/perfiles/chico/AGENTS.md"; afirmar $? "chico: pedirlo en el issue no es la aprobación"
   ! grep -qi 'si está disponible ./code-review.' "$RAIZ/perfiles/chico/.claude/skills/implement-issue/SKILL.md"; afirmar $? "chico: /code-review obligatorio"
