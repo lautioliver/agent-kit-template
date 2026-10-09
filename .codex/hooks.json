@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/agentes/barandas.py\"",
+            "command": "f=\"$(git rev-parse --show-toplevel 2>/dev/null)/scripts/agentes/barandas.py\"; [ -f \"$f\" ] || exit 0; exec python3 \"$f\"",
             "statusMessage": "Barandas: revisando el comando"
           }
         ]

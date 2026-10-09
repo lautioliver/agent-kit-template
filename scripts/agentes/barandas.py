@@ -359,26 +359,36 @@ def a_ojo(comando):
     return None
 
 
+def como_texto(valor):
+    """Un comando como texto: tal cual, o unido si vino como lista; None si es otra cosa."""
+    if isinstance(valor, str):
+        return valor
+    if isinstance(valor, list) and all(isinstance(v, str) for v in valor):
+        return " ".join(valor)
+    return None
+
+
 def comando_de(entrada):
-    """El comando de shell según la herramienta, o None si no es un comando de shell.
+    """(comando, herramienta) del hook, o (None, None) si no es un comando de shell.
 
     Claude Code y Codex: tool_name "Bash" y tool_input.command. Copilot: toolName "bash" y toolArgs
     (objeto o texto JSON). Cursor (beforeShellExecution): command."""
     if not isinstance(entrada, dict):
-        return None
+        return None, None
     if entrada.get("tool_name") == "Bash":
-        return (entrada.get("tool_input") or {}).get("command")
+        args = entrada.get("tool_input")
+        return como_texto(args.get("command") if isinstance(args, dict) else args), "claude"
     if entrada.get("toolName") == "bash":
         args = entrada.get("toolArgs")
         if isinstance(args, str):
             try:
                 args = json.loads(args)
             except ValueError:
-                return args
-        return args.get("command") if isinstance(args, dict) else None
+                pass  # no es JSON: es el comando mismo
+        return como_texto(args.get("command") if isinstance(args, dict) else args), "copilot"
     if entrada.get("hook_event_name") == "beforeShellExecution":
-        return entrada.get("command")
-    return None
+        return como_texto(entrada.get("command")), "cursor"
+    return None, None
 
 
 def main():
@@ -386,7 +396,7 @@ def main():
         entrada = json.load(sys.stdin)
     except ValueError:
         return 0  # sin entrada válida no hay comando que frenar
-    comando = comando_de(entrada)
+    comando, herramienta = comando_de(entrada)
     if not comando:
         return 0
     try:
@@ -395,10 +405,18 @@ def main():
         m = a_ojo(comando)
     if not m:
         return 0
-    print(f"Frenado por las barandas de la plantilla (scripts/agentes/barandas.py): {m}.\n"
-          f"AGENTS.md (Autonomía): un agente no mergea, no aprueba PRs, no crea tags ni releases, no pushea a "
-          f"ramas troncales y no saltea checks. Si la persona lo pidió, pedile que lo corra ella (en Claude Code, en el chat):\n"
-          f"! {comando.strip()}", file=sys.stderr)
+    corto = f"Frenado por las barandas de la plantilla (scripts/agentes/barandas.py): {m}."
+    texto = (f"{corto}\nAGENTS.md (Autonomía): un agente no mergea, no aprueba PRs, no crea tags ni releases, "
+             f"no pushea a ramas troncales y no saltea checks. No busques otro camino: si la persona lo pidió, "
+             f"pedile que lo corra ella (en Claude Code, en el chat):\n! {comando.strip()}")
+    # Cada herramienta lee el motivo de un lugar distinto: Claude Code y Codex de stderr con exit 2,
+    # Copilot del JSON (el exit 2 deniega igual), Cursor del JSON con exit 0.
+    if herramienta == "copilot":
+        print(json.dumps({"permissionDecision": "deny", "permissionDecisionReason": texto}, ensure_ascii=False))
+    elif herramienta == "cursor":
+        print(json.dumps({"permission": "deny", "user_message": corto, "agent_message": texto}, ensure_ascii=False))
+        return 0
+    print(texto, file=sys.stderr)
     return 2
 
 

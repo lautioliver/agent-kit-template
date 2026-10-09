@@ -28,7 +28,7 @@ TODO: las reglas que un agente rompería si no las lee (formato de errores, dón
 
 **Nunca:** correr migraciones o borrar datos fuera de local, poner secretos en el repo, desactivar tests o checks para que algo pase, mergear PRs, crear tags o publicar releases sin un pedido explícito.
 
-Un hook (`scripts/agentes/barandas.py`, en `.claude/settings.json`) frena antes de correrlos el merge, la aprobación de PRs, el push a ramas troncales, los tags, las releases y `--no-verify`. En Codex y Copilot lo registran `.codex/hooks.json` y `.github/hooks/barandas.json`. Si te frena, no busques otro camino: pedile a la persona que lo corra ella (en Claude Code, con `! <comando>`). Cambiar el hook se consulta.
+Un hook (`scripts/agentes/barandas.py`, en `.claude/settings.json`) frena antes de correrlos el merge, la aprobación de PRs, el push a ramas troncales, los tags, las releases y `--no-verify`. En Codex, Copilot y Cursor lo registran `.codex/hooks.json`, `.github/hooks/barandas.json` y `.cursor/hooks.json`. Si te frena, no busques otro camino: pedile a la persona que lo corra ella (en Claude Code, con `! <comando>`). Cambiar el hook, el script o esos registros se consulta.
 
 Rutas sensibles de este proyecto (TODO: completar): schema `…`, auth `…`, deploy `…`.
 
