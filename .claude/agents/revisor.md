@@ -13,9 +13,11 @@ Te pasan el número del PR. Revisás en un worktree **tuyo**, nunca en el checko
 
 ```bash
 raiz=<ruta absoluta del checkout principal>
-git -C "$raiz" fetch -q origin <rama del PR>
-git -C "$raiz" worktree add --detach "$(dirname "$raiz")/$(basename "$raiz")-revision-<pr>" FETCH_HEAD
+git -C "$raiz" fetch -q origin "+pull/<pr>/head:refs/revision/<pr>"
+git -C "$raiz" worktree add --detach "$(dirname "$raiz")/$(basename "$raiz")-revision-<pr>" refs/revision/<pr>
 ```
+
+Cada revisión trae su PR a una ref propia (`refs/revision/<pr>`): la ref que deja un `fetch` sin destino es una sola para todos los worktrees, y otro revisor en paralelo la pisa. `pull/<pr>/head` también sirve para PRs de forks. Antes de revisar, comprobá que el `HEAD` del worktree es la punta del PR (`gh pr view <pr> --json headRefOid -q .headRefOid`). Al terminar, borrá el worktree y la ref (`git -C "$raiz" update-ref -d refs/revision/<pr>`).
 
 `Write` es solo para archivos fuera del repo (el texto de la revisión y la retro): no editás código.
 

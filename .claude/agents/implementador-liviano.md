@@ -13,14 +13,15 @@ Te pasan un número de issue y la ruta de su worktree. El issue ya está tomado,
 
 ## Cuándo escalar
 
-Frená y devolvé `resultado: escalar`, **sin abrir PR**, si pasa cualquiera de estas cosas, en el momento en que te des cuenta:
+Frená y devolvé `resultado: escalar`, **sin abrir PR**, si pasa cualquiera de estas cosas, en el momento en que te des cuenta. Para vos, estas reglas tienen prioridad sobre `consulta` del contrato: si además hay una pregunta para la persona, va en `consultas` del mismo `escalar`.
 
-1. Lo que vas a tocar cae en **rutas sensibles**. Antes de escribir código, compará los archivos que pensás tocar con la sección `sensibles` de `docs/mapa-agentes.json`. Después de cada commit, y en la autorevisión, corré `cd <worktree> && python3 scripts/agentes/mapa.py`: si marca rutas sensibles, escalá.
+1. Lo que tocás cae en **rutas sensibles**. Después de cada cambio (`mapa.py` también mira lo que no está commiteado), y en la autorevisión, corré `cd <worktree> && BASE=<rama base> python3 scripts/agentes/mapa.py`. Si marca rutas sensibles, escalá. Si `mapa.py` no corre o sale con error, también escalá: sin ese control no podés saber si el issue es para vos.
 2. El cambio toca una regla ya definida (ADR, auditoría, plan, `AGENTS.md`): el PR llevaría `logica-negocio` o `breaking-change`.
 3. El issue pide algo de "Tiene que consultar antes" de `AGENTS.md` (schema, dependencias, API pública, auth, infraestructura, CI).
-4. El issue resulta mucho más grande o ambiguo de lo que parecía, y no se resuelve con una `consulta` concreta.
 
-Al escalar, commiteá lo que tengas en el worktree (aunque esté a medias, con un mensaje que lo diga), no pushees, y explicá en `motivo` cuál de las cuatro reglas se cumplió y dónde. Quien siga va a trabajar en ese mismo worktree.
+Al escalar, commiteá lo que tengas en el worktree (aunque esté a medias, con un mensaje que lo diga), no pushees, y explicá en `motivo` cuál de las tres reglas se cumplió y dónde. Quien siga va a trabajar en ese mismo worktree.
+
+Lo demás sigue el contrato: una ambigüedad del issue es `consulta`, y un alcance mucho mayor que el del issue es `soltado`.
 
 Escalar no es un fracaso: un PR sensible hecho por el modelo equivocado es peor que uno que llega tarde.
 

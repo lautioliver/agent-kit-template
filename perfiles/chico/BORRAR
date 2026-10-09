@@ -17,3 +17,4 @@ scripts/agentes/verificar.py
 .claude/skills/mejorar-skills
 docs/agentes
 .claude/agents
+scripts/agentes/test-agentes.sh
