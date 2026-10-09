@@ -27,14 +27,15 @@ def salir(mensaje):
 
 
 def sensibles_nombradas(texto, mapa):
-    """Rutas del texto (con o sin backticks) que caen en una ruta sensible del mapa."""
+    """Rutas del texto (con o sin backticks) que caen en una ruta sensible del mapa. Cuenta cada
+    palabra, tenga o no "/" (package.json, Dockerfile), y una carpeta sin barra final (src/auth)."""
     from mapa import glob_a_regex
-    candidatas = set(re.findall(r"[\w.-]+(?:/[\w.-]*)+", texto))
+    candidatas = {c.rstrip(".,;:") for c in re.findall(r"[\w.-]+(?:/[\w.-]*)*", texto)} - {""}
     hallazgos = []
     for s in mapa.get("sensibles", []):
         regex = [glob_a_regex(g) for g in s.get("rutas", [])]
         for ruta in sorted(candidatas):
-            if any(r.match(ruta) for r in regex):
+            if any(r.match(ruta) or r.match(ruta.rstrip("/") + "/x") for r in regex):
                 hallazgos.append(f"{ruta} ({s.get('tipo', 'sensible')})")
     return hallazgos
 
@@ -43,8 +44,11 @@ def main():
     if len(sys.argv) != 2 or not sys.argv[1].lstrip("#").isdigit():
         salir("uso: ruteo.py <n°issue>")
     n = sys.argv[1].lstrip("#")
-    repo = subprocess.run(["gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
-                          capture_output=True, text=True).stdout.strip()
+    r = subprocess.run(["gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
+                       capture_output=True, text=True)
+    repo = r.stdout.strip()
+    if r.returncode != 0 or not repo:
+        salir(f"no pude leer el repo de GitHub ({r.stderr.strip() or 'gh falló'}). ¿Hay un remoto y gh está autenticado?")
     r = subprocess.run(["gh", "api", f"repos/{repo}/issues/{n}"], capture_output=True, text=True)
     if r.returncode != 0:
         salir(f"no pude leer el issue #{n} ({r.stderr.strip() or 'gh falló'}).")
@@ -52,8 +56,8 @@ def main():
     labels = {l["name"] if isinstance(l, dict) else l for l in issue.get("labels", [])}
 
     tipo = sorted(l for l in labels if l.startswith("tipo:"))
-    if not LIVIANOS & set(tipo):
-        return print("sonnet", f"motivo: {', '.join(tipo) or 'sin tipo:'} no es tipo:docs ni tipo:task", sep="\n")
+    if not tipo or not set(tipo) <= LIVIANOS:
+        return print("sonnet", f"motivo: {', '.join(tipo) or 'sin tipo:'} no es solo tipo:docs o tipo:task", sep="\n")
     riesgo = sorted(RIESGO & labels)
     if riesgo:
         return print("sonnet", f"motivo: lleva {', '.join(riesgo)}", sep="\n")
@@ -65,7 +69,7 @@ def main():
     nombradas = sensibles_nombradas(f"{issue.get('title', '')}\n{issue.get('body') or ''}", mapa)
     if nombradas:
         return print("sonnet", f"motivo: nombra rutas sensibles: {', '.join(nombradas)}", sep="\n")
-    print("haiku", f"motivo: {tipo[0]} sin logica-negocio, breaking-change ni rutas sensibles nombradas", sep="\n")
+    print("haiku", f"motivo: {', '.join(tipo)} sin logica-negocio, breaking-change ni rutas sensibles nombradas", sep="\n")
 
 
 if __name__ == "__main__":

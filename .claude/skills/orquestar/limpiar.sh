@@ -14,23 +14,33 @@ esac
 REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 PENDIENTES="$(git rev-parse --path-format=absolute --git-common-dir)/retros-pendientes"
 
-cerrados=(); sucios=()
+cerrados=(); sucios=(); errores=0
 while read -r ruta; do
   n="${ruta##*/}"
-  estado=$(gh api "repos/$REPO/issues/$n" 2>/dev/null | jq -r .state 2>/dev/null || echo desconocido)
+  if ! estado=$(gh api "repos/$REPO/issues/$n" 2>/dev/null | jq -er .state 2>/dev/null); then
+    echo "No pude leer el estado del issue #$n ($ruta): ¿gh está autenticado? No lo toco." >&2
+    errores=1; continue
+  fi
   [ "$estado" = closed ] || continue
   if [ -n "$(git -C "$ruta" status --porcelain 2>/dev/null)" ]; then sucios+=("$ruta")
   else cerrados+=("$ruta"); fi
 done < <(git worktree list --porcelain | sed -n 's/^worktree //p' | grep -E -- '-wt/[0-9]+$' || true)
 
-if [ ${#cerrados[@]} -eq 0 ] && [ ${#sucios[@]} -eq 0 ]; then echo "No hay worktrees de issues cerrados."; exit 0; fi
+if [ ${#cerrados[@]} -eq 0 ] && [ ${#sucios[@]} -eq 0 ]; then
+  [ "$errores" = 0 ] && echo "No hay worktrees de issues cerrados."
+  exit "$errores"
+fi
 for r in ${cerrados[@]+"${cerrados[@]}"}; do echo "- $r (issue cerrado)"; done
 for r in ${sucios[@]+"${sucios[@]}"}; do echo "- $r (issue cerrado, con cambios sin commitear: no se borra)"; done
-[ -n "$BORRAR" ] || { echo; echo "Para borrar los limpios: $0 --borrar"; exit 0; }
+[ -n "$BORRAR" ] || { echo; echo "Para borrar los limpios: $0 --borrar"; exit "$errores"; }
 
 if ls "$PENDIENTES"/*.md >/dev/null 2>&1; then
   echo "No borro nada: hay retros sin guardar en $PENDIENTES. Reintentá cada una con" >&2
   echo ".claude/skills/mejorar-skills/retro.sh <archivo> y volvé a correr esto." >&2
   exit 1
 fi
-for r in ${cerrados[@]+"${cerrados[@]}"}; do git worktree remove "$r" && echo "Borrado: $r"; done
+for r in ${cerrados[@]+"${cerrados[@]}"}; do
+  if git worktree remove "$r" 2>/dev/null; then echo "Borrado: $r"
+  else echo "limpiar.sh: no se pudo borrar $r (¿bloqueado con git worktree lock?)." >&2; errores=1; fi
+done
+exit "$errores"

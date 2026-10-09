@@ -73,7 +73,7 @@ Con todo commiteado, `python3 scripts/agentes/verificar.py` corre lo que corresp
 
 ## 9. Esperar el CI y entregar
 
-Mirá los checks del PR (`gh pr checks <pr> --watch`). Si alguno falla por tu cambio, corregilo y pusheá de nuevo. Si falla por algo ajeno, decilo.
+Mirá los checks del PR (`gh pr checks <pr> --watch`). Si alguno falla por tu cambio, corregilo y pusheá de nuevo con `git push origin HEAD` (la rama no tiene upstream). Si falla por algo ajeno, decilo.
 
 Respondé con:
 - Link al PR y estado del CI.
