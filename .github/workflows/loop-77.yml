@@ -1,0 +1,58 @@
+# TEMPORAL (#77): corre test-retros.sh muchas veces en Linux para encontrar la falla intermitente.
+# Vive solo en un PR borrador que se cierra sin mergear.
+name: Loop 77
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  loop:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tanda: [1, 2, 3, 4]
+    env:
+      GIT_CONFIG_GLOBAL: /dev/null
+      GIT_CONFIG_NOSYSTEM: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Versiones
+        run: git --version; bash --version | head -1; awk -W version 2>&1 | head -1 || true
+      - name: test-retros.sh directo, 40 veces
+        run: |
+          f=0
+          for i in $(seq 1 40); do
+            if ! o=$(bash .claude/skills/mejorar-skills/test-retros.sh 2>&1); then
+              f=$((f+1)); echo "::group::falla directa $i"; echo "$o"; echo "::endgroup::"
+              echo "$o" | grep '^FAIL' | sed "s/^/[directa $i] /"
+            fi
+          done
+          echo "Fallas directas: $f/40"
+      - name: test-retros.sh en un proyecto inicializado (completo, main), 40 veces
+        run: |
+          p=$(mktemp -d)
+          git ls-files -z -co --exclude-standard | xargs -0 tar -cf - | (cd "$p" && tar -xf -)
+          g() { git -c user.name=t -c user.email=t@t "$@"; }
+          (cd "$p" && git init -q -b main && git add -A && g commit -qm plantilla)
+          (cd "$p" && ./scripts/init-plantilla.sh Demo main >/dev/null 2>&1 && git add -A && g commit -qm init)
+          f=0
+          for i in $(seq 1 40); do
+            if ! o=$(cd "$p" && bash .claude/skills/mejorar-skills/test-retros.sh 2>&1); then
+              f=$((f+1)); echo "::group::falla en proyecto $i"; echo "$o"; echo "::endgroup::"
+              echo "$o" | grep '^FAIL' | sed "s/^/[proyecto $i] /"
+            fi
+          done
+          echo "Fallas en proyecto: $f/40"
+      - name: test-init.sh, 10 veces
+        run: |
+          f=0
+          for i in $(seq 1 10); do
+            if ! o=$(bash scripts/test-init.sh 2>&1); then
+              f=$((f+1)); echo "$o" | grep -E '^FAIL|^ +\[' | sed "s/^/[init $i] /"
+            fi
+          done
+          echo "Fallas de test-init: $f/10"
