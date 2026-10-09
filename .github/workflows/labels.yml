@@ -117,7 +117,7 @@ jobs:
               const refiere = /^\s*refs?:?\s+#\d+/im;
               if (!cierra.test(body) && !refiere.test(body))
                 errors.push('el cuerpo no cierra ni referencia ningún issue: agregá "Closes #<n>" (o "Refs #<n>" si no lo cierra).');
-              if (!/<summary>Rojo antes de implementar<\/summary>|sin test\b.*\S/i.test(body))
+              if (!/<summary>Rojo antes de implementar<\/summary>|sin tests?\b[^\S\n]*:?[^\S\n]*\n?[^\S\n]*\S/i.test(body))
                 errors.push('falta en "Cómo probarlo" el bloque "Rojo antes de implementar" de rojo.sh (o "sin test" con el motivo).');
             }
             if (errors.length) core.setFailed('PR fuera de convención:\n- ' + errors.join('\n- '));

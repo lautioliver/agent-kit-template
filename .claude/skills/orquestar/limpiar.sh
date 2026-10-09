@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Limpia lo que deja una corrida de orquestar, para los issues ya cerrados:
-# - los worktrees ../<repo>-wt/<n> (los de preparar.sh --worktree): se saca el worktree;
+# - los worktrees ../<repo>-wt/<n> (los de preparar.sh --worktree): se saca el worktree, salvo que
+#   su rama tenga un PR abierto;
 # - las ramas claude/<n>-… (locales o remotas) cuyo PR se cerró sin mergear: solo se listan, con
 #   el comando para borrarlas (git push origin --delete; gh pr close --delete-branch falla desde un
 #   detached HEAD). Borrar una rama puede perder trabajo, así que lo decide la persona. Se decide
@@ -36,9 +37,21 @@ cerrado() {
   [ "$estado" = closed ]
 }
 
+# ¿La rama tiene un PR abierto? Algunos proyectos cierran el issue al abrir el PR: el worktree
+# sigue haciendo falta para corregir lo que pida la revisión. Si no se puede leer, no se toca.
+pr_abierto() {
+  local estados
+  [ -n "$1" ] || return 1
+  if ! estados=$(gh pr list --head "$1" --state all --json state 2>/dev/null | jq -r '[.[] | select(.state == "OPEN")] | length' 2>/dev/null); then
+    echo "No pude leer los PRs de $1: no lo toco." >&2; errores=1; return 0
+  fi
+  [ "${estados:-0}" != 0 ]
+}
+
 cerrados=(); sucios=()
 while read -r ruta; do
   cerrado "${ruta##*/}" "$ruta" || continue
+  pr_abierto "$(git -C "$ruta" branch --show-current 2>/dev/null)" && continue
   if [ -n "$(git -C "$ruta" status --porcelain 2>/dev/null)" ]; then sucios+=("$ruta")
   else cerrados+=("$ruta"); fi
 done < <(git worktree list --porcelain | sed -n 's/^worktree //p' | grep -E -- '-wt/[0-9]+$' || true)

@@ -43,6 +43,13 @@ class Bloquea(unittest.TestCase):
                   "git push origin :main", "git -C ../otro push origin main"):
             self.assertFrena(c)
 
+    def test_push_con_repo(self):
+        # Con --repo el remoto no va entre los posicionales: todos son refspecs.
+        for c in ("git push --repo origin develop", "git push --repo=origin main", "git push --repo origin x:main"):
+            self.assertFrena(c)
+        self.assertIsNone(frena("git push --repo origin claude/1-x"))
+        self.assertIsNone(frena("git push --repo=origin HEAD", rama="claude/1-x"))
+
     def test_push_de_la_rama_actual_si_es_troncal(self):
         self.assertFrena("git push", rama="main")
         self.assertFrena("git push origin HEAD", rama="main")
