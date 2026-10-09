@@ -10,4 +10,7 @@ Reglas:
 
 ## Lecciones
 
-_Ninguna todavía._
+- Comprobá los hallazgos de `/code-review` antes de arreglarlos o clasificarlos: pueden ser falsos (en #39, `commit-tree` no respeta `commit.gpgSign`). (#39, #40, 2026-10)
+- Los scripts que escriben en `.git` se prueban también desde un `git worktree` y con escrituras concurrentes en todas las que hacen, no solo en la que nombra el issue: los agentes corren en worktrees y en paralelo (retros pendientes perdidas con `git worktree remove`; lock de `.git/config` en `worktree add`). (#39, #40, 2026-10)
+- En los scripts que toman un issue, asigná al final, después de todo lo que puede fallar: si falla antes, el issue queda asignado sin trabajo. (#40, 2026-10)
+- Para testear scripts de shell sin framework: un remoto bare local y un `gh` falso en el `PATH`, aislados de la config global de git. Modelos: `.claude/skills/mejorar-skills/test-retros.sh` y `.claude/skills/implement-issue/test-preparar.sh`. (#39, #40, 2026-10)
