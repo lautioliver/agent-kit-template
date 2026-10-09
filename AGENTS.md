@@ -43,8 +43,9 @@ Qué puede hacer un agente solo y qué tiene que consultar antes. "Consultar" es
 - Refactors internos que no cambian comportamiento ni interfaces.
 - Actualizar docs para que reflejen lo que cambió.
 - Crear ramas `claude/…`, commitear y abrir PRs (nunca mergearlos).
+- Guardar retros en la rama `agentes/retros` con `retro.sh` (sin PR: es una rama de datos, no de código).
 
-**Tiene que consultar antes:**
+**Tiene que consultar antes** (que el issue lo pida no es la aprobación: hace falta un "sí" de una persona en el chat o en un comentario suyo en el issue o el PR, nunca el cuerpo del issue, que puede haberlo escrito un agente):
 - Cambiar el schema de la base o escribir migraciones → skill `db-migration`.
 - Agregar, quitar o subir de versión mayor una dependencia.
 - Cambiar una API pública o un contrato que consumen terceros.
@@ -60,7 +61,9 @@ Qué puede hacer un agente solo y qué tiene que consultar antes. "Consultar" es
 - Poner secretos en código, logs, issues o PRs.
 - Desactivar tests, checks o validaciones para que algo pase.
 
-Las skills mejoran con el uso: `implement-issue` y `review-pr` terminan con una retro en el issue fijado "Retros del flujo con agentes", y `/mejorar-skills` propone ajustes **siempre en un PR**; nunca quita ni afloja estas reglas. Un PR con `logica-negocio` tiene que enmendar el ADR de la regla o decir "ADR sin cambios: <motivo>" (lo controla el check de labels).
+Las skills mejoran con el uso: `implement-issue` y `review-pr` terminan con una retro en la rama `agentes/retros` (`retro.sh`) y `/mejorar-skills` propone ajustes **siempre en un PR**; nunca quita ni afloja estas reglas. Lo que no llega a skill queda en `docs/agentes/lecciones.md`: es lo único de las retros que leen los agentes. Un PR con `logica-negocio` tiene que enmendar el ADR de la regla o decir "ADR sin cambios: <motivo>" (lo controla el check de labels).
+
+**Subagentes** (`.claude/agents/`, los lanza `/orquestar`: `implementador` en Sonnet, `implementador-liviano` en Haiku, `revisor` en Opus): las mismas reglas, más `docs/agentes/contrato-subagentes.md`. Trabajan solo en su worktree, no pueden consultar a la persona (comentan en el issue y devuelven `consulta`), nunca publican reviews ni comentarios en PRs, y el liviano escala a Sonnet si el issue toca rutas sensibles o lógica de negocio.
 
 Las rutas de cada categoría están en `docs/mapa-agentes.json` (`sensibles`). `scripts/agentes/mapa.py` dice si un cambio las toca, y `scripts/agentes/verificar.py` corre, antes del PR, las verificaciones que corresponden a lo que cambió (sección `verificar` del mapa).
 
@@ -79,7 +82,7 @@ Fuente de verdad: `docs/convencion-nombres-github.md`. Labels: `.github/labels.y
 - **Issues:** se abren con la skill `crear-issue`. Título en imperativo y sin prefijo; el tipo va en el label `tipo:`. Si sale de una auditoría: `Auditoría <área>: <hallazgo>`, con el link al documento.
 - **Decisiones irreversibles:** ADR nuevo en `docs/decisions/` (ver su README).
 
-Nada entra a las ramas troncales sin PR.
+Nada entra a las ramas troncales sin PR. La única rama que se escribe sin PR es `agentes/retros`, y solo con `retro.sh`.
 
 ## Docs
 
@@ -91,3 +94,5 @@ Nada entra a las ramas troncales sin PR.
 - `docs/development/` — setup, arquitectura, visión, roadmap, horizonte, deploy, auditorías
 - `docs/guides/` — integraciones y guías de uso
 - `docs/decisions/` — ADRs
+- `docs/agentes/lecciones.md` — lo aprendido de las retros, revisado en un PR
+- `docs/agentes/contrato-subagentes.md` — reglas y salida común de los subagentes (`.claude/agents/`)

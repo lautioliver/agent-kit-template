@@ -1,0 +1,12 @@
+# Secretos
+.env
+.env.*
+!.env.example
+
+# Generados por los scripts de agentes
+__pycache__
+*.pyc
+.agent-kit/
+
+# Worktrees del aislamiento de Claude Code (subagentes)
+.claude/worktrees/

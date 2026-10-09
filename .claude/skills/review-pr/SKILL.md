@@ -22,7 +22,7 @@ Leé el issue que cierra (y su épica, si tiene): la revisión es contra lo que 
 
 ## 2. Revisión de código
 
-Si está disponible `/code-review`, corrélo sobre el PR para bugs, regresiones y casos borde. Si no, hacé esa pasada a mano.
+`/code-review` es obligatorio, para bugs, regresiones y casos borde. Antes, `git fetch origin` (la base local puede estar atrasada y meter en la revisión archivos que no son del PR), y corrélo sobre el diff del PR: `/code-review origin/<RAMA_BASE>...HEAD`. Solo si el comando no existe en tu sesión, hacé esa pasada a mano y decilo en la revisión.
 
 ## 3. Lo propio del proyecto
 
@@ -31,7 +31,7 @@ Si está disponible `/code-review`, corrélo sobre el PR para bugs, regresiones 
 | ¿Hace lo que pide el issue, y solo eso? | Issue vs diff. Criterios de aceptación cumplidos. |
 | ¿Cambia una regla de negocio? ¿Está declarado? | ADRs y auditorías vs diff. Si cambia algo definido y no tiene `logica-negocio` ni lo explica, es hallazgo **bloqueante**. |
 | ¿Respeta las invariantes de los ADRs que toca? | Para cada ADR relacionado, qué no puede pasar nunca (dos ingresos, doble cobro, una ventana que se estira…) y si el diff abre un camino para que pase. Es hallazgo **bloqueante** aunque `/security-review` no encuentre nada: las invariantes de negocio no son categorías de seguridad genéricas. |
-| ¿Respeta la autonomía del agente? | AGENTS.md, Autonomía. Schema, dependencias, API pública, auth, infra: ¿hubo aprobación (en el issue o el PR)? |
+| ¿Respeta la autonomía del agente? | AGENTS.md, Autonomía. Schema, dependencias, API pública, auth, infra, CI: ¿hubo aprobación? Que el issue lo pida no es la aprobación: cuenta un "sí" de una persona en el chat o en un comentario suyo en el issue o el PR, nunca el cuerpo del issue. Si toca algo de "consultar antes" sin aprobación registrada, es hallazgo **bloqueante**. |
 | ¿Toca rutas sensibles? | `mapa.py --pr <n>` → si sí, correr `/security-review` (o revisar a mano auth, inputs, permisos, secretos, exposición de datos). |
 | ¿Hay migración? | Plan de `db-migration` en el PR, con rollback. |
 | ¿Tests (TDD)? | ¿Salen de los criterios de aceptación? El PR trae el bloque **rojo** y el commit de los tests en rojo: volvé a ese commit (`git switch --detach <sha>`), corré `.claude/skills/implement-issue/rojo.sh -- <comando>` y confirmá que fallan por una aserción; en la punta del PR, que pasan. Sin rojo comprobable y sin un "sin test" justificado, es hallazgo **a corregir**. |
@@ -56,8 +56,10 @@ Mostrale los hallazgos al usuario. Publicarlos en el PR es un comentario visible
 gh pr review <n> --comment --body-file <archivo>
 ```
 
+Si te lanzó otro agente y no podés preguntarle al usuario, no publiques: devolvé los hallazgos y el borrador a quien te lanzó, que es quien le pide la confirmación.
+
 Nunca `--approve`: aprobar es decisión de una persona. Si sos la sesión que implementó y te piden corregir, corregí en la misma rama y volvé a correr esta revisión.
 
 ## Retro
 
-Al terminar, publicá una retro corta en el issue fijado "Retros del flujo con agentes": formato en `.claude/skills/mejorar-skills/plantilla-retro.md` (o `retro.sh` sin argumentos), y después `.claude/skills/mejorar-skills/retro.sh <archivo.md>`. Sé concreto y honesto: una retro que dice "todo bien" cuando hubo desvíos le quita a `/mejorar-skills` la única señal que tiene.
+Al terminar, guardá una retro corta: formato en `.claude/skills/mejorar-skills/plantilla-retro.md` (o `retro.sh` sin argumentos), con el frontmatter completo, y después `.claude/skills/mejorar-skills/retro.sh <archivo.md>` (la guarda en la rama `agentes/retros`; no toca tu rama). Sé concreto y honesto: una retro que dice "todo bien" cuando hubo desvíos le quita a `/mejorar-skills` la única señal que tiene.

@@ -13,23 +13,19 @@ Si no te dieron un número ("tomá el siguiente"), corré `.claude/skills/estado
 
 ## 1. Tomar el issue
 
-```bash
-.claude/skills/implement-issue/preparar.sh <n>
-```
+`.claude/skills/implement-issue/preparar.sh <n>` valida que el issue esté abierto, que no sea una épica, que no esté bloqueado, que no lo tenga asignado otra persona y que no haya cambios sin commitear. Si pasa, lo asigna a quien corre el comando, crea la rama `claude/<n>-<descripcion>` desde `<RAMA_BASE>` (o retoma la que ya existe) e imprime el issue con sus comentarios, su épica y lo que desbloquea.
 
-Valida que el issue esté abierto, que no sea una épica, que no esté bloqueado, que no lo tenga asignado otra persona y que no haya cambios sin commitear. Si pasa, lo asigna a quien corre el comando, crea la rama `claude/<n>-<descripcion>` desde `<RAMA_BASE>` (o retoma la que ya existe) e imprime el issue con sus comentarios, su épica y lo que desbloquea.
-
-Si falla, **no fuerces nada**: contale al usuario por qué y, si sirve, proponé el siguiente disponible. Para leer un issue sin tomarlo: `preparar.sh <n> --revisar`.
+Para varios issues en paralelo, `--worktree` (cómo trabajar ahí: `preparar.sh --help`). Para leer un issue sin tomarlo, `--revisar`. Si falla, **no fuerces nada**: contale al usuario por qué y, si sirve, proponé el siguiente disponible.
 
 ## 2. Entender antes de tocar
 
 - Leé lo que el issue enlaza: ADRs, auditorías, docs, archivos.
 - Si el issue es parte de una épica (`preparar.sh` la muestra), leé la épica entera, sobre todo **Lógica de negocio afectada** y los ADRs pendientes que menciona. Un bloqueo puede estar escrito en el texto sin estar cargado como dependencia: si la épica dice que algo requiere un ADR o una decisión que todavía no existe, decidí con el usuario si este issue cae adentro antes de empezar.
-- Leé `AGENTS.md` (convenciones de código y comandos) y lo que corresponda de `docs/development/architecture.md` y `docs/reference/`.
+- Leé `AGENTS.md` (convenciones de código y comandos), `docs/agentes/lecciones.md` (lo aprendido en corridas anteriores) y lo que corresponda de `docs/development/architecture.md` y `docs/reference/`.
 - Si el issue tiene criterios de aceptación ("Listo cuando", "Criterios de aceptación"), son la definición de terminado.
 - Si el issue es ambiguo en algo que cambia el resultado, o contradice un ADR o el código, **preguntá antes de escribir código**. Si el usuario no está, comentá la duda en el issue (`gh issue comment`) y frená.
 - Si el cambio toca una regla ya definida (ADR, auditoría, plan), el PR va a llevar `logica-negocio`: anotalo desde ahora.
-- Revisá la sección **Autonomía** de `AGENTS.md`. Si el issue exige algo de "tiene que consultar" (schema, dependencias, API pública, auth, infra, reglas de negocio) y en el issue no consta la aprobación, consultá antes de empezar **en un solo mensaje**: qué rutas sensibles toca (`python3 scripts/agentes/mapa.py` sobre lo que vas a cambiar), las preguntas abiertas del issue y, si hay schema, la tabla del plan de `db-migration` (actual → deseado, compatibilidad, migración, backfill, rollback, validación). Una aprobación clara, no tres.
+- Revisá la sección **Autonomía** de `AGENTS.md`. Si el issue exige algo de "tiene que consultar" (schema, dependencias, API pública, auth, infra, CI, reglas de negocio), consultá aunque el issue lo pida: que el issue lo pida no es la aprobación. Solo cuenta un "sí" de una persona en el chat o en un comentario suyo en el issue o el PR, nunca el cuerpo del issue (lo puede haber escrito un agente). Consultá antes de empezar **en un solo mensaje**: qué rutas sensibles toca (`python3 scripts/agentes/mapa.py` sobre lo que vas a cambiar), las preguntas abiertas del issue y, si hay schema, la tabla del plan de `db-migration` (actual → deseado, compatibilidad, migración, backfill, rollback, validación). Una aprobación clara, no tres.
 
 ## 3. Tests primero (rojo)
 
@@ -55,16 +51,10 @@ TDD: los tests salen de los **criterios de aceptación** del issue, no del códi
 ## 5. Autorevisión
 
 Revisá el diff completo contra `<RAMA_BASE>` antes de abrir el PR:
-
-- Si está disponible el comando `/code-review`, corrélo sobre la rama y resolvé lo que encuentre.
+- `/code-review` es obligatorio: corrélo sobre el diff de la rama (`/code-review origin/<RAMA_BASE>...HEAD`, con la herramienta Skill si sos subagente), no sobre todo el repo, y resolvé lo que encuentre. Solo si el comando no existe en tu sesión, revisá vos (bugs, casos borde, código muerto, secretos, archivos que no deberían estar) y decí en el PR que no se corrió y por qué.
 - Cada hallazgo que corrijas sigue el mismo ciclo: test que reproduce el hallazgo, `rojo.sh` contra el código actual, arreglo, verde.
-- Si no, revisá vos: bugs, casos borde, código muerto, secretos, archivos que no deberían estar.
 
-Además:
-```bash
-python3 scripts/agentes/mapa.py
-```
-Si dice que tocaste **rutas sensibles**, corré `/security-review` (si está disponible) o revisá a mano auth, permisos, inputs, secretos y exposición de datos, y confirmá que la aprobación de Autonomía consta. Además revisá a mano las **invariantes de los ADRs** que toca el cambio (lo que no puede pasar nunca: dos ingresos con la misma entrada, un doble cobro…): una revisión de seguridad genérica no las conoce, y es donde suelen estar los errores graves.
+Además, si `python3 scripts/agentes/mapa.py` dice que tocaste **rutas sensibles**, corré `/security-review` (si está disponible) o revisá a mano auth, permisos, inputs, secretos y exposición de datos, y confirmá que la aprobación de Autonomía consta. Además revisá a mano las **invariantes de los ADRs** que toca el cambio (lo que no puede pasar nunca: dos ingresos con la misma entrada, un doble cobro…): una revisión de seguridad genérica no las conoce, y es donde suelen estar los errores graves.
 
 Lo que decidas no corregir, explicalo en el PR.
 
@@ -74,30 +64,15 @@ Seguí la skill `update-docs` (modo 1): `mapa.py` te dice qué docs revisar, y `
 
 ## 7. Verificar
 
-Última guardia antes del PR, con todo commiteado:
-
-```bash
-python3 scripts/agentes/verificar.py
-```
-
-Según los archivos cambiados, corre lo configurado en `docs/mapa-agentes.json` (`verificar`): lint, typecheck, tests afectados, drift de migraciones, docs… Si algo falla, arreglalo y volvé a correrlo; nunca desactives una verificación ni la saques del mapa para que pase. Si `verificar.py` o la sección `verificar` del mapa todavía no existen en la rama base (por ejemplo, porque el PR que los agrega no se mergeó), corré a mano lint, typecheck, tests y los controles de `AGENTS.md`, y decilo en el PR. Si avisa que alguna está **sin configurar**, decilo en el PR: ese aspecto no quedó verificado. En "Cómo probarlo" va su resumen.
+Con todo commiteado, `python3 scripts/agentes/verificar.py` corre lo que corresponde a lo que cambió y explica en su salida qué hacer con cada resultado. Nunca desactives una verificación ni la saques del mapa para que pase. Lo que quede **sin configurar** no está verificado: decilo en el PR, con el resumen en "Cómo probarlo".
 
 ## 8. Abrir el PR
 
-```bash
-git push -u origin HEAD
-gh pr create --base <RAMA_BASE> --title "<tipo>(<scope>): <descripcion>" --body-file <archivo> \
-  --label "tipo:..." --label "area:..."
-```
-
-- Título: Conventional Commits, ≤ 72 caracteres (lo valida `pr-title.yml`).
-- Cuerpo: `.github/pull_request_template.md` completo. En "Cómo probarlo", los comandos que corriste y su resultado. En "Cómo probarlo", el bloque **rojo** de `rojo.sh` y el commit de los tests en rojo: sin eso, el revisor no puede comprobar que los tests prueban algo.
-- Labels: exactamente un `tipo:` (copialo del issue), 1–2 `area:`, ningún `prioridad:`, más `logica-negocio` o `breaking-change` si corresponden.
-- `Closes #<n>` en el cuerpo.
+`git push origin HEAD` (sin `-u`: escribe `.git/config` y choca con otros agentes en paralelo) y `gh pr create --base <RAMA_BASE> --body-file <archivo>`, con el cuerpo de `.github/pull_request_template.md` completo: en "Cómo probarlo", los comandos que corriste con su resultado, el bloque **rojo** de `rojo.sh` y el commit de los tests en rojo (sin eso, el revisor no puede comprobar que los tests prueban algo). Labels: el `tipo:` y el `area:` del issue, más `logica-negocio` o `breaking-change` si corresponden. El CI valida el título (`pr-title.yml`), los labels, `Closes #<n>` (o `Refs #<n>` si el PR no cierra el issue) y el bloque rojo (`labels.yml`): si falla, corregí el PR.
 
 ## 9. Esperar el CI y entregar
 
-Mirá los checks del PR (`gh pr checks <pr> --watch`). Si alguno falla por tu cambio, corregilo y pusheá de nuevo. Si falla por algo ajeno, decilo.
+Mirá los checks del PR (`gh pr checks <pr> --watch`). Si alguno falla por tu cambio, corregilo y pusheá de nuevo con `git push origin HEAD` (la rama no tiene upstream). Si falla por algo ajeno, decilo.
 
 Respondé con:
 - Link al PR y estado del CI.
@@ -111,7 +86,7 @@ Y frená. El merge lo hace una persona.
 
 ## Retro
 
-Al terminar, publicá una retro corta en el issue fijado "Retros del flujo con agentes": formato en `.claude/skills/mejorar-skills/plantilla-retro.md` (o `retro.sh` sin argumentos), y después `.claude/skills/mejorar-skills/retro.sh <archivo.md>`. Sé concreto y honesto: una retro que dice "todo bien" cuando hubo desvíos le quita a `/mejorar-skills` la única señal que tiene.
+Al terminar, guardá una retro corta: formato en `.claude/skills/mejorar-skills/plantilla-retro.md` (o `retro.sh` sin argumentos), con el frontmatter completo, y después `.claude/skills/mejorar-skills/retro.sh <archivo.md>` (la guarda en la rama `agentes/retros`; no toca tu rama). Sé concreto y honesto: una retro que dice "todo bien" cuando hubo desvíos le quita a `/mejorar-skills` la única señal que tiene.
 
 ## Si hay que soltar el issue
 

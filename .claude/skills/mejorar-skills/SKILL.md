@@ -13,13 +13,15 @@ Las skills aprenden de su uso, pero **no se reescriben solas**: esta skill propo
 .claude/skills/mejorar-skills/senales.sh [días]
 ```
 
-Trae las retros nuevas del issue fijado "Retros del flujo con agentes" (desde la última consolidación) y las señales objetivas: fallas de CI en ramas `claude/` agrupadas por workflow, y reverts. Las señales objetivas pesan más que las retros: el agente no ve sus propios puntos ciegos.
+Trae las retros nuevas de la rama `agentes/retros` (desde `consolidado.md`; un archivo por retro, con `skill_sha` para saber con qué versión de la skill se hizo, y `modelo` y `rol` para saber quién la hizo) y las señales objetivas: fallas de CI en ramas `claude/` agrupadas por workflow, y reverts. Las señales objetivas pesan más que las retros: el agente no ve sus propios puntos ciegos.
 
 Si no hay nada nuevo, decilo y terminá.
 
 ## 2. Agrupar por patrón
 
 Para cada patrón: qué pasó, en qué casos (links), y qué skill o script lo habría evitado. Un patrón es algo que se repite o que fue grave; una anécdota no es un patrón.
+
+Agrupá los desvíos y hallazgos por `modelo` y por `rol`. Si un mismo modelo falla repetido en un tipo de issue (`tipo:` o `area:`), es un caso para la regla de ruteo de `orquestar` (qué issues van a Haiku y cuáles a Sonnet): se propone en el PR, sin aflojar el escalado de `mapa.py` ni el revisor. Las retros con `modelo: desconocido` o `rol: sesion` no entran en esa comparación.
 
 ## 3. Decidir qué proponer
 
@@ -30,6 +32,7 @@ Reglas, en este orden:
 3. **Script antes que texto.** Si se puede verificar mecánicamente (un check de CI, un control en `verificar.py` o `preparar.sh`), eso; una instrucción más en Markdown es el último recurso. Las instrucciones son lo que el agente se saltea.
 4. **Largo máximo:** ninguna `SKILL.md` pasa de 120 líneas. Si un ajuste no entra, hay que sacar o pasar a script otra cosa.
 5. **Un cambio por patrón**, con su motivo y los casos que lo justifican.
+6. **Lecciones:** lo que sirve pero no alcanza para cambiar una skill (un caso, o algo que no se puede verificar con un script) va a `docs/agentes/lecciones.md`, en el mismo PR. Es lo único de las retros que leen los demás agentes: nunca leen retros crudas. Máximo 40 líneas (lo controla `check-docs.py`): si no entra, sacá la lección más vieja o la que ya pasó a una skill.
 
 ## 4. Proponer en un PR
 
@@ -48,13 +51,13 @@ Mostrá el borrador del PR antes de abrirlo y esperá un "sí".
 
 ## 5. Marcar lo consolidado
 
-Abierto el PR, comentá en el issue de retros (con `retro.sh`) un resumen corto con el link al PR y, al final, la línea:
+Abierto el PR, marcá hasta dónde consolidaste con el commit que imprimió `senales.sh` ("consolidar hasta"):
 
-```
-<!-- mejorar-skills: consolidado -->
+```bash
+.claude/skills/mejorar-skills/retro.sh --consolidado <commit> <link al PR>
 ```
 
-Así la próxima corrida empieza desde ahí.
+Escribe `consolidado.md` en la rama `agentes/retros`; la próxima corrida empieza desde ahí. Usá ese commit y no la punta actual: así no se saltean retros que llegaron mientras armabas el PR.
 
 ## Programarla
 

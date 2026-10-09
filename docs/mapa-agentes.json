@@ -53,6 +53,18 @@
         "docs/development/deploy.md"
       ],
       "motivo": "cambió la infraestructura o el deploy"
+    },
+    {
+      "cuando": [
+        ".claude/agents/**",
+        "docs/agentes/contrato-subagentes.md"
+      ],
+      "revisar": [
+        "AGENTS.md",
+        "README.md",
+        "docs/agentes/contrato-subagentes.md"
+      ],
+      "motivo": "cambió un subagente (modelo, herramientas, escalado) o su contrato"
     }
   ],
   "sensibles": [
@@ -113,6 +125,65 @@
         "**/*.sh"
       ],
       "correr": "command -v shellcheck >/dev/null || { echo 'Falta shellcheck: brew install shellcheck (macOS) o apt install shellcheck. Sin él, esta verificación no corre.'; exit 1; }; shellcheck {archivos}"
+    },
+    {
+      "nombre": "preparar",
+      "cuando": [
+        ".claude/skills/implement-issue/preparar.sh",
+        ".claude/skills/implement-issue/test-preparar.sh"
+      ],
+      "correr": "bash .claude/skills/implement-issue/test-preparar.sh"
+    },
+    {
+      "nombre": "agentes",
+      "cuando": [
+        ".claude/agents/**",
+        "docs/agentes/contrato-subagentes.md",
+        "scripts/agentes/check-docs.py",
+        "scripts/agentes/test-agentes.sh"
+      ],
+      "correr": "bash scripts/agentes/test-agentes.sh"
+    },
+    {
+      "nombre": "rojo",
+      "cuando": [
+        ".claude/skills/implement-issue/rojo.sh",
+        ".claude/skills/implement-issue/test-rojo.sh"
+      ],
+      "correr": "bash .claude/skills/implement-issue/test-rojo.sh"
+    },
+    {
+      "nombre": "orquestar",
+      "cuando": [
+        ".claude/skills/orquestar/**",
+        ".claude/agents/revisor.md",
+        ".claude/skills/implement-issue/SKILL.md",
+        ".gitignore",
+        "?perfiles/chico/BORRAR"
+      ],
+      "correr": "bash .claude/skills/orquestar/test-orquestar.sh"
+    },
+    {
+      "nombre": "retros",
+      "cuando": [
+        ".claude/skills/mejorar-skills/**"
+      ],
+      "correr": "bash .claude/skills/mejorar-skills/test-retros.sh"
+    },
+    {
+      "nombre": "base",
+      "cuando": [
+        "scripts/agentes/**"
+      ],
+      "correr": "bash scripts/agentes/test-base.sh"
+    },
+    {
+      "nombre": "init",
+      "cuando": [
+        "?scripts/init-plantilla.sh",
+        "?scripts/test-init.sh"
+      ],
+      "correr": "bash scripts/test-init.sh"
     },
     {
       "nombre": "lint",

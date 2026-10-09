@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400" role="img" aria-label="Barrilete, un dron robot atado a una correa con dos nudos que termina en un mango">
+<title>Barrilete, un dron robot atado a una correa con dos nudos que termina en un mango</title>
+<rect width="400" height="400" rx="24" fill="#E9ECF1"/>
+<path d="M200 166 Q200 220 150 236 Q100 252 140 300 Q170 336 250 340" stroke="#B4122B" stroke-width="7" fill="none" stroke-linecap="round"/>
+<circle cx="150" cy="236" r="11" fill="#FFB020"/>
+<circle cx="140" cy="300" r="11" fill="#FFB020"/>
+<rect x="246" y="328" width="72" height="24" rx="12" fill="#14161A"/>
+<rect x="258" y="333" width="48" height="10" rx="4" fill="#B4122B"/>
+<rect x="258" y="341" width="48" height="4" rx="2" fill="#5A6270"/>
+<rect x="120" y="52" width="64" height="8" rx="4" fill="#14161A"/>
+<rect x="216" y="52" width="64" height="8" rx="4" fill="#14161A"/>
+<rect x="148" y="58" width="6" height="18" rx="3" fill="#14161A"/>
+<rect x="246" y="58" width="6" height="18" rx="3" fill="#14161A"/>
+<rect x="140" y="70" width="120" height="98" rx="40" fill="#FFFFFF"/>
+<rect x="158" y="92" width="84" height="46" rx="18" fill="#14161A"/>
+<circle cx="186" cy="115" r="7" fill="#8FB0FF"/>
+<circle cx="214" cy="115" r="7" fill="#8FB0FF"/>
+<rect x="190" y="160" width="20" height="10" rx="4" fill="#B4122B"/>
+<path d="M118 150 Q108 120 118 92" stroke="#14161A" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.25"/>
+<path d="M282 150 Q292 120 282 92" stroke="#14161A" stroke-width="4" fill="none" stroke-linecap="round" opacity="0.25"/>
+</svg>

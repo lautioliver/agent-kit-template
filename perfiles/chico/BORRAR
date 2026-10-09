@@ -15,3 +15,8 @@ scripts/agentes/mapa.py
 .claude/skills/git-workflow
 scripts/agentes/verificar.py
 .claude/skills/mejorar-skills
+docs/agentes
+.claude/agents
+scripts/agentes/test-agentes.sh
+README.en.md
+.claude/skills/orquestar

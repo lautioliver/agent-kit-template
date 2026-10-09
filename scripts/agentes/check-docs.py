@@ -12,7 +12,10 @@ Revisa:
 - Rutas del mapa (docs, sensibles, verificar) que no coinciden con ningún archivo (salvo las
   marcadas como opcionales con "?" al principio); avisa de
   carpetas con código que el mapa no cubre.
-- Skills (.claude/skills/*/SKILL.md) de más de 120 líneas.
+- Lo que AGENTS.md dice que está ignorado (`.env*`…) y git no ignora.
+- Skills (.claude/skills/*/SKILL.md) de más de 120 líneas, y docs/agentes/lecciones.md de más de 40.
+- Subagentes (.claude/agents/*.md) sin name, description o tools, con un model que no es opus,
+  sonnet ni haiku, o que no remiten al contrato común (docs/agentes/contrato-subagentes.md).
 - Integrantes de .github/equipo.json repetidos o con áreas que no están en labels.yml.
 Las rutas de "ignorar_check" del mapa (por ejemplo, bitácoras históricas) no se validan.
 """
@@ -174,6 +177,55 @@ if os.path.isdir(".claude/skills"):
             lineas = sum(1 for _ in open(ruta, encoding="utf-8"))
             if lineas > MAX_SKILL:
                 errores.append(f"{ruta}: {lineas} líneas (máximo {MAX_SKILL}). Pasá algo a un script o sacá lo que no aporta.")
+
+# Lo que AGENTS.md dice que está ignorado (`.env*` están ignorados) tiene que estarlo: el agente
+# confía en esa frase y, si es falsa, termina commiteando un secreto.
+if os.path.exists("AGENTS.md"):
+    NIEGA = re.compile(r"\b(?:no|nunca)\s+(?:est[aá]n?\s+|es\s+|son\s+|se\s+)?ignor", re.I)
+    for n, linea in enumerate(open("AGENTS.md", encoding="utf-8"), 1):
+        if not re.search(r"ignorad", linea, re.I):
+            continue
+        # Cada patrón entre backticks se decide por lo que viene después, hasta el siguiente:
+        # en "`.env*` está ignorado y `dist/` no está ignorado" se valida .env* y no dist/.
+        ms = list(re.finditer(r"`([^`\s]+)`", linea))
+        fin = [sig.start() for sig in ms[1:]] + [len(linea)]
+        tramos = [(m.group(1), linea[m.end():f]) for m, f in zip(ms, fin)]
+        afirmados = [p for p, t in tramos if re.search(r"ignor", t, re.I) and not NIEGA.search(t)]
+        if not any(re.search(r"ignor", t, re.I) for _, t in tramos) and not NIEGA.search(linea):
+            afirmados = [p for p, _ in tramos]  # "Están ignorados: `.env*`, `x`": la afirmación va antes
+        for patron in afirmados:
+            ejemplo = patron.replace("*", "")  # .env* → .env
+            if not ejemplo:
+                continue
+            r = subprocess.run(["git", "check-ignore", "-q", "--no-index", ejemplo], capture_output=True)
+            if r.returncode == 1:
+                errores.append(f"AGENTS.md:{n}: dice que `{patron}` está ignorado, pero {ejemplo} no lo está. "
+                               "Agregalo a .gitignore o corregí la frase.")
+
+# Lecciones de las retros: las lee cada agente antes de empezar, así que tienen que ser cortas.
+MAX_LECCIONES, LECCIONES = 40, "docs/agentes/lecciones.md"
+if os.path.exists(LECCIONES):
+    lineas = sum(1 for _ in open(LECCIONES, encoding="utf-8"))
+    if lineas > MAX_LECCIONES:
+        errores.append(f"{LECCIONES}: {lineas} líneas (máximo {MAX_LECCIONES}). Sacá la lección más vieja o la que ya pasó a una skill.")
+
+# Subagentes: el orquestador elige el modelo por rol, y todos devuelven la misma salida.
+CONTRATO, AGENTES = "docs/agentes/contrato-subagentes.md", ".claude/agents"
+if os.path.isdir(AGENTES):
+    for nombre in sorted(os.listdir(AGENTES)):
+        if not nombre.endswith(".md"):
+            continue
+        ruta = os.path.join(AGENTES, nombre)
+        texto = open(ruta, encoding="utf-8").read()
+        m = re.match(r"---\n(.*?)\n---\n", texto, re.S)
+        campos = {k: v.strip().strip("'\"") for k, v in re.findall(r"^(\w+): *(.*)$", m.group(1), re.M)} if m else {}
+        for campo in ("name", "description", "tools"):
+            if not campos.get(campo):
+                errores.append(f"{ruta}: falta '{campo}:' en el frontmatter.")
+        if campos.get("model") not in ("opus", "sonnet", "haiku"):
+            errores.append(f"{ruta}: model '{campos.get('model', '')}' (tiene que ser opus, sonnet o haiku: el modelo es parte del rol, no se hereda).")
+        if CONTRATO not in texto:
+            errores.append(f"{ruta}: no remite al contrato común ({CONTRATO}).")
 
 for a in avisos:
     print(f"Aviso: {a}")

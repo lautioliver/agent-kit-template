@@ -20,7 +20,7 @@ import sys
 import tempfile
 
 PLANTILLA = os.environ.get("AGENT_KIT_PLANTILLA", "https://github.com/lautioliver/agent-kit-template")
-NO_TRAER = {"README.md", ".agent-kit.json", "scripts/crecer.py", ".github/equipo.json"}  # datos del proyecto, no de la plantilla
+NO_TRAER = {"README.md", "README.en.md", ".agent-kit.json", "scripts/crecer.py", ".github/equipo.json"}  # el README completo explica la plantilla, no el proyecto; el equipo es del proyecto
 PENDIENTES = ".agent-kit/pendientes"
 
 
