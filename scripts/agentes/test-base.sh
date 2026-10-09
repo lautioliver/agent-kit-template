@@ -45,6 +45,18 @@ afirmar $c "sin origin/HEAD local, la pide al remoto"
 s=$(cd "$TMP/p" && BASE=trunk python3 scripts/agentes/mapa.py 2>&1)
 ! grep -qi "aviso" <<<"$s"; afirmar $? "con BASE explícita no avisa"
 
+# Nombres con espacios, tildes o ñ: llegan literales (sin comillas ni escapes), commiteados o no,
+# y un renombre aparece una sola vez, con el nombre nuevo.
+(cd "$TMP/p" && git switch -q trunk && echo r >"viejo nombre.txt" && git add -A && git commit -qm viejo \
+  && git push -q origin trunk 2>/dev/null && git switch -q -c claude/2-nombres \
+  && echo a >"a b.txt" && echo g >"guía.md" && git add -A && git commit -qm nombres \
+  && echo c >"c d.txt" && git add "c d.txt" && echo s >"señal.md" && git mv "viejo nombre.txt" "nuevo ñ.txt")
+s=$(cd "$TMP/p" && python3 -c 'import sys; sys.path.insert(0, "scripts/agentes"); from mapa import archivos_cambiados
+print("\n".join(archivos_cambiados(["--base", "trunk"])))' 2>&1)
+esperado=$(printf '%s\n' "a b.txt" "c d.txt" "guía.md" "nuevo ñ.txt" "señal.md")
+[ "$s" = "$esperado" ]; afirmar $? "archivos_cambiados devuelve los nombres literales y el renombre una vez"
+[ "$s" = "$esperado" ] || printf '       %s\n' "$s"
+
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
 echo "Todos los tests pasan."
