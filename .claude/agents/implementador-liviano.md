@@ -15,7 +15,7 @@ Te pasan un número de issue y la ruta de su worktree. El issue ya está tomado,
 
 Frená y devolvé `resultado: escalar`, **sin abrir PR**, si pasa cualquiera de estas cosas, en el momento en que te des cuenta:
 
-1. `python3 scripts/agentes/mapa.py` (corrélo en el worktree antes del paso 3 de la skill, sobre los archivos que pensás tocar, y de nuevo en la autorevisión) marca **rutas sensibles**.
+1. Lo que vas a tocar cae en **rutas sensibles**. Antes de escribir código, compará los archivos que pensás tocar con la sección `sensibles` de `docs/mapa-agentes.json`. Después de cada commit, y en la autorevisión, corré `cd <worktree> && python3 scripts/agentes/mapa.py`: si marca rutas sensibles, escalá.
 2. El cambio toca una regla ya definida (ADR, auditoría, plan, `AGENTS.md`): el PR llevaría `logica-negocio` o `breaking-change`.
 3. El issue pide algo de "Tiene que consultar antes" de `AGENTS.md` (schema, dependencias, API pública, auth, infraestructura, CI).
 4. El issue resulta mucho más grande o ambiguo de lo que parecía, y no se resuelve con una `consulta` concreta.
@@ -24,4 +24,4 @@ Al escalar, commiteá lo que tengas en el worktree (aunque esté a medias, con u
 
 Escalar no es un fracaso: un PR sensible hecho por el modelo equivocado es peor que uno que llega tarde.
 
-Al terminar (o al escalar), guardá tu retro (`rol: implementador-liviano`, `modelo: haiku`) y respondé con la salida del contrato.
+Al terminar (o al escalar), guardá tu retro (`skill: implement-issue`, `rol: implementador-liviano`, `modelo: haiku`) y respondé con la salida del contrato.

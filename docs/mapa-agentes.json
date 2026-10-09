@@ -53,6 +53,18 @@
         "docs/development/deploy.md"
       ],
       "motivo": "cambió la infraestructura o el deploy"
+    },
+    {
+      "cuando": [
+        ".claude/agents/**",
+        "docs/agentes/contrato-subagentes.md"
+      ],
+      "revisar": [
+        "AGENTS.md",
+        "README.md",
+        "docs/agentes/contrato-subagentes.md"
+      ],
+      "motivo": "cambió un subagente (modelo, herramientas, escalado) o su contrato"
     }
   ],
   "sensibles": [

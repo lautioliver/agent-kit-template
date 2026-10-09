@@ -11,7 +11,6 @@ ok() { echo "ok   - $1"; }
 falla() { echo "FAIL - $1"; fallas=$((fallas + 1)); }
 # Uso: <condición>; afirmar $? "descripción"
 afirmar() { if [ "$1" -eq 0 ]; then ok "$2"; else falla "$2"; fi; }
-es() { test "$@"; }
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1 GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=t@t
 CONTRATO=docs/agentes/contrato-subagentes.md
 AGENTES=".claude/agents"
@@ -19,7 +18,7 @@ AGENTES=".claude/agents"
 # Copia del repo con lo commiteado y lo que está en el working tree.
 copia() {
   rm -rf "$TMP/r"; mkdir -p "$TMP/r"
-  (cd "$RAIZ" && git ls-files -co --exclude-standard -z | xargs -0 tar -cf - 2>/dev/null) | tar -xf - -C "$TMP/r"
+  (cd "$RAIZ" && git ls-files -co --exclude-standard -z | tar --null -T - -cf -) | tar -xf - -C "$TMP/r"
   (cd "$TMP/r" && git init -q && git add -A && git commit -qm base)
 }
 check() { (cd "$TMP/r" && python3 scripts/agentes/check-docs.py 2>&1); }

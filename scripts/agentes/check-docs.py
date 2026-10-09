@@ -171,12 +171,12 @@ if os.path.isdir(AGENTES):
         ruta = os.path.join(AGENTES, nombre)
         texto = open(ruta, encoding="utf-8").read()
         m = re.match(r"---\n(.*?)\n---\n", texto, re.S)
-        campos = dict(re.findall(r"^(\w+): *(.*)$", m.group(1), re.M)) if m else {}
+        campos = {k: v.strip().strip("'\"") for k, v in re.findall(r"^(\w+): *(.*)$", m.group(1), re.M)} if m else {}
         for campo in ("name", "description", "tools"):
             if not campos.get(campo):
                 errores.append(f"{ruta}: falta '{campo}:' en el frontmatter.")
         if campos.get("model") not in ("opus", "sonnet", "haiku"):
-            errores.append(f"{ruta}: model '{campos.get('model', '')}' (tiene que ser opus, sonnet o haiku).")
+            errores.append(f"{ruta}: model '{campos.get('model', '')}' (tiene que ser opus, sonnet o haiku: el modelo es parte del rol, no se hereda).")
         if CONTRATO not in texto:
             errores.append(f"{ruta}: no remite al contrato común ({CONTRATO}).")
 

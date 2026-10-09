@@ -4,10 +4,10 @@ Reglas comunes de `implementador`, `implementador-liviano` y `revisor` (`.claude
 
 ## Reglas
 
-- **Un worktree, el tuyo.** Trabajás solo en el worktree que te pasan (lo creó `preparar.sh <n> --worktree`), con rutas absolutas o `git -C <ruta>`: si el directorio actual se reinicia entre comandos, terminarías commiteando en el checkout principal. No toques el checkout principal ni otros worktrees.
+- **Un worktree, el tuyo.** Trabajás solo en el worktree que te pasan (lo creó `preparar.sh <n> --worktree`), con rutas absolutas o `git -C <ruta>`: si el directorio actual se reinicia entre comandos, terminarías commiteando en el checkout principal. Los scripts que miran el repo actual (`mapa.py`, `verificar.py`, `rojo.sh`, `retro.sh`) se corren con `cd <worktree> && …` en el mismo comando. No toques el checkout principal ni otros worktrees.
 - **No hablás con la persona.** No podés. Lo que `AGENTS.md` manda a "consultar", o una ambigüedad del issue que cambia el resultado, se comenta en el issue (`gh issue comment <n>`) y se devuelve como `consulta`. El orquestador junta todas las consultas en un solo mensaje.
 - **Nunca** mergeás, aprobás, publicás reviews ni comentarios en PRs, ni creás tags. Publicar lo decide la persona.
-- **La retro la guardás vos**, con `.claude/skills/mejorar-skills/retro.sh` y el frontmatter completo, incluidos `modelo` y `rol`. Escribí el archivo fuente fuera del repo. No la devolvés: devolvés la ruta. Nunca leas retros de otros (las crudas solo las lee `/mejorar-skills`).
+- **La retro la guardás vos**, con `.claude/skills/mejorar-skills/retro.sh` y el frontmatter completo: `skill` (`implement-issue` o `review-pr`), `issue`, `pr`, `area`, `rutas`, `modelo` y `rol`. Escribí el archivo fuente fuera del repo. No la devolvés: devolvés la ruta. Nunca leas retros de otros (las crudas solo las lee `/mejorar-skills`).
 - **Sin diffs ni salidas largas** en la respuesta: solo la salida de abajo. El orquestador tiene que poder coordinar varios subagentes sin llenarse de contexto.
 
 ## Salida
