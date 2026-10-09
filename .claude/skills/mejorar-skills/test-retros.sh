@@ -13,6 +13,7 @@ falla() { echo "FAIL - $1"; fallas=$((fallas + 1)); }
 # Uso: <condición>; afirmar $? "descripción"
 afirmar() { if [ "$1" -eq 0 ]; then ok "$2"; else falla "$2"; fi; }
 igual() { [ "$1" = "$2" ]; }
+es() { test "$@"; }
 
 # gh falso: los scripts no pueden depender de GitHub para las retros.
 mkdir -p "$TMP/bin"
@@ -240,7 +241,17 @@ grep -q "^agente_sha: $revsha$" <<<"$c"; afirmar $? "rol con espacio al final gu
 S="$RAIZ/.claude/skills/mejorar-skills/SKILL.md"
 grep -Eiq 'agrup[^.]*modelo' "$S" && grep -Eiq 'agrup[^.]*rol' "$S"; afirmar $? "mejorar-skills describe cómo agrupa por modelo y rol"
 grep -Eiq 'ruteo[^.]*orquestar|orquestar[^.]*ruteo' "$S"; afirmar $? "mejorar-skills propone cambios en la regla de ruteo de orquestar"
-[ "$(wc -l <"$S")" -le 120 ]; afirmar $? "mejorar-skills/SKILL.md tiene como máximo 120 líneas"
+es "$(wc -l <"$S")" -le 120; afirmar $? "mejorar-skills/SKILL.md tiene como máximo 120 líneas"
+
+# #88: lo que imprime retro.sh después de "Guardado en" es el campo retro: del contrato y abre la retro
+# con git show (con remoto, desde origin/: retro.sh no crea la rama local).
+valor=$(retro a review-pr 1 "formato" 2>/dev/null | sed -n 's/^Guardado en \([^ ]*\).*/\1/p')
+grep -Eq "^$RAMA:retros/[^ ]+\.md$" <<<"$valor" && git -C "$TMP/a" fetch -q origin "$RAMA" 2>/dev/null \
+  && git -C "$TMP/a" show "origin/$valor" 2>/dev/null | grep -q '^skill: review-pr$'
+afirmar $? "el valor de retro: (<rama>:<ruta>) abre la retro con git show origin/<valor>"
+C="$RAIZ/docs/agentes/contrato-subagentes.md"
+grep -q 'git show origin/agentes/retros:' "$C" && grep -q 'solo local' "$C" && grep -Eq '^retro: .*pendiente: ' "$C"
+afirmar $? "el contrato dice cómo abrirla (origin/), qué hacer con el sufijo sin remoto y con una retro pendiente"
 
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
