@@ -75,17 +75,27 @@ slug=$(printf '%s' "$titulo" | perl -CS -MUnicode::Normalize -ne 'print lc NFD($
   | perl -pe 's/[^a-z0-9]+/-/g; s/^-+|-+$//g; s/^(.{1,40})(-.*)?$/$1/ if length > 40')
 RAMA="claude/$N-$slug"
 # Si el issue ya tiene rama (claude/<n>-*, local o en origin), se retoma esa aunque el título haya
-# cambiado después de tomarlo (#41). Con más de una no se elige: se listan.
-locales=$(git for-each-ref --format='%(refname:strip=2)' "refs/heads/claude/$N-*")
-remotas=$(git ls-remote --heads origin "claude/$N-*" 2>/dev/null | sed 's|.*refs/heads/||' || true)
-existentes=$(printf '%s\n%s\n' "$locales" "$remotas" | grep -E "^claude/$N-" | sort -u || true)
+# cambiado después de tomarlo (#41). Con más de una no se elige: se listan. Las de un PR ya mergeado
+# o cerrado no cuentan: un issue reabierto arranca de nuevo.
+del_issue() { grep -E "^claude/$N-[^/]+$" || true; }
+locales=$(git for-each-ref --format='%(refname:strip=2)' "refs/heads/claude/" | del_issue)
+remotas=$(git ls-remote --heads origin "claude/$N-*") || error "no pude consultar las ramas de origin (¿red o permisos?). Sin eso podría crear una segunda rama del issue."
+remotas=$(awk '{sub("^refs/heads/", "", $2); print $2}' <<<"$remotas" | del_issue)
+existentes=""
+for r in $(printf '%s\n%s\n' "$locales" "$remotas" | sort -u); do
+  estado=$(gh pr list -R "$REPO" --head "$r" --state all --json state -q '.[0].state' 2>/dev/null || true)
+  case "$estado" in MERGED|CLOSED) continue ;; esac
+  existentes+="$r"$'\n'
+done
+existentes=$(sed '/^$/d' <<<"$existentes")
 if [ "$(grep -c . <<<"$existentes")" -gt 1 ]; then
   error "tiene más de una rama: $(paste -sd ' ' - <<<"$existentes"). Borrá las que sobran o retomá una a mano."
 fi
 [ -n "$existentes" ] && RAMA="$existentes"
 # Solo en origin: se crea la local desde ahí.
-SOLO_REMOTA=""
+SOLO_REMOTA=""; EN_ORIGIN=()
 [ -n "$existentes" ] && ! grep -qx "$RAMA" <<<"$locales" && SOLO_REMOTA=1
+grep -qx "$RAMA" <<<"$remotas" && EN_ORIGIN=("refs/heads/$RAMA:refs/remotes/origin/$RAMA")
 # El worktree va al lado del checkout principal (el primero de la lista), aunque esto
 # se corra desde otro worktree.
 if [ -n "$WORKTREE" ]; then
@@ -118,16 +128,23 @@ if [ -n "$REVISAR" ]; then
 fi
 
 # Varios agentes en paralelo pueden chocar en los locks de .git: se reintenta solo eso.
+# Trae la base y, si el issue ya tiene rama en origin, también esa (para retomarla o comparar).
 traer() {
   local intento err
   for intento in 1 2 3; do
-    err=$(git fetch -q origin "$BASE" 2>&1) && return 0
+    err=$(git fetch -q origin "$BASE" ${EN_ORIGIN[@]+"${EN_ORIGIN[@]}"} 2>&1) && return 0
     grep -Eq "\.lock'|cannot lock ref" <<<"$err" || break
     [ "$intento" -lt 3 ] && sleep "$intento"
   done
   echo "$err" >&2; return 1
 }
-traer_rama() { git fetch -q origin "refs/heads/$RAMA:refs/remotes/origin/$RAMA"; }
+# La rama local quedó atrás de la de origin (otro clon pusheó): se avisa, no se pisa.
+atrasada() {
+  [ ${#EN_ORIGIN[@]} -gt 0 ] && git show-ref -q --verify "refs/heads/$RAMA" \
+    && ! git merge-base --is-ancestor "origin/$RAMA" "$RAMA" \
+    && echo "Aviso: origin/$RAMA tiene commits que tu rama local no tiene. Traelos (git pull --ff-only) antes de seguir." >&2
+  return 0
+}
 
 # Dónde está ya la rama (si está). prune olvida los worktrees cuya carpeta se borró a mano.
 git worktree prune
@@ -141,15 +158,16 @@ if [ -z "$WORKTREE" ]; then
   [ -n "$(git status --porcelain)" ] && error "hay cambios sin commitear en el working tree."
   actual=$(cd "$(git rev-parse --show-toplevel)" && pwd -P)
   [ -n "$en_uso" ] && [ "$en_uso" != "$actual" ] && error "la rama $RAMA ya está en uso en otro worktree: $en_uso"
-  gh issue edit "$N" -R "$REPO" --add-assignee @me >/dev/null
+  # Primero la rama, después la asignación: si algo falla, el issue no queda asignado.
   traer
   if git show-ref -q --verify "refs/heads/$RAMA"; then
-    git switch -q "$RAMA"; echo "Rama existente: $RAMA (retomando)"
+    git switch -q "$RAMA"; echo "Rama existente: $RAMA (retomando)"; atrasada
   elif [ -n "$SOLO_REMOTA" ]; then
-    traer_rama; git switch -q --no-track -c "$RAMA" "origin/$RAMA"; echo "Rama existente: $RAMA (retomando desde origin)"
+    git switch -q --no-track -c "$RAMA" "origin/$RAMA"; echo "Rama existente: $RAMA (retomando desde origin)"
   else
     git switch -q -c "$RAMA" "origin/$BASE"; echo "Rama nueva: $RAMA (desde origin/$BASE)"
   fi
+  gh issue edit "$N" -R "$REPO" --add-assignee @me >/dev/null
   echo "Asignado a @$YO."
   exit 0
 fi
@@ -163,12 +181,12 @@ elif [ -e "$WT" ]; then
 fi
 traer
 if [ -n "$en_uso" ]; then
-  echo "Rama existente: $RAMA (retomando)"
+  echo "Rama existente: $RAMA (retomando)"; atrasada
 elif git show-ref -q --verify "refs/heads/$RAMA"; then
   mkdir -p "$(dirname "$WT")"; git worktree add -q "$WT" "$RAMA"
-  echo "Rama existente: $RAMA (retomando)"
+  echo "Rama existente: $RAMA (retomando)"; atrasada
 elif [ -n "$SOLO_REMOTA" ]; then
-  traer_rama; mkdir -p "$(dirname "$WT")"; git worktree add -q --no-track -b "$RAMA" "$WT" "origin/$RAMA"
+  mkdir -p "$(dirname "$WT")"; git worktree add -q --no-track -b "$RAMA" "$WT" "origin/$RAMA"
   echo "Rama existente: $RAMA (retomando desde origin)"
 else
   mkdir -p "$(dirname "$WT")"; git worktree add -q --no-track -b "$RAMA" "$WT" "origin/$BASE"
