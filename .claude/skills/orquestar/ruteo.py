@@ -28,15 +28,20 @@ def salir(mensaje):
 
 def sensibles_nombradas(texto, mapa):
     """Rutas del texto (con o sin backticks) que caen en una ruta sensible del mapa. Cuenta cada
-    palabra, tenga o no "/" (package.json, Dockerfile), y una carpeta sin barra final (src/auth)."""
+    palabra, tenga o no "/" (package.json, Dockerfile), una carpeta sin barra final (src/auth),
+    una ruta con "./" adelante o dentro de un link (…/blob/main/src/auth/x.ts), sin distinguir
+    mayúsculas. Equivocarse hacia Sonnet está bien: "infra" en prosa también cuenta."""
     from mapa import glob_a_regex
-    candidatas = {c.rstrip(".,;:") for c in re.findall(r"[\w.-]+(?:/[\w.-]*)*", texto)} - {""}
+    palabras = {c.rstrip(".,;:") for c in re.findall(r"[\w.-]+(?:/[\w.-]*)*", texto)} - {""}
     hallazgos = []
     for s in mapa.get("sensibles", []):
-        regex = [glob_a_regex(g) for g in s.get("rutas", [])]
-        for ruta in sorted(candidatas):
-            if any(r.match(ruta) or r.match(ruta.rstrip("/") + "/x") for r in regex):
-                hallazgos.append(f"{ruta} ({s.get('tipo', 'sensible')})")
+        regex = [re.compile(glob_a_regex(g).pattern, re.I) for g in s.get("rutas", [])]
+        for palabra in sorted(palabras):
+            partes = palabra.removeprefix("./").split("/")
+            # La ruta entera y cada sufijo después de una "/" (cubre los links a GitHub).
+            sufijos = ["/".join(partes[i:]) for i in range(len(partes))]
+            if any(r.match(c) or r.match(c.rstrip("/") + "/x") for c in sufijos if c for r in regex):
+                hallazgos.append(f"{palabra} ({s.get('tipo', 'sensible')})")
     return hallazgos
 
 

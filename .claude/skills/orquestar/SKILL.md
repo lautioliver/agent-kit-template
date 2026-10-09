@@ -12,6 +12,7 @@ Sos la sesión principal: repartís, coordinás y le hablás a la persona. Los s
 ## 1. Preparar
 
 - Esta sesión tiene que correr en Opus. Si no lo está, pedile a la persona `/model opus` y esperá.
+- La rama base de los PRs (`<base>`) es la de la regla de ramas de `AGENTS.md`; se la pasás a cada subagente como `BASE=<base>`.
 - Anotá la corrida (`date +%Y%m%d-%H%M`) para tu retro, y la raíz del checkout principal (`git rev-parse --show-toplevel`): todos los comandos de git van con `git -C <ruta>`.
 - Corré `.claude/skills/estado/disponibles.sh`. Solo se lanzan issues de **"Se pueden empezar ya"**: un issue bloqueado, ya asignado o con un PR abierto no se lanza nunca, aunque la persona lo nombre (decíselo).
 
@@ -23,7 +24,7 @@ Elegí hasta **3** issues de "Se pueden empezar ya", en el orden en que aparecen
 .claude/skills/orquestar/ruteo.py <n>
 ```
 
-Imprime el modelo y el motivo. Es la regla de la épica #33, decisión 2: **Haiku solo si el issue es `tipo:docs` o `tipo:task`, sin `logica-negocio` ni `breaking-change` y sin rutas sensibles nombradas en el texto. Lo demás, Sonnet.** Si en la autorevisión `mapa.py` marca rutas sensibles, Haiku frena y devuelve `escalar`, y lo relanzás con Sonnet en el mismo worktree. No cambies la regla a ojo: si un caso no encaja, proponé el cambio a `ruteo.py` en un issue.
+Imprime el modelo y el motivo. Es la regla de la épica #33, decisión 2: **Haiku solo si el issue es `tipo:docs` o `tipo:task`, sin `logica-negocio` ni `breaking-change` y sin rutas sensibles nombradas en el texto. Lo demás, Sonnet.** Si en la autorevisión `mapa.py` marca rutas sensibles, Haiku frena y devuelve `escalar`, y lo relanzás con Sonnet en el mismo worktree. `ruteo.py` se equivoca a propósito hacia Sonnet: una palabra como "infra" o "middleware" en prosa ya cuenta como ruta sensible. No cambies la regla a ojo: si un caso no encaja, proponé el cambio a `ruteo.py` en un issue.
 
 Mostrale a la persona una tabla (issue, título, modelo, motivo) y esperá el "sí". Puede sacar issues o cambiar el modelo de uno a Sonnet; a Haiku solo si `ruteo.py` lo permite.
 
@@ -36,7 +37,7 @@ git -C <raíz> fetch -q origin        # una sola vez, antes de lanzar: fetch en 
 
 `preparar.sh` valida, asigna, crea el worktree en `../<repo>-wt/<n>` e imprime `Worktree: <ruta>`. Si falla para un issue, no lo lances y anotalo para el mensaje final.
 
-Lanzá los subagentes en paralelo, en un solo mensaje, con la herramienta Agent: `subagent_type` `implementador-liviano` (Haiku) o `implementador` (Sonnet). Sin `isolation`: el worktree ya existe. En el prompt: número de issue, ruta del worktree, rama base (`BASE=<rama>`) y que siga su definición. **Nunca más de 3 implementando a la vez**, contando los relanzados.
+Lanzá los subagentes en paralelo, en un solo mensaje, con la herramienta Agent: `subagent_type` `implementador-liviano` (Haiku) o `implementador` (Sonnet). Sin `isolation`: el worktree ya existe. En el prompt: número de issue, ruta del worktree, rama base (`BASE=<base>`) y que siga su definición. **Nunca más de 3 implementando a la vez**, contando los relanzados.
 
 ## 4. Con cada resultado
 
@@ -74,7 +75,7 @@ Ofrecé publicar las revisiones (`gh pr review <pr> --comment --body-file <archi
 
 ## 6. Retro
 
-Las retros de los subagentes ya están guardadas: no las leas, ni siquiera la ruta que te devolvieron (solo las lee `/mejorar-skills`). Guardá la tuya con `.claude/skills/mejorar-skills/retro.sh <archivo>` y este frontmatter: `skill: orquestar`, `issue: <épica>` (si los issues son de una) o `corrida: <AAAAMMDD-HHMM>`, `modelo: opus`, `rol: orquestador`, `area`, `rutas`. En el cuerpo: issues lanzados con su modelo, escalados, rondas extra y cuánto tardó cada uno. Escribí el archivo fuera del repo.
+Las retros de los subagentes ya están guardadas: recibís su ruta, pero no abras esos archivos (solo los lee `/mejorar-skills`). Guardá la tuya con `.claude/skills/mejorar-skills/retro.sh <archivo>` y este frontmatter: `skill: orquestar`, `issue: <épica>` (si los issues son de una) o `corrida: <AAAAMMDD-HHMM>`, `modelo: opus`, `rol: orquestador`, `area`, `rutas`. En el cuerpo: issues lanzados con su modelo, escalados, rondas extra y cuánto tardó cada uno. Escribí el archivo fuera del repo.
 
 ## 7. Limpiar
 
@@ -83,4 +84,4 @@ Las retros de los subagentes ya están guardadas: no las leas, ni siquiera la ru
 .claude/skills/orquestar/limpiar.sh --borrar   # los borra, si la persona dice que sí
 ```
 
-No borra uno con cambios sin commitear, ni ninguno si quedan retros en `retros-pendientes/` (se perderían): en ese caso, reintentá cada retro con `retro.sh <archivo>` y volvé a correrlo.
+No borra uno con cambios sin commitear, ni ninguno si quedan retros en `retros-pendientes/` (la corrida no está cerrada hasta guardarlas): en ese caso, reintentá cada retro con `retro.sh <archivo>` y volvé a correrlo.

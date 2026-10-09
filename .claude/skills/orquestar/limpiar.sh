@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Lista los worktrees de issues cerrados (../<repo>-wt/<n>, los de preparar.sh --worktree)
 # y, con --borrar, los saca. Nunca borra uno con cambios sin commitear, ni ninguno si quedan
-# retros sin guardar en <.git común>/retros-pendientes/ (se perderían con el worktree).
+# retros sin guardar en <.git común>/retros-pendientes/: la corrida no se da por cerrada hasta
+# guardarlas con retro.sh.
 # La rama queda: solo se saca el worktree.
 # Uso: limpiar.sh [--borrar]
 set -euo pipefail
