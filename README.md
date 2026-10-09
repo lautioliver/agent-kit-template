@@ -20,6 +20,7 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
 | PRs | `.github/pull_request_template.md` |
 | Issues | `.github/ISSUE_TEMPLATE/*.yml` (formularios con labels automáticos), `.github/workflows/desbloquear.yml` (saca `estado:bloqueado` al cerrarse los bloqueantes) |
 | Skills de Claude Code | Ver [El flujo con agentes](#el-flujo-con-agentes) |
+| Subagentes por modelo | `.claude/agents/` (implementador, implementador liviano, revisor) + `docs/agentes/contrato-subagentes.md` |
 | Autonomía del agente | `AGENTS.md` → qué puede hacer solo, qué tiene que consultar y qué nunca |
 | Mapa para agentes | `docs/mapa-agentes.json` → qué docs revisar según lo que cambia, rutas sensibles, docs obligatorios |
 | Docs testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py` → links, rutas y ADRs rotos, rutas del mapa que ya no existen |
@@ -61,7 +62,7 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
    | Docs | hub con `reference/`, `development/`, `guides/` | un solo archivo de arquitectura y los ADRs |
    | Convención de GitHub | documento con opciones y decisiones | una página con las reglas |
    | Autonomía y rutas sensibles | `AGENTS.md` + `docs/mapa-agentes.json` | todo en `AGENTS.md`, con la checklist de migraciones |
-   | Sale | | épicas y `plan-feature`, `review-pr`, `estado`, bloqueos, labeler, formularios de issue, modo releases |
+   | Sale | | épicas y `plan-feature`, `review-pr`, `estado`, bloqueos, labeler, formularios de issue, modo releases, subagentes |
 
    Los archivos del modo chico están en `perfiles/chico/` (más la lista `BORRAR`); el init los aplica y borra la carpeta. Lo común (skills como `debug`, `check-docs.py`, `preparar.sh`) es el mismo archivo en los dos modos, así los arreglos llegan a ambos.
 
@@ -122,6 +123,8 @@ idea → /plan-feature → épica + issues con bloqueos
 | `/mejorar-skills` | Junta las retros (rama `agentes/retros`, un archivo por retro) y las señales objetivas (fallas de CI en ramas de agentes, reverts) y propone ajustes a las skills en un PR. Nunca afloja controles. |
 | `/estado` | Resumen del proyecto generado en el momento (versión, trabajo, épicas, PRs, deuda, decisiones, migraciones) y "¿qué puedo hacer ahora?" (`disponibles.sh`). |
 | `git-workflow` | Ramas, commits y PRs. |
+
+**Subagentes por modelo** (`.claude/agents/`): `implementador` (Sonnet), `implementador-liviano` (Haiku, para issues chicos sin rutas sensibles ni lógica de negocio; escala a Sonnet si se encuentra con algo de eso) y `revisor` (Opus, corre `review-pr` sin publicar). Comparten las reglas y el formato de salida de `docs/agentes/contrato-subagentes.md`, y cada uno trabaja en su propio worktree (`preparar.sh <n> --worktree`). `check-docs.py` valida que cada uno tenga modelo, herramientas y el contrato. No están en el modo chico.
 
 Dos puntos de control quedan siempre en manos de personas: **aprobar el plan** y **mergear**.
 
