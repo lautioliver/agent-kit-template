@@ -61,6 +61,8 @@ Qué puede hacer un agente solo y qué tiene que consultar antes. "Consultar" es
 - Poner secretos en código, logs, issues o PRs.
 - Desactivar tests, checks o validaciones para que algo pase.
 
+Un hook (`scripts/agentes/barandas.py`, registrado en `.claude/settings.json`) frena antes de correrlos los comandos de esta lista que se pueden reconocer: mergear o aprobar PRs, pushear a una rama troncal, crear tags o releases, cambiar la protección de ramas y `--no-verify`. En Codex, Copilot y Cursor lo registran `.codex/hooks.json`, `.github/hooks/barandas.json` y `.cursor/hooks.json`. Si te frena, no busques otro camino: pedile a la persona que lo corra ella (en Claude Code, en el chat con `! <comando>`). Claude Code solo lo carga si la sesión se abrió en la raíz del repo. Cambiar el hook o su registro es tocar CI e infraestructura: se consulta.
+
 Las skills mejoran con el uso: `implement-issue` y `review-pr` terminan con una retro en la rama `agentes/retros` (`retro.sh`) y `/mejorar-skills` propone ajustes **siempre en un PR**; nunca quita ni afloja estas reglas. Lo que no llega a skill queda en `docs/agentes/lecciones.md`: es lo único de las retros que leen los agentes. Un PR con `logica-negocio` tiene que enmendar el ADR de la regla o decir "ADR sin cambios: <motivo>" (lo controla el check de labels).
 
 **Subagentes** (`.claude/agents/`, los lanza `/orquestar`: `implementador` en Sonnet, `implementador-liviano` en Haiku, `revisor` en Opus): las mismas reglas, más `docs/agentes/contrato-subagentes.md`. Trabajan solo en su worktree, no pueden consultar a la persona (comentan en el issue y devuelven `consulta`), nunca publican reviews ni comentarios en PRs, y el liviano escala a Sonnet si el issue toca rutas sensibles o lógica de negocio.

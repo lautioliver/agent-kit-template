@@ -53,6 +53,11 @@ Plantilla de repo para trabajar con agentes de código **sin perder el control**
 
 ## 🚀 Empezar
 
+<!-- plantilla:inicio -->
+> [!NOTE]
+> ¿La probás por primera vez para contar cómo te fue? Seguí la [guía de prueba](docs/probar-la-plantilla.md): pasos, qué anotar y el formulario para reportarlo.
+<!-- plantilla:fin -->
+
 > [!TIP]
 > Necesitás `gh` autenticado (`gh auth status`), `jq` y `python3`. Ver [Requisitos](#requisitos).
 
@@ -71,7 +76,7 @@ Plantilla de repo para trabajar con agentes de código **sin perder el control**
    - `docs/convencion-nombres-github.md` §2: los scopes de commit.
 4. Cargá al equipo: `/add-member @usuario` por cada integrante, con las áreas que cubre. Desde ahí, cada issue que creen los agentes nace asignado (ver [Equipo y asignación](#equipo)).
 5. Creá los labels: **Actions → Labels → Run workflow**.
-6. ¿Usás Cursor? Enlazá las skills: `ln -s ../.claude/skills .cursor/skills`.
+6. ¿Usás Codex? Enlazá las skills: `mkdir -p .agents && ln -s ../.claude/skills .agents/skills`. Copilot y Cursor las leen de `.claude/skills` sin hacer nada. Ver [Herramientas](#herramientas).
 
 > [!IMPORTANT]
 > El check de docs falla a propósito mientras queden rutas `TODO/` en `docs/mapa-agentes.json`: con rutas de ejemplo, un agente nunca detectaría que tocó algo sensible. Las rutas con `?` adelante son alternativas de stack opcionales; las propias van sin `?`, así el check falla si dejan de existir.
@@ -104,6 +109,8 @@ flowchart LR
 ```
 
 Los agentes hacen el trabajo. Los dos nudos de la correa, **aprobar el plan** y **mergear** 🟡, quedan siempre en manos de personas.
+
+**Barandas.** No depende solo de lo que pide `AGENTS.md`: un hook de Claude Code (`.claude/settings.json` → `scripts/agentes/barandas.py`) frena antes de correrlos el merge y la aprobación de PRs, el push a `main` o `develop`, los tags, las releases, los cambios a la protección de ramas y `--no-verify`, también dentro de comandos compuestos. El mismo script se registra para Codex, Copilot y Cursor (ver [Herramientas](#herramientas)). Si pediste uno de esos pasos, lo corrés vos en el chat: `! gh pr merge 12`. Abrí Claude Code en la raíz del repo: desde un subdirectorio no carga `.claude/settings.json` y el hook no corre. Son barandas, no una cerradura: frenan el error común, pero un agente con tu token puede llegar por otro camino (un script propio, otra herramienta). La cerradura es GitHub: una regla en la rama base que exija una aprobación. Si trabajás solo, esa regla también te frena a vos (GitHub no deja aprobar un PR propio), así que es opcional.
 
 Durante `/implement-issue` se usan, según haga falta, `debug`, `db-migration` y `update-docs`. Si el PR toca rutas sensibles, la revisión suma `/security-review`.
 
@@ -195,6 +202,7 @@ Sin integrantes, los issues quedan sin asignar. El equipo se cambia con `/add-me
 |---|---|---|
 | 🧭 | Reglas para agentes | `AGENTS.md` (fuente), `CLAUDE.md` (lo importa), `llms.txt`, `docs/llms.txt` |
 | 🚦 | Autonomía del agente | `AGENTS.md`: qué puede hacer solo, qué tiene que consultar y qué nunca |
+| 🛑 | Barandas | `.claude/settings.json` + `scripts/agentes/barandas.py`: hook que frena merge, tags, releases y push a ramas troncales |
 | 🗺️ | Mapa para agentes | `docs/mapa-agentes.json`: qué docs revisar según lo que cambia, rutas sensibles, docs obligatorios |
 | 📚 | Hub de documentación | `docs/README.md` + `reference/`, `development/`, `guides/`, `decisions/` |
 | ⚖️ | ADRs | `docs/decisions/README.md` (cómo se escriben) + `ADR-000-plantilla.md` |
@@ -268,6 +276,33 @@ Inicializa la versión nueva con los datos del proyecto y la compara archivo por
 - Lo que el proyecto borró no vuelve.
 
 Muestra qué cambió según el changelog y no commitea: revisás el diff y abrís un PR. Un proyecto creado antes de las versiones también se actualiza, pero sin fusionar: lo que modificó queda entero en `.agent-kit/pendientes/`.
+
+<a name="herramientas"></a>
+
+## 🧩 Herramientas
+
+La plantilla está hecha y probada con Claude Code. Las demás leen buena parte de lo mismo:
+
+| | Claude Code | Codex | GitHub Copilot | Cursor |
+|---|---|---|---|---|
+| Reglas (`AGENTS.md`) | ✅ | 📄 | 📄 agente en la nube, VS Code y CLI | 📄 |
+| Skills (`.claude/skills`) | ✅ `/implement-issue 3` | 📄 desde `.agents/skills`: enlazalas (paso 6 de [Empezar](#empezar)) | 📄 las lee tal cual | 📄 las lee tal cual |
+| Subagentes y `/orquestar` | ✅ | ❌ usa otro formato (`.codex/agents/*.toml`) | 📄 solo VS Code lee `.claude/agents` | 📄 lee `.claude/agents`; los modelos (`sonnet`, `haiku`) no se traducen |
+| [Barandas](#el-flujo) | ✅ `.claude/settings.json` | 📄 `.codex/hooks.json`, si confiás en el proyecto y aprobás el hook con `/hooks` | 📄 `.github/hooks/barandas.json` (nube y CLI). En VS Code, solo con `chat.useClaudeHooks` | 📄 `.cursor/hooks.json` |
+
+✅ probado en este repo. 📄 lo dice la documentación de la herramienta (octubre de 2026), sin probar acá: [Codex](https://learn.chatgpt.com/docs/build-skills) ([hooks](https://learn.chatgpt.com/docs/hooks)), [Copilot](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) ([hooks](https://docs.github.com/en/copilot/reference/hooks-reference), [VS Code](https://code.visualstudio.com/docs/copilot/customization/custom-agents)), [Cursor](https://cursor.com/docs/context/skills) ([hooks](https://cursor.com/docs/agent/hooks), [subagentes](https://cursor.com/docs/context/subagents)). ❌ no funciona. Las barandas necesitan `bash`, `git` y `python3`: en Windows, solo con WSL.
+
+Las skills no tienen nada propio de Claude Code: son Markdown con scripts en bash y Python. Lo que sí es propio es la orquestación: subagentes por modelo, worktrees y el contrato de salida. El agente en la nube de Copilot, además, no puede mergear: solo pushea a su rama `copilot/…`.
+
+<details>
+<summary><b>✅ Probarla en otra herramienta</b></summary>
+
+1. **Reglas:** preguntale "¿qué no podés hacer sin consultar?". Tiene que citar la sección Autonomía de `AGENTS.md`.
+2. **Skills:** pedile "seguí la skill implement-issue para el issue N" (o `/implement-issue N` si la reconoce). Tiene que tomar el issue con `preparar.sh`, commitear los tests en rojo con `rojo.sh` y abrir el PR sin mergearlo.
+3. **Barandas:** pedile que corra `gh pr merge 999999`. El hook lo tiene que frenar antes de ejecutarlo.
+4. Si algo no anda, abrí un issue con la herramienta, su versión, el paso y el error textual. Así la tabla pasa de 📄 a ✅ o ❌.
+
+</details>
 
 <a name="requisitos"></a>
 

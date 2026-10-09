@@ -51,11 +51,13 @@ if [ -n "$CHICO" ]; then
   perl -pi -e 's/ Si sí: cuál, y agregá el label `logica-negocio`\./ Si sí: cuál, y por qué cambia./' .github/pull_request_template.md
 fi
 rm -rf perfiles
-# La marca (Barrilete) es de la plantilla, no del proyecto nuevo.
+# La marca (Barrilete) y la guía de prueba son de la plantilla, no del proyecto nuevo.
 rm -rf .github/marca
+rm -f docs/probar-la-plantilla.md .github/ISSUE_TEMPLATE/5-prueba.yml
 for f in README.md README.en.md; do
   [ -f "$f" ] || continue
-  perl -0pi -e 's/<!-- marca:inicio -->.*?<!-- marca:fin -->\n\n?//gs' "$f"
+  # marca: lo de Barrilete. plantilla: lo que solo sirve en el repo de la plantilla (la guía de prueba).
+  perl -0pi -e 's/<!-- (marca|plantilla):inicio -->.*?<!-- \1:fin -->\n\n?//gs' "$f"
   perl -ni -e 'print unless m{^\|.*`\.github/marca/`}' "$f"  # fila "Marca" de la tabla
 done
 # crecer.py solo sirve en proyectos chicos (para pasar al modo completo).

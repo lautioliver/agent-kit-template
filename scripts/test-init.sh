@@ -31,6 +31,9 @@ for modo in completo chico; do
   (cd "$p" && git add -A && git commit -qm init)
 
   ! [ -e "$p/scripts/test-init.sh" ]; afirmar $? "[$modo] el init borra este test (no sirve sin init-plantilla.sh)"
+  ! [ -e "$p/docs/probar-la-plantilla.md" ] && ! [ -e "$p/.github/ISSUE_TEMPLATE/5-prueba.yml" ]
+  afirmar $? "[$modo] el init borra la guía y el formulario de prueba (son de la plantilla, no del proyecto)"
+  ! grep -rq 'probar-la-plantilla' "$p"/README*.md; afirmar $? "[$modo] el README del proyecto no enlaza la guía de prueba borrada"
   n=$(cd "$p" && git check-ignore .env .env.local scripts/agentes/__pycache__ | wc -l | tr -d ' ')
   es "$n" = 3; afirmar $? "[$modo] .env, .env.local y __pycache__ están ignorados"
   ! (cd "$p" && git check-ignore -q .env.example); afirmar $? "[$modo] .env.example no está ignorado"
@@ -49,6 +52,18 @@ for modo in completo chico; do
   fi
 done
 grep -q '"nombre": "init"' "$RAIZ/docs/mapa-agentes.json"; afirmar $? "la plantilla sin inicializar conserva la verificación init"
+[ -f "$RAIZ/docs/probar-la-plantilla.md" ] && grep -q 'probar-la-plantilla.md' "$RAIZ/README.md" \
+  && grep -q '5-prueba.yml' "$RAIZ/docs/probar-la-plantilla.md"
+afirmar $? "la plantilla trae la guía de prueba, enlazada desde el README, y la guía lleva al formulario"
+# Los pasos del formulario son los de la guía, con el mismo número y nombre.
+python3 - "$RAIZ" <<'PY'
+import re, sys
+raiz = sys.argv[1]
+guia = re.findall(r"^(\d+)\. \*\*([^*:]+):?\*\*", open(f"{raiz}/docs/probar-la-plantilla.md", encoding="utf-8").read(), re.M)
+form = re.findall(r"^ +- \"?(\d+)\. ([^\"\n]+)\"?$", open(f"{raiz}/.github/ISSUE_TEMPLATE/5-prueba.yml", encoding="utf-8").read(), re.M)
+sys.exit(0 if guia and [(n, t.strip()) for n, t in guia] == [(n, t.strip()) for n, t in form] else 1)
+PY
+afirmar $? "los pasos del formulario de prueba coinciden con los de la guía"
 
 # Los test-*.sh que deja el init pasan en el proyecto nuevo (los corre el CI), con cualquier rama base.
 for combinacion in "completo main" "chico main" "completo develop" "chico develop"; do
