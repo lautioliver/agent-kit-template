@@ -33,7 +33,7 @@ for par in implementador:sonnet implementador-liviano:haiku revisor:opus; do
   grep -q "^tools: " <<<"$fm"; afirmar $? "$rol: lista sus herramientas (tools:)"
   grep -q "$CONTRATO" "$f" 2>/dev/null; afirmar $? "$rol: remite al contrato de salida común"
 done
-! grep -q "Edit\|Write" <<<"$(frontmatter "$RAIZ/$AGENTES/revisor.md" 2>/dev/null | grep '^tools:')"; afirmar $? "revisor: no puede editar archivos"
+! grep -q "Edit" <<<"$(frontmatter "$RAIZ/$AGENTES/revisor.md" 2>/dev/null | grep '^tools:')"; afirmar $? "revisor: no puede editar código (Write solo para la revisión y la retro)"
 
 # 2. El contrato de salida está en un solo lugar, con todos los resultados.
 for r in pr consulta escalar soltado bloqueantes; do
