@@ -200,6 +200,35 @@ class Hook(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
 
 
+class OtrasHerramientas(unittest.TestCase):
+    """El mismo script sirve de hook en Codex, Copilot y Cursor, cada uno con su formato de entrada."""
+
+    def correr(self, entrada):
+        return subprocess.run([sys.executable, os.path.join(AQUI, "barandas.py")], input=json.dumps(entrada),
+                              capture_output=True, text=True)
+
+    def test_copilot_con_argumentos_como_texto_json(self):
+        r = self.correr({"toolName": "bash", "toolArgs": json.dumps({"command": "gh pr merge 1"}), "cwd": AQUI})
+        self.assertEqual(r.returncode, 2)
+
+    def test_copilot_con_argumentos_como_objeto(self):
+        r = self.correr({"toolName": "bash", "toolArgs": {"command": "gh pr merge 1"}, "cwd": AQUI})
+        self.assertEqual(r.returncode, 2)
+
+    def test_copilot_deja_pasar_otra_herramienta(self):
+        r = self.correr({"toolName": "edit", "toolArgs": {"path": "gh pr merge"}})
+        self.assertEqual(r.returncode, 0, r.stderr)
+
+    def test_cursor_before_shell_execution(self):
+        r = self.correr({"hook_event_name": "beforeShellExecution", "command": "git push origin main", "cwd": AQUI})
+        self.assertEqual(r.returncode, 2)
+
+    def test_deja_pasar_un_comando_permitido_en_cualquier_formato(self):
+        for e in ({"toolName": "bash", "toolArgs": {"command": "gh pr view 1"}},
+                  {"hook_event_name": "beforeShellExecution", "command": "git status"}):
+            self.assertEqual(self.correr(e).returncode, 0)
+
+
 class Config(unittest.TestCase):
     def test_settings_registra_el_hook_para_bash(self):
         raiz = os.path.dirname(os.path.dirname(AQUI))
@@ -207,6 +236,21 @@ class Config(unittest.TestCase):
             cfg = json.load(f)
         hooks = [h for g in cfg["hooks"]["PreToolUse"] if g["matcher"] == "Bash" for h in g["hooks"]]
         self.assertTrue(any("scripts/agentes/barandas.py" in h["command"] for h in hooks))
+
+    def test_codex_registra_el_hook_para_bash(self):
+        raiz = os.path.dirname(os.path.dirname(AQUI))
+        with open(os.path.join(raiz, ".codex", "hooks.json"), encoding="utf-8") as f:
+            cfg = json.load(f)
+        hooks = [h for g in cfg["hooks"]["PreToolUse"] if g["matcher"] == "Bash" for h in g["hooks"]]
+        self.assertTrue(any("scripts/agentes/barandas.py" in h["command"] for h in hooks))
+
+    def test_copilot_registra_el_hook_para_bash(self):
+        raiz = os.path.dirname(os.path.dirname(AQUI))
+        with open(os.path.join(raiz, ".github", "hooks", "barandas.json"), encoding="utf-8") as f:
+            cfg = json.load(f)
+        self.assertEqual(cfg["version"], 1)
+        hooks = [h for h in cfg["hooks"]["preToolUse"] if h.get("matcher") == "bash"]
+        self.assertTrue(any("scripts/agentes/barandas.py" in h["bash"] for h in hooks))
 
 
 if __name__ == "__main__":
