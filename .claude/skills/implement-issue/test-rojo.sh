@@ -65,6 +65,20 @@ E       AttributeError: 'Carrito' object has no attribute 'total'
 FAILED test_x.py::test_t - AttributeError: 'Carrito' object has no attribute 'total'
 1 failed in 0.02s"
 
+# pytest: rojos válidos que no traen "E   assert".
+rojo 0 "pytest: pytest.raises que no se cumple" 1 "    def test_t():
+        with pytest.raises(ValueError):
+>           validar(-1)
+E           Failed: DID NOT RAISE <class 'ValueError'>
+=========================== short test summary info ============================
+FAILED test_x.py::test_t - Failed: DID NOT RAISE <class 'ValueError'>
+1 failed in 0.02s"
+rojo 0 "pytest --tb=line: la aserción solo está en el resumen" 1 "/p/test_x.py:3: assert 0 == 3
+=========================== short test summary info ============================
+FAILED test_x.py::test_t - assert 0 == 3
+1 failed in 0.02s"
+rojo 0 "pytest con color: la línea E empieza con códigos ANSI" 1 "$(printf '\033[1m\033[31mE       assert 0 == 3\033[0m\nFAILED test_x.py::test_t - assert 0 == 3')"
+
 # vitest / jest
 rojo 2 "vitest: TypeError sobre undefined" 1 " FAIL  src/suma.test.ts > suma > suma dos números
 TypeError: Cannot read properties of undefined (reading 'total')
