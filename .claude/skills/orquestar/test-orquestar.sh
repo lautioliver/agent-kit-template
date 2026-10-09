@@ -131,6 +131,20 @@ git -C "$P" worktree unlock "$WT/13"
 
 s=$(cd "$P" && "$AQUI/limpiar.sh" --borrar 2>&1); c=$?
 afirmar $c "limpiar.sh --borrar termina bien"
+
+# Ramas de issues cerrados cuyo PR no se mergeó: se borran la local y la remota (sin gh --delete-branch).
+git init -q --bare -b main "$TMP/remoto.git"; git -C "$P" remote add origin "$TMP/remoto.git"
+git -C "$P" push -q origin main 2>/dev/null; git -C "$P" remote set-head origin main
+for n in 15 16 17; do git -C "$P" branch "claude/$n-x" main; (cd "$P" && git switch -q "claude/$n-x" && git commit -q --allow-empty -m "r$n" && git push -q origin "claude/$n-x" 2>/dev/null && git switch -q main); done
+(cd "$P" && git merge -q --no-ff --no-edit claude/16-x && git push -q origin main 2>/dev/null)
+issue 15 closed "tipo:task" "Cerrado sin mergear."
+issue 16 closed "tipo:task" "Cerrado y mergeado."
+issue 17 open "tipo:task" "Abierto."
+s=$(cd "$P" && BASE=main "$AQUI/limpiar.sh" 2>&1)
+grep -q "claude/15-x.*sin mergear" <<<"$s" && ! grep -q "claude/16-x" <<<"$s" && ! grep -q "claude/17-x" <<<"$s"; afirmar $? "lista las ramas de issues cerrados que no se mergearon"
+(cd "$P" && BASE=main "$AQUI/limpiar.sh" --borrar >/dev/null 2>&1)
+! git -C "$P" rev-parse -q --verify claude/15-x >/dev/null && ! git --git-dir="$TMP/remoto.git" rev-parse -q --verify claude/15-x >/dev/null; afirmar $? "--borrar borra la rama local y la remota de un issue cerrado sin mergear"
+git -C "$P" rev-parse -q --verify claude/16-x >/dev/null && git -C "$P" rev-parse -q --verify claude/17-x >/dev/null; afirmar $? "--borrar no toca la rama mergeada ni la de un issue abierto"
 ! es -d "$WT/10" && ! es -d "$WT/13"; afirmar $? "--borrar borra los worktrees limpios de issues cerrados"
 es -d "$WT/11" && es -f "$WT/12/sucio.txt"; afirmar $? "--borrar no toca el abierto ni el que tiene cambios"
 git -C "$P" rev-parse -q --verify claude/10-x >/dev/null; afirmar $? "--borrar deja la rama (solo saca el worktree)"
@@ -146,8 +160,15 @@ for f in .claude/skills/implement-issue/SKILL.md .gitignore perfiles/chico/BORRA
 done
 R="$RAIZ/.claude/agents/revisor.md"
 grep -q 'refs/revision/<pr>-<sufijo>' "$R" && grep -q -- '-revision-<pr>-<sufijo>' "$R"; afirmar $? "revisor: ref y worktree con sufijo único (dos revisiones del mismo PR no chocan)"
-# shellcheck disable=SC2016  # $raiz literal del markdown
-grep -q 'cd "$raiz" && .*retro.sh' "$R"; afirmar $? "revisor: guarda la retro desde el checkout principal (agente_sha de la versión que corrió)"
+! grep -q 'checkout principal.*retro\|retro.*checkout principal' "$R" "$RAIZ/docs/agentes/contrato-subagentes.md"; afirmar $? "la retro del revisor no depende del checkout principal (podía estar en una rama vieja)"
+grep -q 'worktree de revisión.*retro.sh\|retro.sh.*worktree de revisión' "$R"; afirmar $? "revisor: guarda la retro desde su worktree de revisión"
+for a in implementador implementador-liviano revisor; do
+  grep -q 'agente_sha' "$RAIZ/.claude/agents/$a.md"; afirmar $? "$a: escribe en la retro el agente_sha que le pasa el orquestador"
+done
+grep -q 'agente_sha' "$AQUI/SKILL.md"; afirmar $? "orquestar le pasa agente_sha a cada subagente"
+grep -qi 'markdown crudo' "$R"; afirmar $? "revisor: el texto de la revisión va en Markdown crudo, sin entidades HTML"
+grep -qi 'relanzado.*consulta\|consulta.*relanzado' "$AQUI/SKILL.md"; afirmar $? "orquestar: dice qué hacer si un relanzado devuelve consulta"
+grep -q 'code-review.*origin/<RAMA_BASE>\.\.\.HEAD' "$RAIZ/.claude/skills/implement-issue/SKILL.md"; afirmar $? "implement-issue corre /code-review sobre el diff de la rama"
 (cd "$RAIZ" && git check-ignore -q .claude/worktrees/agente-x); afirmar $? ".claude/worktrees/ está ignorado (el aislamiento de Claude Code no ensucia el checkout)"
 grep -qx '.claude/skills/orquestar' "$RAIZ/perfiles/chico/BORRAR" 2>/dev/null || ! [ -d "$RAIZ/perfiles" ]; afirmar $? "el modo chico borra la skill orquestar"
 
