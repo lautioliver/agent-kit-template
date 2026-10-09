@@ -63,6 +63,12 @@ Error: Cannot find module './suma' imported from /p/src/suma.test.ts
 rojo 2 "jest: No tests found" 1 "No tests found, exiting with code 1
 Run with \`--passWithNoTests\` to exit with code 0"
 
+# Los test-*.sh de la plantilla (ok/FAIL con afirmar)
+rojo 0 "test-*.sh: una afirmación que falla" 1 "ok   - crea la rama
+FAIL - asigna el issue
+
+1 test(s) fallaron."
+
 # Cualquier herramienta
 rojo 2 "comando inexistente (exit 127)" 127 "bash: comando-que-no-existe: command not found"
 rojo 2 "comando sin permiso de ejecución (exit 126)" 126 "bash: ./test.sh: Permission denied"
