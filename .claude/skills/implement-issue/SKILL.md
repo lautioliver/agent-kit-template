@@ -51,7 +51,7 @@ TDD: los tests salen de los **criterios de aceptación** del issue, no del códi
 ## 5. Autorevisión
 
 Revisá el diff completo contra `<RAMA_BASE>` antes de abrir el PR:
-- Si está disponible el comando `/code-review`, corrélo sobre la rama y resolvé lo que encuentre.
+- Si está disponible el comando `/code-review`, corrélo sobre el diff de la rama (`/code-review origin/<RAMA_BASE>...HEAD`), no sobre todo el repo, y resolvé lo que encuentre.
 - Cada hallazgo que corrijas sigue el mismo ciclo: test que reproduce el hallazgo, `rojo.sh` contra el código actual, arreglo, verde.
 - Si no, revisá vos: bugs, casos borde, código muerto, secretos, archivos que no deberían estar.
 

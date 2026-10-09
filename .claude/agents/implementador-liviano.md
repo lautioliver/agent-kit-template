@@ -25,4 +25,4 @@ Lo demás sigue el contrato: una ambigüedad del issue es `consulta`, y un alcan
 
 Escalar no es un fracaso: un PR sensible hecho por el modelo equivocado es peor que uno que llega tarde.
 
-Al terminar (o al escalar), guardá tu retro (`skill: implement-issue`, `rol: implementador-liviano`, `modelo: haiku`) y respondé con la salida del contrato.
+Al terminar (o al escalar), guardá tu retro (`skill: implement-issue`, `rol: implementador-liviano`, `modelo: haiku`, y `agente_sha:` con el valor que te pasó el orquestador) y respondé con la salida del contrato.

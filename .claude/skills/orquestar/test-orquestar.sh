@@ -152,7 +152,6 @@ git -C "$P" rev-parse -q --verify claude/10-x >/dev/null; afirmar $? "--borrar d
 # 3. Lo que hace falta para correr en paralelo (criterios de #37).
 ! grep -q 'push -u' "$RAIZ/.claude/skills/implement-issue/SKILL.md"; afirmar $? "implement-issue pushea sin -u (el -u escribe .git/config y choca en paralelo)"
 ! grep -Eq 'pushe[aá] de nuevo[^`]*$' "$RAIZ/.claude/skills/implement-issue/SKILL.md" && grep -q 'git push origin HEAD' "$RAIZ/.claude/agents/implementador.md"; afirmar $? "cada push dice git push origin HEAD (la rama no tiene upstream)"
-grep -q 'revisor.*checkout principal.*retro' "$RAIZ/docs/agentes/contrato-subagentes.md"; afirmar $? "el contrato dice que el revisor guarda la retro desde el checkout principal"
 M="$RAIZ/docs/mapa-agentes.json"
 for f in .claude/skills/implement-issue/SKILL.md .gitignore perfiles/chico/BORRAR; do
   python3 -c "import json,sys; v=[x for x in json.load(open('$M'))['verificar'] if x['nombre']=='orquestar'][0]; sys.exit(0 if any(g.lstrip('?')=='$f' for g in v['cuando']) else 1)"
@@ -160,7 +159,8 @@ for f in .claude/skills/implement-issue/SKILL.md .gitignore perfiles/chico/BORRA
 done
 R="$RAIZ/.claude/agents/revisor.md"
 grep -q 'refs/revision/<pr>-<sufijo>' "$R" && grep -q -- '-revision-<pr>-<sufijo>' "$R"; afirmar $? "revisor: ref y worktree con sufijo único (dos revisiones del mismo PR no chocan)"
-! grep -q 'checkout principal.*retro\|retro.*checkout principal' "$R" "$RAIZ/docs/agentes/contrato-subagentes.md"; afirmar $? "la retro del revisor no depende del checkout principal (podía estar en una rama vieja)"
+# shellcheck disable=SC2016  # $raiz literal del markdown
+! grep -q 'retro[^.]*desde el checkout principal\|cd "$raiz" && [^`]*retro.sh' "$R" "$RAIZ/docs/agentes/contrato-subagentes.md"; afirmar $? "la retro del revisor no depende del checkout principal (podía estar en una rama vieja)"
 grep -q 'worktree de revisión.*retro.sh\|retro.sh.*worktree de revisión' "$R"; afirmar $? "revisor: guarda la retro desde su worktree de revisión"
 for a in implementador implementador-liviano revisor; do
   grep -q 'agente_sha' "$RAIZ/.claude/agents/$a.md"; afirmar $? "$a: escribe en la retro el agente_sha que le pasa el orquestador"
