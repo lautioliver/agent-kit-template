@@ -196,8 +196,31 @@ printf -- '---\nskill: orquestar\ncorrida: 20261008-1530\nmodelo: opus\nrol: orq
 (cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/corr.md" >/dev/null 2>&1)
 archivos | grep -Eq 'retros/[0-9]{4}-[0-9]{2}-[0-9]{2}-orquestar-20261008-1530\.md$'; afirmar $? "orquestar sin épica se identifica con corrida: AAAAMMDD-HHMM"
 
-printf -- '---\nskill: orquestar\ncorrida: ayer\n---\nmala\n' >"$TMP/corr-mal.md"
-! (cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/corr-mal.md" >/dev/null 2>&1); afirmar $? "orquestar con corrida mal formada se rechaza"
+printf -- '---\nskill: orquestar\ncorrida: ayer\npr: 47\n---\nmal formada\n' >"$TMP/corr-mal.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/corr-mal.md" >/dev/null 2>&1)
+archivos | grep -Eq 'retros/[0-9]{4}-[0-9]{2}-[0-9]{2}-orquestar-pr47\.md$'; afirmar $? "corrida mal formada cae al pr y la retro se nombra prN"
+
+printf -- '---\nskill: implement-issue\ncorrida: 20261008-1530\n---\ncorrida fuera de orquestar\n' >"$TMP/corr-ii.md"
+! (cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/corr-ii.md" >/dev/null 2>&1); afirmar $? "corrida: solo vale con skill orquestar: implement-issue sin issue ni pr se rechaza"
+
+# Campos vacíos y espacios al final (revisión de #46).
+printf -- '---\nskill: implement-issue\nissue: 61\nmodelo:\nrol:\n---\nvacios\n' >"$TMP/vacios.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/vacios.md" >/dev/null 2>&1)
+c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'implement-issue-61' | head -1)" 2>/dev/null)
+grep -q '^modelo: desconocido$' <<<"$c" && grep -q '^rol: sesion$' <<<"$c" && ! grep -Eq '^(modelo|rol):$' <<<"$c"; afirmar $? "modelo y rol vacíos se guardan como desconocido y sesion"
+
+printf -- '---\nskill: implement-issue\nissue: 62\nmodelo: haiku \nrol: implementador-liviano \n---\nespacios\n' >"$TMP/esp.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/esp.md" >/dev/null 2>&1)
+c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'implement-issue-62' | head -1)" 2>/dev/null)
+grep -q '^modelo: haiku$' <<<"$c" && grep -q '^rol: implementador-liviano$' <<<"$c" && grep -q "^agente_sha: $agsha$" <<<"$c"; afirmar $? "espacios al final no se guardan en modelo/rol y no impiden agente_sha"
+
+mkdir -p "$TMP/g/.claude/agents"; echo "# revisor" >"$TMP/g/.claude/agents/revisor.md"
+(cd "$TMP/g" && git add .claude/agents && git commit -qm "agente revisor")
+revsha=$(cd "$TMP/g" && git log -1 --format=%H -- .claude/agents/revisor.md)
+printf -- '---\nskill: review-pr\npr: 63\nmodelo: opus\nrol: revisor \n---\nrev2\n' >"$TMP/rev2.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/rev2.md" >/dev/null 2>&1)
+c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'review-pr-pr63' | head -1)" 2>/dev/null)
+grep -q "^agente_sha: $revsha$" <<<"$c"; afirmar $? "rol con espacio al final guarda agente_sha igual"
 
 # La skill de mejorar-skills describe el agrupado por modelo y rol y el ruteo de orquestar.
 S="$RAIZ/.claude/skills/mejorar-skills/SKILL.md"
