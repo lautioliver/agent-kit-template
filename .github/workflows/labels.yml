@@ -1,7 +1,8 @@
 # .github/workflows/labels.yml — <PROYECTO>
 # 1) sync:    aplica .github/labels.yml al repo (borra labels que no estén en el archivo).
 # 2) labeler: etiqueta PRs según rama y archivos (.github/labeler.yml).
-# 3) check:   valida los labels del PR contra docs/convencion-nombres-github.md §5.
+# 3) check:   valida los labels del PR contra docs/convencion-nombres-github.md §5 y, en las ramas
+#             de agentes (claude/…), que el cuerpo cierre un issue y muestre el rojo de los tests.
 name: Labels
 
 on:
@@ -104,5 +105,13 @@ jobs:
               const explica = /ADR sin cambios:\s*\S/i.test(pr.body || '');
               if (!tocaAdr && !explica) errors.push('logica-negocio sin cambios en docs/decisions/: enmendá el ADR que define la regla, o agregá al cuerpo "ADR sin cambios: <motivo>".');
             }
-            if (errors.length) core.setFailed('Labels fuera de convención:\n- ' + errors.join('\n- '));
+            // Ramas de agentes: lo que implement-issue pide en el cuerpo, validado acá en vez de en la skill.
+            if (/^claude\//.test(pr.head.ref)) {
+              const body = pr.body || '';
+              if (!/\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?):?\s+#\d+/i.test(body))
+                errors.push('el cuerpo no cierra ningún issue: agregá "Closes #<n>".');
+              if (!/Rojo antes de implementar|sin test/i.test(body))
+                errors.push('falta en "Cómo probarlo" el bloque "Rojo antes de implementar" de rojo.sh (o "sin test" con el motivo).');
+            }
+            if (errors.length) core.setFailed('PR fuera de convención:\n- ' + errors.join('\n- '));
             else core.info('Labels OK: ' + names.join(', '));
