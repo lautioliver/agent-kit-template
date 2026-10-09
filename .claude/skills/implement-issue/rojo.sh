@@ -32,6 +32,8 @@ fi
 #    pytest también marca estas como FAILED.
 mala='Cannot find module|Failed to resolve import|ERR_MODULE_NOT_FOUND|SyntaxError|ReferenceError|is not defined|is not a function|is not a constructor|Transform failed|error TS[0-9]{4}'
 mala+='|ImportError|ModuleNotFoundError|AttributeError: module|NameError|ERROR collecting|no tests ran|collected 0 items|No test files found|No tests found'
+# Símbolo inexistente o firma incorrecta: el test corre, pero rompe antes de la aserción.
+mala+="|AttributeError: '[^']*' object has no attribute|TypeError: .*(takes [0-9]+ positional argument|missing [0-9]+ required|unexpected keyword argument|Cannot read propert(y|ies) of (undefined|null))"
 if grep -Eq "$mala" "$salida"; then
   echo "Los tests fallan, pero por una razón que no es el comportamiento:"
   grep -E "$mala" "$salida" | sort -u | head -5 | sed 's/^/  /'
@@ -40,9 +42,11 @@ if grep -Eq "$mala" "$salida"; then
   exit 2
 fi
 
-# 3. Evidencia positiva de una aserción. Sin ella no se da el rojo por bueno.
-# ^FAIL - es el formato de los test-*.sh de esta plantilla (afirmar).
-aserciones='AssertionError|assert |Expected|Received|expected .* to|✗|×|FAILED .*::|^FAIL - '
+# 3. Evidencia positiva de una aserción. Sin ella no se da el rojo por bueno (un KeyError, por
+#    ejemplo, sale con 2). FAILED (pytest) y ×/✗ (vitest) marcan cualquier test que falla, no
+#    una aserción: no alcanzan. "E   assert" es la línea de pytest con la aserción que falló
+#    (">   assert" es el código del test). ^FAIL - es el formato de los test-*.sh de la plantilla.
+aserciones='AssertionError|^E +assert |Expected|Received|expected .* to|^FAIL - '
 if ! grep -Eq "$aserciones" "$salida"; then
   echo "Los tests fallan, pero no reconozco esta falla como una aserción; revisala y, si es válida,"
   echo "agregá el patrón a rojo.sh. Últimas líneas:"
