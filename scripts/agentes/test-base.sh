@@ -11,6 +11,7 @@ ok() { echo "ok   - $1"; }
 falla() { echo "FAIL - $1"; fallas=$((fallas + 1)); }
 # Uso: <condición>; afirmar $? "descripción"
 afirmar() { if [ "$1" -eq 0 ]; then ok "$2"; else falla "$2"; fi; }
+es() { test "$@"; }
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=t@t
 unset BASE
@@ -54,8 +55,14 @@ s=$(cd "$TMP/p" && BASE=trunk python3 scripts/agentes/mapa.py 2>&1)
 s=$(cd "$TMP/p" && python3 -c 'import sys; sys.path.insert(0, "scripts/agentes"); from mapa import archivos_cambiados
 print("\n".join(archivos_cambiados(["--base", "trunk"])))' 2>&1)
 esperado=$(printf '%s\n' "a b.txt" "c d.txt" "guía.md" "nuevo ñ.txt" "señal.md")
-[ "$s" = "$esperado" ]; afirmar $? "archivos_cambiados devuelve los nombres literales y el renombre una vez"
+es "$s" = "$esperado"; afirmar $? "archivos_cambiados devuelve los nombres literales y el renombre una vez"
 [ "$s" = "$esperado" ] || printf '       %s\n' "$s"
+
+# Un archivo dentro de una carpeta nueva sin trackear aparece con su ruta, no solo la carpeta.
+(cd "$TMP/p" && mkdir -p "carpeta nueva/sub" && echo x >"carpeta nueva/sub/a.txt")
+s=$(cd "$TMP/p" && python3 -c 'import sys; sys.path.insert(0, "scripts/agentes"); from mapa import archivos_cambiados
+print("\n".join(archivos_cambiados(["--base", "trunk"])))' 2>&1)
+grep -qx "carpeta nueva/sub/a.txt" <<<"$s" && ! grep -q '/$' <<<"$s"; afirmar $? "archivos_cambiados lista los archivos de una carpeta nueva sin trackear"
 
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
