@@ -143,7 +143,7 @@ Viven en `.claude/skills/`.
 | 📚 | `update-docs` | Qué docs quedaron viejos por un cambio (según el mapa) y corregirlos en el mismo PR. |
 | 👀 | `/review-pr <n>` | Revisión con foco en lo propio del proyecto: reglas de negocio, ADRs, autonomía, docs, tests y rutas sensibles. No aprueba. |
 | 📊 | `/estado` | Resumen generado en el momento (versión, trabajo, épicas, PRs, deuda, decisiones, migraciones) y "¿qué puedo hacer ahora?". |
-| 🎛️ | `/orquestar` | Reparte hasta 3 issues disponibles entre subagentes en paralelo (Haiku o Sonnet según `ruteo.py`, Opus revisa), cada uno en su worktree, y junta PRs, consultas y escalados en un solo mensaje. No mergea ni publica sin confirmación. |
+| 🎛️ | `/orquestar` | Reparte hasta 4 issues disponibles entre subagentes en paralelo (Haiku o Sonnet según `ruteo.py`, Opus revisa), cada uno en su worktree, y junta PRs, consultas y escalados en un solo mensaje. No mergea ni publica sin confirmación. |
 | 🔁 | `/mejorar-skills` | Junta las retros y las señales objetivas (fallas de CI en ramas de agentes, reverts) y propone ajustes a las skills en un PR. Nunca afloja controles. |
 | 🌿 | `git-workflow` | Ramas, commits y PRs. |
 

@@ -18,7 +18,7 @@ Sos la sesión principal: repartís, coordinás y le hablás a la persona. Los s
 
 ## 2. Proponer y esperar confirmación
 
-Elegí hasta **3** issues de "Se pueden empezar ya", en el orden en que aparecen (prioridad). Para cada uno corré:
+Elegí hasta **4** issues de "Se pueden empezar ya", en el orden en que aparecen (prioridad). Para cada uno corré:
 
 ```bash
 .claude/skills/orquestar/ruteo.py <n>
@@ -37,7 +37,7 @@ git -C <raíz> fetch -q origin        # una sola vez, antes de lanzar: fetch en 
 
 `preparar.sh` valida, asigna, crea el worktree en `../<repo>-wt/<n>` e imprime `Worktree: <ruta>`. Si falla para un issue, no lo lances y anotalo para el mensaje final.
 
-Lanzá los subagentes en paralelo, en un solo mensaje, con la herramienta Agent: `subagent_type` `implementador-liviano` (Haiku) o `implementador` (Sonnet). Sin `isolation`: el worktree ya existe. En el prompt: número de issue, ruta del worktree, rama base (`BASE=<base>`) y que siga su definición. **Nunca más de 3 implementando a la vez**, contando los relanzados.
+Lanzá los subagentes en paralelo, en un solo mensaje, con la herramienta Agent: `subagent_type` `implementador-liviano` (Haiku) o `implementador` (Sonnet). Sin `isolation`: el worktree ya existe. En el prompt: número de issue, ruta del worktree, rama base (`BASE=<base>`) y que siga su definición. **Nunca más de 4 implementando a la vez**, contando los relanzados.
 
 ## 4. Con cada resultado
 
@@ -46,7 +46,7 @@ Cada subagente devuelve el bloque del contrato. Leé solo eso: nunca diffs ni re
 | `resultado` | Qué hacés |
 |---|---|
 | `pr` (implementador) | Lanzás un `revisor` con el número de PR y la raíz del checkout. **Una sola revisión por PR a la vez.** |
-| `escalar` | Relanzás `implementador` (Sonnet) en el **mismo worktree**, con el `motivo`. Cuenta para el máximo de 3. |
+| `escalar` | Relanzás `implementador` (Sonnet) en el **mismo worktree**, con el `motivo`. Cuenta para el máximo de 4. |
 | `consulta` / `soltado` | Lo anotás para el mensaje final. Ya está comentado en el issue. |
 | `pr` (revisor) | Lo anotás con su `revision:` para el mensaje final. |
 | `bloqueantes` (revisor) | Decidís vos, con el criterio de abajo. |
