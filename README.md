@@ -105,6 +105,8 @@ flowchart LR
 
 Los agentes hacen el trabajo. Los dos nudos de la correa, **aprobar el plan** y **mergear** 🟡, quedan siempre en manos de personas.
 
+**Barandas.** No depende solo de lo que pide `AGENTS.md`: un hook de Claude Code (`.claude/settings.json` → `scripts/agentes/barandas.py`) frena antes de correrlos el merge y la aprobación de PRs, el push a `main` o `develop`, los tags, las releases, los cambios a la protección de ramas y `--no-verify`, también dentro de comandos compuestos. Si pediste uno de esos pasos, lo corrés vos en el chat: `! gh pr merge 12`. Son barandas, no una cerradura: frenan el error común, pero un agente con tu token puede llegar por otro camino (un script propio, otra herramienta). La cerradura es GitHub: una regla en la rama base que exija una aprobación. Si trabajás solo, esa regla también te frena a vos (GitHub no deja aprobar un PR propio), así que es opcional.
+
 Durante `/implement-issue` se usan, según haga falta, `debug`, `db-migration` y `update-docs`. Si el PR toca rutas sensibles, la revisión suma `/security-review`.
 
 <!-- marca:inicio -->
@@ -195,6 +197,7 @@ Sin integrantes, los issues quedan sin asignar. El equipo se cambia con `/add-me
 |---|---|---|
 | 🧭 | Reglas para agentes | `AGENTS.md` (fuente), `CLAUDE.md` (lo importa), `llms.txt`, `docs/llms.txt` |
 | 🚦 | Autonomía del agente | `AGENTS.md`: qué puede hacer solo, qué tiene que consultar y qué nunca |
+| 🛑 | Barandas | `.claude/settings.json` + `scripts/agentes/barandas.py`: hook que frena merge, tags, releases y push a ramas troncales |
 | 🗺️ | Mapa para agentes | `docs/mapa-agentes.json`: qué docs revisar según lo que cambia, rutas sensibles, docs obligatorios |
 | 📚 | Hub de documentación | `docs/README.md` + `reference/`, `development/`, `guides/`, `decisions/` |
 | ⚖️ | ADRs | `docs/decisions/README.md` (cómo se escriben) + `ADR-000-plantilla.md` |

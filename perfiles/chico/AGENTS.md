@@ -26,7 +26,9 @@ TODO: las reglas que un agente rompería si no las lee (formato de errores, dón
 
 **Consulta antes** (que el issue lo pida no es la aprobación: hace falta un "sí" de una persona en el chat o en un comentario suyo en el issue o el PR): cambiar el schema de la base, agregar o quitar dependencias, tocar auth o secretos, cambiar una API que usan otros, tocar deploy o CI, ampliar el alcance del issue.
 
-**Nunca:** correr migraciones o borrar datos fuera de local, poner secretos en el repo, desactivar tests o checks para que algo pase.
+**Nunca:** correr migraciones o borrar datos fuera de local, poner secretos en el repo, desactivar tests o checks para que algo pase, mergear PRs, crear tags o publicar releases sin un pedido explícito.
+
+Un hook (`scripts/agentes/barandas.py`, en `.claude/settings.json`) frena antes de correrlos el merge, la aprobación de PRs, el push a ramas troncales, los tags, las releases y `--no-verify`. Si te frena, no busques otro camino: pedile a la persona que lo corra ella con `! <comando>`. Cambiar el hook se consulta.
 
 Rutas sensibles de este proyecto (TODO: completar): schema `…`, auth `…`, deploy `…`.
 
