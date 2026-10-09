@@ -28,7 +28,7 @@ modo=""; guardado=0
 
 # Si algo falla después de preparar la retro (cualquier comando, no solo el push),
 # la retro queda en pendientes en vez de perderse.
-# shellcheck disable=SC2329  # la invoca el trap EXIT
+# shellcheck disable=SC2317,SC2329  # la invoca el trap EXIT (el código cambia según la versión)
 al_salir() {
   if [ "$modo" = retro ] && [ "$guardado" = 0 ]; then
     mkdir -p "$PENDIENTES"; pendiente="$PENDIENTES/${base##*/}-$$.md"
