@@ -55,7 +55,8 @@ for campo in skill issue pr area rutas skill_sha fecha; do
   grep -Eq "^$campo: .+" <<<"$c"; afirmar $? "el frontmatter tiene $campo"
 done
 sha=$(cd "$TMP/a" && git log -1 --format=%h -- .claude/skills/implement-issue/SKILL.md)
-grep -q "^skill_sha: $sha" <<<"$c"; afirmar $? "skill_sha es el último commit del SKILL.md"
+sha=$(cd "$TMP/a" && git log -1 --format=%H -- .claude/skills/implement-issue/SKILL.md)
+grep -q "^skill_sha: $sha$" <<<"$c"; afirmar $? "skill_sha es el commit completo del último cambio del SKILL.md"
 igual "$(cd "$TMP/a" && git branch --show-current)" claude/1-algo; afirmar $? "la rama actual no cambió"
 igual "$(cd "$TMP/a" && git diff --cached --name-only)" sucio.txt; afirmar $? "el índice no cambió"
 
@@ -123,6 +124,48 @@ ls "$TMP/c/.git/retros-pendientes/"*.md >/dev/null 2>&1; afirmar $? "deja la ret
 git init -q "$TMP/d"; (cd "$TMP/d" && git commit -q --allow-empty -m base)
 (cd "$TMP/d" && "$AQUI/retro.sh" "$TMP/carrera.md" >/dev/null 2>&1)
 git -C "$TMP/d" ls-tree -r --name-only "$RAMA" 2>/dev/null | grep -q 'implement-issue-9\.md$'; afirmar $? "sin remoto guarda en la rama local"
+
+# Revisión del PR #39.
+# --consolidado solo acepta commits de la rama de retros.
+otro=$(cd "$TMP/a" && git rev-parse HEAD)
+(cd "$TMP/a" && "$AQUI/retro.sh" --consolidado "$otro" https://example.test/pull/8 >/dev/null 2>&1); igual $? 64; afirmar $? "--consolidado rechaza un commit que no es de $RAMA"
+
+# Frontmatter con CRLF y comillas se acepta; sin cerrar se rechaza.
+printf -- '---\r\nskill: "implement-issue"\r\nissue: 11\r\n---\r\ncrlf\r\n' >"$TMP/crlf.md"
+(cd "$TMP/a" && "$AQUI/retro.sh" "$TMP/crlf.md" >/dev/null 2>&1)
+archivos | grep -q 'implement-issue-11\.md$'; afirmar $? "acepta frontmatter con CRLF y comillas"
+printf -- '---\nskill: implement-issue\nissue: 12\nsin cierre\n' >"$TMP/abierto.md"
+! (cd "$TMP/a" && "$AQUI/retro.sh" "$TMP/abierto.md" >/dev/null 2>&1); afirmar $? "rechaza un frontmatter sin cerrar"
+
+# Con commit.gpgSign y una firma que falla, igual guarda (la rama de retros no se firma).
+(cd "$TMP/a" && git config commit.gpgSign true && git config gpg.program false)
+printf -- '---\nskill: implement-issue\nissue: 13\n---\nfirma\n' >"$TMP/firma.md"
+(cd "$TMP/a" && "$AQUI/retro.sh" "$TMP/firma.md" >/dev/null 2>&1)
+archivos | grep -q 'implement-issue-13\.md$'; afirmar $? "guarda aunque el repo exija firmar commits"
+(cd "$TMP/a" && git config --unset commit.gpgSign && git config --unset gpg.program)
+
+# En un worktree, la pendiente queda en el .git común (sobrevive a git worktree remove).
+git -C "$TMP/c" worktree add -q "$TMP/cw" 2>/dev/null
+printf -- '---\nskill: implement-issue\nissue: 14\n---\nworktree\n' >"$TMP/wt.md"
+(cd "$TMP/cw" && "$AQUI/retro.sh" "$TMP/wt.md" >/dev/null 2>&1)
+git -C "$TMP/c" worktree remove --force "$TMP/cw" 2>/dev/null
+pend=$(find "$TMP/c/.git/retros-pendientes" -name "*implement-issue-14*.md" 2>/dev/null | head -1)
+grep -q . <<<"$pend"; afirmar $? "en un worktree la pendiente sobrevive a git worktree remove"
+
+# Reintentar una pendiente con éxito la borra y no duplica.
+(cd "$TMP/c" && git remote set-url origin "$TMP/remoto.git")
+(cd "$TMP/c" && "$AQUI/retro.sh" "$pend" >/dev/null 2>&1)
+igual "$(archivos | grep -c 'implement-issue-14')" 1; afirmar $? "la pendiente reintentada se guarda una vez"
+! [ -e "$pend" ]; afirmar $? "la pendiente reintentada se borra"
+
+# Retros guardadas sin remoto siguen visibles (y se suben) cuando se agrega uno.
+git init -q --bare "$TMP/remoto-d.git"
+(cd "$TMP/d" && git remote add origin "$TMP/remoto-d.git")
+s=$(cd "$TMP/d" && "$AQUI/senales.sh" 2>&1)
+grep -q 'implement-issue-9' <<<"$s"; afirmar $? "senales.sh ve las retros locales después de agregar un remoto"
+printf -- '---\nskill: implement-issue\nissue: 15\n---\nd\n' >"$TMP/d.md"
+(cd "$TMP/d" && "$AQUI/retro.sh" "$TMP/d.md" >/dev/null 2>&1)
+git --git-dir="$TMP/remoto-d.git" ls-tree -r --name-only "$RAMA" 2>/dev/null | grep -q 'implement-issue-9'; afirmar $? "al agregar un remoto, las retros locales se suben"
 
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
