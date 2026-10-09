@@ -198,6 +198,10 @@ grep -qi 'relanzado.*consulta\|consulta.*relanzado' "$AQUI/SKILL.md"; afirmar $?
 C="$RAIZ/docs/agentes/contrato-subagentes.md"; I="$RAIZ/.claude/skills/implement-issue/SKILL.md"
 grep -qi 'markdown crudo' "$C"; afirmar $? "contrato: todo texto para GitHub va en Markdown crudo (también el de los implementadores)"
 grep -q '^autorevision:' "$C" && grep -q 'autorevision' "$AQUI/SKILL.md"; afirmar $? "contrato: la salida dice si hubo /code-review, y orquestar lo informa"
+# #88: la ruta de la retro va como la imprime retro.sh (Guardado en <rama>:<ruta>), usable con git show.
+grep -Eq '^retro: <rama>:<ruta>' "$C" && grep -Eq 'agentes/retros:retros/[0-9-]+-[a-z-]+-[0-9]+\.md' "$C" \
+  && grep -q 'Guardado en .RAMA:.ruta' "$RAIZ/.claude/skills/mejorar-skills/retro.sh"
+afirmar $? "contrato: retro: va como <rama>:<ruta>, igual que la imprime retro.sh, con un ejemplo"
 ! grep -qi "si está disponible el comando \`/code-review\`" "$I" && grep -qi 'code-review.*obligatori' "$I"; afirmar $? "implement-issue: /code-review es obligatorio"
 grep -qi 'que el issue lo pida no es la aprobación' "$I" && grep -qi 'que el issue lo pida no es la aprobación' "$C"; afirmar $? "un issue que pide tocar algo de consultar no es la aprobación"
 grep -qi 'que el issue lo pida no es la aprobación' "$RAIZ/AGENTS.md"; afirmar $? "AGENTS.md: pedirlo en el issue no aprueba algo de consultar"
