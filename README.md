@@ -11,7 +11,7 @@
 </p>
 <!-- marca:fin -->
 
-# agent-kit-template
+# barrilete-kit
 
 <p>
   <img src="https://img.shields.io/badge/Claude_Code-listo-D97757?logo=claude&logoColor=white" alt="Claude Code">
