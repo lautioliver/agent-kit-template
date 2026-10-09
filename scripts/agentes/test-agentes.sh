@@ -45,6 +45,12 @@ grep -q "retro.sh" "$RAIZ/$CONTRATO" 2>/dev/null; afirmar $? "el contrato dice q
 f="$RAIZ/$AGENTES/implementador-liviano.md"
 grep -q "mapa.py" "$f" 2>/dev/null && grep -q "rutas sensibles" "$f" && grep -q "logica-negocio" "$f"
 afirmar $? "implementador-liviano: escala por rutas sensibles (mapa.py) o lógica de negocio"
+f="$RAIZ/$AGENTES/implementador-liviano.md"
+grep -q "mapa.py.*error\|error.*mapa.py" "$f" 2>/dev/null; afirmar $? "implementador-liviano: escala si mapa.py no corre o sale con error"
+grep -q "prioridad" "$f" 2>/dev/null; afirmar $? "implementador-liviano: dice qué tiene prioridad sobre consulta y soltado del contrato"
+grep -q "BASE" "$RAIZ/$CONTRATO" 2>/dev/null; afirmar $? "el contrato dice cómo pasar BASE a los scripts"
+f="$RAIZ/$AGENTES/revisor.md"
+! grep -q "FETCH_HEAD" "$f" 2>/dev/null && grep -q "headRefOid" "$f" 2>/dev/null; afirmar $? "revisor: trae el PR a una ref propia (no FETCH_HEAD) y comprueba headRefOid"
 
 # 4. check-docs.py valida los subagentes.
 copia
@@ -63,6 +69,7 @@ check >/dev/null; afirmar $? "check-docs acepta valores entre comillas"
 
 # 5. El modo chico no deja los subagentes.
 grep -qx "$AGENTES" "$RAIZ/perfiles/chico/BORRAR"; afirmar $? "el modo chico borra $AGENTES"
+grep -qx "scripts/agentes/test-agentes.sh" "$RAIZ/perfiles/chico/BORRAR"; afirmar $? "el modo chico borra test-agentes.sh (sin agentes no tiene qué probar)"
 
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
