@@ -60,4 +60,4 @@ Nunca `--approve`: aprobar es decisión de una persona. Si sos la sesión que im
 
 ## Retro
 
-Al terminar, publicá una retro corta en el issue fijado "Retros del flujo con agentes": formato en `.claude/skills/mejorar-skills/plantilla-retro.md` (o `retro.sh` sin argumentos), y después `.claude/skills/mejorar-skills/retro.sh <archivo.md>`. Sé concreto y honesto: una retro que dice "todo bien" cuando hubo desvíos le quita a `/mejorar-skills` la única señal que tiene.
+Al terminar, guardá una retro corta: formato en `.claude/skills/mejorar-skills/plantilla-retro.md` (o `retro.sh` sin argumentos), con el frontmatter completo, y después `.claude/skills/mejorar-skills/retro.sh <archivo.md>` (la guarda en la rama `agentes/retros`; no toca tu rama). Sé concreto y honesto: una retro que dice "todo bien" cuando hubo desvíos le quita a `/mejorar-skills` la única señal que tiene.

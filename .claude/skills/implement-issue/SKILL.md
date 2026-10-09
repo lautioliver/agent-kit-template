@@ -25,7 +25,7 @@ Si falla, **no fuerces nada**: contale al usuario por qué y, si sirve, proponé
 
 - Leé lo que el issue enlaza: ADRs, auditorías, docs, archivos.
 - Si el issue es parte de una épica (`preparar.sh` la muestra), leé la épica entera, sobre todo **Lógica de negocio afectada** y los ADRs pendientes que menciona. Un bloqueo puede estar escrito en el texto sin estar cargado como dependencia: si la épica dice que algo requiere un ADR o una decisión que todavía no existe, decidí con el usuario si este issue cae adentro antes de empezar.
-- Leé `AGENTS.md` (convenciones de código y comandos) y lo que corresponda de `docs/development/architecture.md` y `docs/reference/`.
+- Leé `AGENTS.md` (convenciones de código y comandos), `docs/agentes/lecciones.md` (lo aprendido en corridas anteriores) y lo que corresponda de `docs/development/architecture.md` y `docs/reference/`.
 - Si el issue tiene criterios de aceptación ("Listo cuando", "Criterios de aceptación"), son la definición de terminado.
 - Si el issue es ambiguo en algo que cambia el resultado, o contradice un ADR o el código, **preguntá antes de escribir código**. Si el usuario no está, comentá la duda en el issue (`gh issue comment`) y frená.
 - Si el cambio toca una regla ya definida (ADR, auditoría, plan), el PR va a llevar `logica-negocio`: anotalo desde ahora.
@@ -111,7 +111,7 @@ Y frená. El merge lo hace una persona.
 
 ## Retro
 
-Al terminar, publicá una retro corta en el issue fijado "Retros del flujo con agentes": formato en `.claude/skills/mejorar-skills/plantilla-retro.md` (o `retro.sh` sin argumentos), y después `.claude/skills/mejorar-skills/retro.sh <archivo.md>`. Sé concreto y honesto: una retro que dice "todo bien" cuando hubo desvíos le quita a `/mejorar-skills` la única señal que tiene.
+Al terminar, guardá una retro corta: formato en `.claude/skills/mejorar-skills/plantilla-retro.md` (o `retro.sh` sin argumentos), con el frontmatter completo, y después `.claude/skills/mejorar-skills/retro.sh <archivo.md>` (la guarda en la rama `agentes/retros`; no toca tu rama). Sé concreto y honesto: una retro que dice "todo bien" cuando hubo desvíos le quita a `/mejorar-skills` la única señal que tiene.
 
 ## Si hay que soltar el issue
 
