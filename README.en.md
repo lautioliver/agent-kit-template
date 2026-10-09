@@ -56,6 +56,11 @@ A repo template for working with coding agents **without losing control**: clear
 
 ## 🚀 Get started
 
+<!-- marca:inicio -->
+> [!NOTE]
+> Trying it for the first time to tell us how it went? Follow the [test guide](docs/probar-la-plantilla.md) (in Spanish): steps, what to note and the form to report it.
+<!-- marca:fin -->
+
 > [!TIP]
 > You need an authenticated `gh` (`gh auth status`), `jq` and `python3`. See [Requirements](#requirements).
 
