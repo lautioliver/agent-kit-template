@@ -57,8 +57,16 @@ for combinacion in "completo main" "chico main" "completo develop" "chico develo
   copiar "$p"
   extra=(); [ "$modo" = chico ] && extra=(--chico)
   (cd "$p" && ./scripts/init-plantilla.sh Demo "$base" ${extra[@]+"${extra[@]}"} >/dev/null 2>&1 && git add -A && git commit -qm init)
-  rotos=$(cd "$p" && git ls-files '*test-*.sh' | while read -r t; do bash "$t" >/dev/null 2>&1 || echo "$t"; done)
-  es -z "$rotos"; afirmar $? "[$modo, base $base] los test-*.sh del proyecto pasan${rotos:+ (fallan: ${rotos//$'\n'/ })}"
+  # Si uno falla, se muestran sus líneas FAIL: una falla que no se repite (#77) no se puede
+  # investigar si el log del CI solo dice qué archivo falló.
+  rotos=""
+  while read -r t; do
+    if ! salida=$(cd "$p" && bash "$t" 2>&1); then
+      rotos+="$t "
+      grep -E '^FAIL|fallaron' <<<"$salida" | sed "s|^|       [$modo, base $base] $t: |"
+    fi
+  done < <(cd "$p" && git ls-files '*test-*.sh')
+  es -z "$rotos"; afirmar $? "[$modo, base $base] los test-*.sh del proyecto pasan${rotos:+ (fallan: $rotos)}"
 done
 
 # check-docs.py falla si AGENTS.md dice que algo está ignorado y no lo está.
