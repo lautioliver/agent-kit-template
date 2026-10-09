@@ -21,6 +21,7 @@
   <img src="https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white" alt="Python 3">
   <img src="https://img.shields.io/badge/Bash-scripts-4EAA25?logo=gnubash&logoColor=white" alt="Bash">
   <img src="https://img.shields.io/badge/Conventional_Commits-1.0-FE5196?logo=conventionalcommits&logoColor=white" alt="Conventional Commits">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-FFB020" alt="MIT"></a>
 </p>
 
 A repo template for working with coding agents **without losing control**: clear rules, tested documentation and an issue-to-PR flow where **people approve the plan and merge**.
@@ -229,6 +230,10 @@ Small-mode files live in `perfiles/chico/` (plus the `BORRAR` list). What both m
 - An authenticated `gh`, `jq` and `python3` on the machine where the agent runs.
 - **Sub-issues and issue dependencies** ("Blocked by" / "Blocking") enabled on GitHub. Without them, skills report the error (404/422) and write the blocker into the issue body, but `planificar.py`, `disponibles.sh`, `preparar.sh` and `desbloquear.yml` lose the automatic part.
 - Agents must be able to push to the `agentes/retros` branch. If you protect branches with a broad pattern (`*`), exclude it. If they can't push, `retro.sh` keeps retros in `.git/retros-pendientes/`.
+
+## 📄 License
+
+[MIT](LICENSE) © 2026 Lautaro Zahir Oliver.
 
 <!-- marca:inicio -->
 ---
