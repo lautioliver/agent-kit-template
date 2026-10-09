@@ -73,6 +73,12 @@ cp "$TMP/AGENTS.md" "$p/AGENTS.md"
 (cd "$p" && git rm -q .gitignore)
 s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1); c=$?
 [ "$c" -ne 0 ] && grep -q 'AGENTS.md.*\.env.*ignorad' <<<"$s"; afirmar $? "check-docs.py falla si AGENTS.md dice que .env* está ignorado y no lo está"
+# Una línea que afirma una cosa y niega otra: la negación no tapa la afirmación.
+grep -v 'ignorad' "$TMP/AGENTS.md" >"$p/AGENTS.md"
+# shellcheck disable=SC2016  # backticks de Markdown literales
+echo '- `.env*` están ignorados; `dist/` no está ignorado.' >>"$p/AGENTS.md"
+s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1)
+grep -q 'AGENTS.md.*\.env.*ignorad' <<<"$s" && ! grep -q 'dist/' <<<"$s"; afirmar $? "check-docs.py valida la afirmación aunque la misma línea niegue otra cosa"
 
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
