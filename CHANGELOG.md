@@ -4,6 +4,12 @@ Cambios de la plantilla por versión. `scripts/actualizar.py` muestra las seccio
 
 **Publicar una versión** (lo hace una persona): un PR que sube `VERSION` y agrega su sección acá; después del merge, `git tag vX.Y.Z` sobre ese commit y `git push origin vX.Y.Z`. Así `VERSION` en `main` coincide con el último tag.
 
+## [Sin publicar]
+
+- Barandas: `git push --repo <remoto> <rama troncal>` se frena (antes la rama se tomaba como remoto y el push pasaba) (#109).
+- `limpiar.sh` no saca el worktree de un issue cerrado si su PR sigue abierto: hay proyectos que cierran el issue al abrir el PR (#109).
+- El check de labels acepta "sin test" o "sin tests", con el motivo en la misma línea o en la siguiente (#109).
+
 ## [0.9.0] - 2026-10-09
 
 Primera versión con número: desde acá, un proyecto puede traer las siguientes con `python3 scripts/actualizar.py`. También los proyectos creados antes, si tienen `.agent-kit.json` (sin fusionar: lo que modificaron queda entero en `.agent-kit/pendientes/`).

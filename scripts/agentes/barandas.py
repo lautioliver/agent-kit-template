@@ -223,6 +223,7 @@ def analizar_push(args, cwd, ctx):
     while i < len(args):
         a = args[i]
         if a in PUSH_CON_VALOR:
+            opciones.add(a)
             i += 2
             continue
         if a.startswith("-"):
@@ -235,7 +236,8 @@ def analizar_push(args, cwd, ctx):
         if o in opciones:
             return que
     borrar = bool(opciones & {"--delete", "-d"})
-    refspecs = posicionales[1:] or ["HEAD"]
+    # Con --repo el remoto no va entre los posicionales: todos son refspecs.
+    refspecs = (posicionales if "--repo" in opciones else posicionales[1:]) or ["HEAD"]
     if "tag" in refspecs:
         return "pushear tags"
     for r in refspecs:
