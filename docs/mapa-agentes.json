@@ -123,6 +123,14 @@
       "correr": "bash .claude/skills/implement-issue/test-preparar.sh"
     },
     {
+      "nombre": "rojo",
+      "cuando": [
+        ".claude/skills/implement-issue/rojo.sh",
+        ".claude/skills/implement-issue/test-rojo.sh"
+      ],
+      "correr": "bash .claude/skills/implement-issue/test-rojo.sh"
+    },
+    {
       "nombre": "retros",
       "cuando": [
         ".claude/skills/mejorar-skills/**"

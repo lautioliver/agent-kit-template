@@ -5,7 +5,8 @@
 # Uso: rojo.sh -- <comando de test>
 #   ej.: rojo.sh -- npx vitest run src/modulo
 # Sale con 0 si está en rojo por una aserción; 1 si los tests pasan; 2 si fallan
-# por otra razón (carga, sintaxis, símbolo inexistente).
+# por otra razón (el comando no corrió, carga, sintaxis, símbolo inexistente) o por
+# una falla que no reconoce como aserción.
 set -uo pipefail
 [ "${1:-}" = "--" ] && shift
 [ $# -gt 0 ] || { echo "Uso: $0 -- <comando de test>" >&2; exit 64; }
@@ -20,8 +21,17 @@ if [ "$codigo" -eq 0 ]; then
   exit 1
 fi
 
-# Fallas que no son del comportamiento: el test ni llegó a correr la aserción.
+# 1. El comando ni corrió (no existe o no se puede ejecutar).
+if [ "$codigo" -eq 126 ] || [ "$codigo" -eq 127 ]; then
+  echo "El comando de test no corrió (salió con $codigo): revisá que exista y se pueda ejecutar."
+  echo "Salida: $salida"
+  exit 2
+fi
+
+# 2. Fallas de carga: el test ni llegó a correr la aserción. Van antes que las aserciones porque
+#    pytest también marca estas como FAILED.
 mala='Cannot find module|Failed to resolve import|ERR_MODULE_NOT_FOUND|SyntaxError|ReferenceError|is not defined|is not a function|is not a constructor|Transform failed|error TS[0-9]{4}'
+mala+='|ImportError|ModuleNotFoundError|AttributeError: module|NameError|ERROR collecting|no tests ran|collected 0 items|No test files found|No tests found'
 if grep -Eq "$mala" "$salida"; then
   echo "Los tests fallan, pero por una razón que no es el comportamiento:"
   grep -E "$mala" "$salida" | sort -u | head -5 | sed 's/^/  /'
@@ -30,7 +40,18 @@ if grep -Eq "$mala" "$salida"; then
   exit 2
 fi
 
-resumen=$(grep -E '✗|×|FAIL|AssertionError|Expected|Received|expected .* to' "$salida" | sed 's/\x1b\[[0-9;]*m//g' | head -40)
+# 3. Evidencia positiva de una aserción. Sin ella no se da el rojo por bueno.
+# ^FAIL - es el formato de los test-*.sh de esta plantilla (afirmar).
+aserciones='AssertionError|assert |Expected|Received|expected .* to|✗|×|FAILED .*::|^FAIL - '
+if ! grep -Eq "$aserciones" "$salida"; then
+  echo "Los tests fallan, pero no reconozco esta falla como una aserción; revisala y, si es válida,"
+  echo "agregá el patrón a rojo.sh. Últimas líneas:"
+  tail -5 "$salida" | sed 's/^/  /'
+  echo "Salida completa: $salida"
+  exit 2
+fi
+
+resumen=$(grep -E "FAIL|$aserciones" "$salida" | sed 's/\x1b\[[0-9;]*m//g' | head -40)
 fallas="${resumen:-$(tail -20 "$salida")}"
 pr="${salida}.md"
 {
