@@ -75,7 +75,7 @@ Ofrecé publicar las revisiones (`gh pr review <pr> --comment --body-file <archi
 
 ## 6. Retro
 
-Las retros de los subagentes ya están guardadas: recibís su ruta, pero no abras esos archivos (solo los lee `/mejorar-skills`). Guardá la tuya con `.claude/skills/mejorar-skills/retro.sh <archivo>` y este frontmatter: `skill: orquestar`, `issue: <épica>` (si los issues son de una) o `corrida: <AAAAMMDD-HHMM>`, `modelo: opus`, `rol: orquestador`, `area`, `rutas`. En el cuerpo: issues lanzados con su modelo, escalados, rondas extra y cuánto tardó cada uno. Escribí el archivo fuera del repo.
+Las retros de los subagentes ya están guardadas: recibís dónde quedaron (`retro:`, ver el contrato), pero no las abras (solo los lee `/mejorar-skills`). Guardá la tuya con `.claude/skills/mejorar-skills/retro.sh <archivo>` y este frontmatter: `skill: orquestar`, `issue: <épica>` (si los issues son de una) o `corrida: <AAAAMMDD-HHMM>`, `modelo: opus`, `rol: orquestador`, `area`, `rutas`. En el cuerpo: issues lanzados con su modelo, escalados, rondas extra y cuánto tardó cada uno. Escribí el archivo fuera del repo.
 
 ## 7. Limpiar
 
