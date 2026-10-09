@@ -1,0 +1,5 @@
+name: Reporte de prueba
+description: stub
+body:
+  - type: textarea
+    attributes: { label: Qué pasó }
