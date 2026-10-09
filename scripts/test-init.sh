@@ -65,6 +65,21 @@ sys.exit(0 if guia and [(n, t.strip()) for n, t in guia] == [(n, t.strip()) for 
 PY
 afirmar $? "los pasos del formulario de prueba coinciden con los de la guía"
 
+# El CI de docs corre en los pushes a main de la plantilla, y el init deja el filtro de cada modo (#101).
+grep -Eq '^    branches: \[main, <RAMA_BASE>\]$' "$RAIZ/.github/workflows/docs.yml"
+afirmar $? "la plantilla corre el CI de docs en los pushes a main"
+for combinacion in "completo main|[main]" "chico main|[main]" "completo develop|[main, develop]" \
+  "completo develop releases|[main, develop, 'release/**']"; do
+  IFS='|' read -r args esperado <<<"$combinacion"
+  p="$TMP/ramas-${args// /-}"
+  copiar "$p"
+  read -r modo base rel <<<"$args"
+  extra=(); [ "$modo" = chico ] && extra=(--chico)
+  (cd "$p" && ./scripts/init-plantilla.sh Demo "$base" ${rel:+"$rel"} ${extra[@]+"${extra[@]}"} >/dev/null 2>&1)
+  grep -qxF "    branches: $esperado" "$p/.github/workflows/docs.yml"
+  afirmar $? "[$args] docs.yml corre en los pushes a $esperado"
+done
+
 # Los test-*.sh que deja el init pasan en el proyecto nuevo (los corre el CI), con cualquier rama base.
 for combinacion in "completo main" "chico main" "completo develop" "chico develop"; do
   read -r modo base <<<"$combinacion"
