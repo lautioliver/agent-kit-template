@@ -27,6 +27,7 @@ case "$*" in
   api\ repos/o/r/issues/*/comments*) ;;
   api\ repos/o/r/issues/*) cat "$GH_ISSUES/${2##*/}.json" ;;
   "issue edit"*) ;;
+  "pr list"*) r=$(sed -E 's/.*--head ([^ ]+).*/\1/' <<<"$*"); [ -f "$GH_ISSUES/pr-${r//\//_}" ] && cat "$GH_ISSUES/pr-${r//\//_}" ;;
   *) echo "gh falso: $*" >&2; exit 1 ;;
 esac
 SH
@@ -157,6 +158,65 @@ for args in "--worktree" ""; do
   es "$c" -eq 1 && grep -q "NO SE PUEDE TOMAR #46: .*bloqueado" <<<"$s"; afirmar $? "${args:-sin --worktree}: un worktree bloqueado y sin carpeta da un error claro"
 done
 ! asignado 46; afirmar $? "no asigna si la rama está en un worktree bloqueado sin carpeta"
+
+# 9. #41: se retoma la rama del issue aunque el título se haya editado.
+issue 50 "Titulo viejo"
+(cd "$TMP/proj" && "$PREPARAR" 50 >/dev/null 2>&1 && git commit -q --allow-empty -m trabajo && git switch -q main)
+issue 50 "Titulo nuevo"
+s=$(cd "$TMP/proj" && "$PREPARAR" 50 2>&1); c=$?
+es "$c" -eq 0 && es "$(git -C "$TMP/proj" branch --show-current)" = claude/50-titulo-viejo \
+  && ! git -C "$TMP/proj" show-ref -q --verify refs/heads/claude/50-titulo-nuevo && grep -q "^Rama existente: claude/50-titulo-viejo" <<<"$s"
+afirmar $? "sin --worktree, con el título editado, retoma la rama existente y no crea otra"
+git -C "$TMP/proj" switch -q main
+
+issue 51 "Antes"
+(cd "$TMP/proj" && "$PREPARAR" 51 --worktree >/dev/null 2>&1)
+issue 51 "Despues"
+s=$(cd "$TMP/proj" && "$PREPARAR" 51 --worktree 2>&1); c=$?
+es "$c" -eq 0 && grep -qx "Worktree: $WT/51" <<<"$s" && es "$(git -C "$WT/51" branch --show-current)" = claude/51-antes
+afirmar $? "con --worktree, con el título editado, retoma el worktree existente"
+
+issue 52 "Dos ramas"
+git -C "$TMP/proj" branch claude/52-una main; git -C "$TMP/proj" branch claude/52-otra main
+for args in "--worktree" ""; do
+  # shellcheck disable=SC2086  # vacío a propósito
+  s=$(cd "$TMP/proj" && "$PREPARAR" 52 $args 2>&1); c=$?
+  es "$c" -eq 1 && grep -q "claude/52-una" <<<"$s" && grep -q "claude/52-otra" <<<"$s"
+  afirmar $? "${args:-sin --worktree}: con dos ramas claude/<n>-*, falla y las lista"
+done
+! asignado 52; afirmar $? "con dos ramas del issue no asigna"
+
+issue 53 "Titulo distinto"
+git clone -q "$TMP/remoto.git" "$TMP/otro-clon" 2>/dev/null
+(cd "$TMP/otro-clon" && git switch -q -c claude/53-remota origin/main && git commit -q --allow-empty -m remota \
+  && git push -q origin claude/53-remota && git switch -q -c claude/530-otra origin/main && git push -q origin claude/530-otra) 2>/dev/null
+s=$(cd "$TMP/proj" && "$PREPARAR" 53 --worktree 2>&1); c=$?
+es "$c" -eq 0 && es "$(git -C "$WT/53" branch --show-current)" = claude/53-remota \
+  && es "$(git -C "$WT/53" log -1 --format=%s)" = remota
+afirmar $? "una rama claude/<n>-* que solo está en origin se retoma (y claude/<n>0-* no cuenta)"
+
+# 10. Hallazgos de /code-review de #41.
+issue 54 "Solo remota sin worktree"
+(cd "$TMP/otro-clon" && git switch -q -c claude/54-remota origin/main && git commit -q --allow-empty -m r54 \
+  && git push -q origin claude/54-remota) 2>/dev/null
+s=$(cd "$TMP/proj" && "$PREPARAR" 54 2>&1); c=$?
+es "$c" -eq 0 && es "$(git -C "$TMP/proj" branch --show-current)" = claude/54-remota && es "$(git -C "$TMP/proj" log -1 --format=%s)" = r54
+afirmar $? "sin --worktree, una rama que solo está en origin se retoma"
+git -C "$TMP/proj" switch -q main
+
+issue 55 "Reabierto"
+(cd "$TMP/otro-clon" && git switch -q -c claude/55-vieja origin/main && git push -q origin claude/55-vieja) 2>/dev/null
+echo MERGED >"$TMP/issues/pr-claude_55-vieja"
+s=$(cd "$TMP/proj" && "$PREPARAR" 55 --worktree 2>&1); c=$?
+es "$c" -eq 0 && es "$(git -C "$WT/55" branch --show-current)" = claude/55-reabierto
+afirmar $? "una rama cuyo PR ya se mergeó o cerró no se retoma: el issue reabierto arranca una nueva"
+
+issue 56 "Sin remoto"
+git -C "$TMP/proj" remote set-url origin "$TMP/no-existe.git"
+s=$(cd "$TMP/proj" && "$PREPARAR" 56 2>&1); c=$?
+git -C "$TMP/proj" remote set-url origin "$TMP/remoto.git"
+es "$c" -ne 0 && ! asignado 56 && ! git -C "$TMP/proj" show-ref -q --verify refs/heads/claude/56-sin-remoto
+afirmar $? "si no puede consultar las ramas de origin, falla sin asignar ni crear una rama nueva"
 
 # Plantilla sin inicializar (BASE=<RAMA_BASE>) y sin BASE: usa la rama por defecto del remoto y avisa.
 # Después del init la base ya está configurada (puede ser develop, que este remoto no tiene) y estos
