@@ -27,7 +27,8 @@ fi
 if [ -n "$CHICO" ] && [ "$MODO" = "releases" ]; then
   echo "$USO"; echo "'--chico' no se combina con 'releases': si necesitás releases, usá el modo completo."; exit 1
 fi
-F=$(date +%Y-%m-%d)
+# AGENT_KIT_FECHA: la fecha original del proyecto, para que actualizar.py reproduzca su init.
+F=${AGENT_KIT_FECHA:-$(date +%Y-%m-%d)}
 export F
 if [ "$B" = "main" ]; then
   # shellcheck disable=SC2016  # backticks de Markdown literales
@@ -74,13 +75,18 @@ else
   [ "$B" != "main" ] && perl -pi -e "s/branches: \[$B\]/branches: [main, $B]/" .github/workflows/labels.yml .github/workflows/docs.yml
 fi
 rm -- scripts/init-plantilla.sh scripts/test-init.sh  # el test solo sirve con el init
+rm -f scripts/test-actualizar.sh  # arma versiones de la plantilla: necesita el init
+# La versión de la plantilla queda en .agent-kit.json; VERSION y CHANGELOG.md son de la plantilla.
+V=$(cat VERSION 2>/dev/null || true)
+export V
+rm -f VERSION CHANGELOG.md
 # La verificación "init" del mapa corre ese test: sin él, es una regla muerta.
 if [ -f docs/mapa-agentes.json ]; then
   python3 - <<'PY'
 import json
 ruta = "docs/mapa-agentes.json"
 mapa = json.load(open(ruta, encoding="utf-8"))
-mapa["verificar"] = [v for v in mapa.get("verificar", []) if v.get("nombre") != "init"]
+mapa["verificar"] = [v for v in mapa.get("verificar", []) if v.get("nombre") not in ("init", "actualizar")]
 open(ruta, "w", encoding="utf-8").write(json.dumps(mapa, ensure_ascii=False, indent=2) + "\n")
 PY
 fi
@@ -97,7 +103,8 @@ for base, dirs, files in os.walk("."):
             archivos[ruta] = hashlib.sha1(open(ruta, "rb").read()).hexdigest()
 json.dump({
     "proyecto": os.environ["P"], "rama_base": os.environ["B"], "releases": os.environ["RELEASES"] == "releases",
-    "modo": os.environ["MODO_KIT"], "fecha": os.environ["F"], "archivos": dict(sorted(archivos.items())),
+    "modo": os.environ["MODO_KIT"], "fecha": os.environ["F"], "version": os.environ["V"] or None,
+    "archivos": dict(sorted(archivos.items())),
 }, open(".agent-kit.json", "w"), ensure_ascii=False, indent=2)
 PY
 echo "Listo. Pendientes (TODO:):"

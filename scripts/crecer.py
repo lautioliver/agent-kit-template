@@ -19,7 +19,7 @@ import subprocess
 import sys
 import tempfile
 
-PLANTILLA = os.environ.get("AGENT_KIT_PLANTILLA", "https://github.com/lautioliver/agent-kit-template")
+PLANTILLA = os.environ.get("AGENT_KIT_PLANTILLA", "https://github.com/lautioliver/barrilete-kit")
 NO_TRAER = {"README.md", "README.en.md", ".agent-kit.json", "scripts/crecer.py", ".github/equipo.json"}  # el README completo explica la plantilla, no el proyecto; el equipo es del proyecto
 PENDIENTES = ".agent-kit/pendientes"
 
@@ -69,6 +69,7 @@ def main():
         sh("git", "clone", "-q", "--depth", "1", plantilla, tmp)
         init = ["./scripts/init-plantilla.sh", kit["proyecto"], kit["rama_base"]] + (["releases"] if releases else [])
         sh(*init, cwd=tmp)
+        version = json.load(open(os.path.join(tmp, ".agent-kit.json"), encoding="utf-8")).get("version")
 
         agregados, reemplazados, pendientes, iguales = [], [], [], 0
         registradas = kit.get("archivos", {})
@@ -109,6 +110,8 @@ def main():
     if movido:
         registradas.pop("docs/architecture.md", None)
     kit.update({"modo": "completo", "releases": releases, "archivos": dict(sorted(registradas.items()))})
+    if version:
+        kit["version"] = version  # crecer trae la versión de la plantilla que clonó
     json.dump(kit, open(".agent-kit.json", "w", encoding="utf-8"), ensure_ascii=False, indent=2)
     os.remove("scripts/crecer.py")
 
