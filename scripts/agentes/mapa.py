@@ -92,7 +92,8 @@ def archivos_cambiados(args):
     if r.returncode != 0:
         salir(f"git diff contra '{ref}' falló: {r.stderr.strip()}. ¿Tienen historia en común? Probá con --base.")
     nombres = set(r.stdout.split("\0"))
-    entradas = iter(subprocess.run(["git", "status", "--porcelain", "-z"], capture_output=True, text=True).stdout.split("\0"))
+    # Con -uall, una carpeta nueva sin trackear se lista archivo por archivo (si no, solo "carpeta/").
+    entradas = iter(subprocess.run(["git", "status", "--porcelain", "-z", "-uall"], capture_output=True, text=True).stdout.split("\0"))
     for e in entradas:
         nombres.add(e[3:])
         if "R" in e[:2] or "C" in e[:2]:
