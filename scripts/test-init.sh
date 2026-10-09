@@ -44,6 +44,17 @@ for modo in completo chico; do
   es -z "$(cd "$p" && git status --porcelain)"; afirmar $? "[$modo] después de correr los scripts, git status queda limpio"
 done
 
+# Los test-*.sh que deja el init pasan en el proyecto nuevo (los corre el CI), con cualquier rama base.
+for combinacion in "completo main" "chico main" "completo develop" "chico develop"; do
+  read -r modo base <<<"$combinacion"
+  p="$TMP/tests-$modo-$base"
+  copiar "$p"
+  extra=(); [ "$modo" = chico ] && extra=(--chico)
+  (cd "$p" && ./scripts/init-plantilla.sh Demo "$base" ${extra[@]+"${extra[@]}"} >/dev/null 2>&1 && git add -A && git commit -qm init)
+  rotos=$(cd "$p" && git ls-files '*test-*.sh' | while read -r t; do bash "$t" >/dev/null 2>&1 || echo "$t"; done)
+  es -z "$rotos"; afirmar $? "[$modo, base $base] los test-*.sh del proyecto pasan${rotos:+ (fallan: ${rotos//$'\n'/ })}"
+done
+
 # check-docs.py falla si AGENTS.md dice que algo está ignorado y no lo está.
 p="$TMP/completo"
 s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1)
