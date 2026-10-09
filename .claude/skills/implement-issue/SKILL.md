@@ -69,7 +69,7 @@ Con todo commiteado, `python3 scripts/agentes/verificar.py` corre lo que corresp
 
 ## 8. Abrir el PR
 
-`git push -u origin HEAD` y `gh pr create --base <RAMA_BASE> --body-file <archivo>`, con el cuerpo de `.github/pull_request_template.md` completo: en "Cómo probarlo", los comandos que corriste con su resultado, el bloque **rojo** de `rojo.sh` y el commit de los tests en rojo (sin eso, el revisor no puede comprobar que los tests prueban algo). Labels: el `tipo:` y el `area:` del issue, más `logica-negocio` o `breaking-change` si corresponden. El CI valida el título (`pr-title.yml`), los labels, `Closes #<n>` y el bloque rojo (`labels.yml`): si falla, corregí el PR.
+`git push origin HEAD` (sin `-u`: escribe `.git/config` y choca con otros agentes en paralelo) y `gh pr create --base <RAMA_BASE> --body-file <archivo>`, con el cuerpo de `.github/pull_request_template.md` completo: en "Cómo probarlo", los comandos que corriste con su resultado, el bloque **rojo** de `rojo.sh` y el commit de los tests en rojo (sin eso, el revisor no puede comprobar que los tests prueban algo). Labels: el `tipo:` y el `area:` del issue, más `logica-negocio` o `breaking-change` si corresponden. El CI valida el título (`pr-title.yml`), los labels, `Closes #<n>` y el bloque rojo (`labels.yml`): si falla, corregí el PR.
 
 ## 9. Esperar el CI y entregar
 

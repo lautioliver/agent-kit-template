@@ -19,3 +19,4 @@ docs/agentes
 .claude/agents
 scripts/agentes/test-agentes.sh
 README.en.md
+.claude/skills/orquestar

@@ -153,6 +153,14 @@
       "correr": "bash .claude/skills/implement-issue/test-rojo.sh"
     },
     {
+      "nombre": "orquestar",
+      "cuando": [
+        ".claude/skills/orquestar/**",
+        ".claude/agents/revisor.md"
+      ],
+      "correr": "bash .claude/skills/orquestar/test-orquestar.sh"
+    },
+    {
       "nombre": "retros",
       "cuando": [
         ".claude/skills/mejorar-skills/**"
