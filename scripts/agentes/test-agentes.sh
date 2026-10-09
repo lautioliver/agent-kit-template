@@ -22,6 +22,9 @@ copia() {
   (cd "$TMP/r" && git init -q && git add -A && git commit -qm base)
 }
 check() { (cd "$TMP/r" && python3 scripts/agentes/check-docs.py 2>&1); }
+# check-docs sin errores de los subagentes. En un proyecto recién inicializado check-docs falla
+# igual por los TODO del mapa, así que se mira solo lo de los subagentes.
+sin_errores_agentes() { ! check | grep -q "$AGENTES\|contrato-subagentes"; }
 frontmatter() { awk 'NR==1 && $0!="---"{exit} NR>1 && $0=="---"{exit} NR>1{print}' "$1"; }
 
 # 1. Los tres roles existen con su modelo y herramientas acotadas.
@@ -54,7 +57,7 @@ f="$RAIZ/$AGENTES/revisor.md"
 
 # 4. check-docs.py valida los subagentes.
 copia
-check >/dev/null; afirmar $? "check-docs pasa con los subagentes del repo"
+sin_errores_agentes; afirmar $? "check-docs no reporta errores en los subagentes del repo"
 mkdir -p "$TMP/r/$AGENTES"
 printf -- '---\nname: x\ndescription: d\ntools: Read\nmodel: gpt-4\n---\nVer %s.\n' "$CONTRATO" >"$TMP/r/$AGENTES/x.md"
 salida=$(check); grep -q "$AGENTES/x.md.*model" <<<"$salida"; afirmar $? "check-docs rechaza un model que no es opus, sonnet ni haiku"
@@ -63,13 +66,15 @@ salida=$(check); grep -q "$AGENTES/x.md.*tools" <<<"$salida"; afirmar $? "check-
 printf -- '---\nname: x\ndescription: d\ntools: Read\nmodel: haiku\n---\nSin contrato.\n' >"$TMP/r/$AGENTES/x.md"
 salida=$(check); grep -q "$AGENTES/x.md.*contrato" <<<"$salida"; afirmar $? "check-docs rechaza un subagente que no remite al contrato"
 printf -- '---\r\nname: x\r\ndescription: d\r\ntools: Read\r\nmodel: haiku\r\n---\r\nVer %s.\r\n' "$CONTRATO" >"$TMP/r/$AGENTES/x.md"
-check >/dev/null; afirmar $? "check-docs acepta un subagente con fin de línea CRLF"
+sin_errores_agentes; afirmar $? "check-docs acepta un subagente con fin de línea CRLF"
 printf -- '---\nname: "x"\ndescription: d\ntools: Read\nmodel: "haiku"\n---\nVer %s.\n' "$CONTRATO" >"$TMP/r/$AGENTES/x.md"
-check >/dev/null; afirmar $? "check-docs acepta valores entre comillas"
+sin_errores_agentes; afirmar $? "check-docs acepta valores entre comillas"
 
-# 5. El modo chico no deja los subagentes.
-grep -qx "$AGENTES" "$RAIZ/perfiles/chico/BORRAR"; afirmar $? "el modo chico borra $AGENTES"
-grep -qx "scripts/agentes/test-agentes.sh" "$RAIZ/perfiles/chico/BORRAR"; afirmar $? "el modo chico borra test-agentes.sh (sin agentes no tiene qué probar)"
+# 5. El modo chico no deja los subagentes (solo en la plantilla: el init borra perfiles/).
+if [ -f "$RAIZ/perfiles/chico/BORRAR" ]; then
+  grep -qx "$AGENTES" "$RAIZ/perfiles/chico/BORRAR"; afirmar $? "el modo chico borra $AGENTES"
+  grep -qx "scripts/agentes/test-agentes.sh" "$RAIZ/perfiles/chico/BORRAR"; afirmar $? "el modo chico borra test-agentes.sh (sin agentes no tiene qué probar)"
+fi
 
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
