@@ -115,6 +115,31 @@ chmod +x "$TMP/bin/git"
 afirmar $c "reintenta git fetch si falla por un lock"
 rm -f "$TMP/bin/git"
 
+# 7. Hallazgos de /code-review.
+issue 42 "Huerfano"; issue 43 "Desde worktree"; issue 44 "Sin fetch"
+(cd "$TMP/proj" && "$PREPARAR" 42 --worktree >/dev/null 2>&1)
+rm -rf "$WT/42"
+s=$(cd "$TMP/proj" && "$PREPARAR" 42 --worktree 2>&1); c=$?
+afirmar $c "retoma aunque la carpeta del worktree se haya borrado a mano"
+es -d "$WT/42"; afirmar $? "vuelve a crear la carpeta del worktree borrado"
+
+s=$(cd "$TMP/proj" && "$PREPARAR" 36 2>&1); c=$?
+es "$c" -ne 0; afirmar $? "sin --worktree falla si la rama está en un worktree"
+grep -q "otro worktree" <<<"$s"; afirmar $? "sin --worktree dice en qué worktree está la rama"
+es "$(grep -c "^issue edit 36 " "$GH_LOG")" -eq 2; afirmar $? "sin --worktree no asigna si la rama está en un worktree"
+
+s=$(cd "$WT/36" && "$PREPARAR" 43 --worktree 2>&1); c=$?
+afirmar $c "--worktree funciona corriendo desde otro worktree"
+grep -qx "Worktree: $WT/43" <<<"$s"; afirmar $? "desde otro worktree, el nuevo va al lado del checkout principal"
+
+(cd "$TMP/proj" && "$PREPARAR" ../44 --worktree >/dev/null 2>&1); c=$?
+es "$c" -eq 64 && ! grep -q 'issues/\.\.' "$GH_LOG"; afirmar $? "rechaza un número de issue inválido sin llamar a gh"
+
+git -C "$TMP/proj" remote set-url origin "$TMP/no-existe.git"
+(cd "$TMP/proj" && "$PREPARAR" 44 --worktree >/dev/null 2>&1); c=$?
+es "$c" -ne 0 && ! asignado 44; afirmar $? "con --worktree no asigna si no pudo crear el worktree"
+git -C "$TMP/proj" remote set-url origin "$TMP/remoto.git"
+
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
 echo "Todos los tests pasan."
