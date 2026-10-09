@@ -53,6 +53,18 @@
         "docs/development/deploy.md"
       ],
       "motivo": "cambió la infraestructura o el deploy"
+    },
+    {
+      "cuando": [
+        ".claude/agents/**",
+        "docs/agentes/contrato-subagentes.md"
+      ],
+      "revisar": [
+        "AGENTS.md",
+        "README.md",
+        "docs/agentes/contrato-subagentes.md"
+      ],
+      "motivo": "cambió un subagente (modelo, herramientas, escalado) o su contrato"
     }
   ],
   "sensibles": [
@@ -121,6 +133,16 @@
         ".claude/skills/implement-issue/test-preparar.sh"
       ],
       "correr": "bash .claude/skills/implement-issue/test-preparar.sh"
+    },
+    {
+      "nombre": "agentes",
+      "cuando": [
+        ".claude/agents/**",
+        "docs/agentes/contrato-subagentes.md",
+        "scripts/agentes/check-docs.py",
+        "scripts/agentes/test-agentes.sh"
+      ],
+      "correr": "bash scripts/agentes/test-agentes.sh"
     },
     {
       "nombre": "rojo",

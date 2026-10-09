@@ -146,6 +146,18 @@ Viven en `.claude/skills/`.
 | 🔁 | `/mejorar-skills` | Junta las retros y las señales objetivas (fallas de CI en ramas de agentes, reverts) y propone ajustes a las skills en un PR. Nunca afloja controles. |
 | 🌿 | `git-workflow` | Ramas, commits y PRs. |
 
+### 🤖 Subagentes por modelo
+
+En `.claude/agents/`, cada rol con su modelo:
+
+| | Subagente | Modelo | Para qué |
+|---|---|---|---|
+| 🛠️ | `implementador` | Sonnet | `implement-issue` en el worktree que le pasan: lógica de negocio, bugs, features y lo que escala el liviano. |
+| 🪶 | `implementador-liviano` | Haiku | Issues chicos sin rutas sensibles ni lógica de negocio. Si se encuentra con algo de eso, frena y escala. |
+| 👀 | `revisor` | Opus | `review-pr` desde otro contexto, en un worktree propio. No publica: devuelve los hallazgos. |
+
+Comparten las reglas y el formato de salida de `docs/agentes/contrato-subagentes.md`, y cada uno trabaja en su propio worktree (`preparar.sh <n> --worktree`). `check-docs.py` valida que cada uno tenga modelo, herramientas y el contrato.
+
 ### 🌱 Cómo aprenden
 
 > [!NOTE]
@@ -171,6 +183,7 @@ Las skills tienen un máximo de 120 líneas, que controla `check-docs.py`. Dos c
 | 🌿 | Convenciones de GitHub | `docs/convencion-nombres-github.md`: ramas, commits, PRs, issues, labels |
 | 🏷️ | Labels | `.github/labels.yml` (fuente), `.github/labeler.yml` (auto-etiquetado), `.github/workflows/labels.yml` (sync + labeler + checks) |
 | 📬 | Issues y PRs | `.github/ISSUE_TEMPLATE/` (formularios con labels), `.github/pull_request_template.md`, `.github/workflows/desbloquear.yml` |
+| 🤖 | Subagentes por modelo | `.claude/agents/` (implementador, implementador liviano, revisor) + `docs/agentes/contrato-subagentes.md` |
 | ✅ | Docs y scripts testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py`: links, rutas y ADRs rotos, rutas del mapa que ya no existen, lo que `AGENTS.md` dice ignorado y no lo está; shellcheck y los `test-*.sh`, aislados de la config de git |
 | 🔒 | Secretos fuera del repo | `.gitignore`: `.env*` (salvo `.env.example`) y lo que generan los scripts de agentes |
 | 🧪 | Verificación antes del PR | `scripts/agentes/verificar.py`: según lo que cambió, corre lint, typecheck, tests afectados, drift de migraciones… |
@@ -202,7 +215,7 @@ Para proyectos de una o dos personas, agregá `--chico`: `./scripts/init-plantil
 | Docs | hub con `reference/`, `development/`, `guides/` | un archivo de arquitectura y los ADRs |
 | Convención de GitHub | documento con opciones y decisiones | una página con las reglas |
 | Autonomía y rutas sensibles | `AGENTS.md` + `docs/mapa-agentes.json` | todo en `AGENTS.md`, con la checklist de migraciones |
-| No trae | | épicas y `plan-feature`, `review-pr`, `estado`, bloqueos, labeler, formularios de issue, modo releases |
+| No trae | | épicas y `plan-feature`, `review-pr`, `estado`, bloqueos, labeler, formularios de issue, modo releases, subagentes |
 
 <details>
 <summary><b>📈 Si el proyecto chico crece</b></summary>

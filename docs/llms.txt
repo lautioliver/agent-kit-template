@@ -12,6 +12,7 @@ Instrucciones para modelos: leer este archivo y AGENTS.md. Spec aspiracional = /
 - [Convención de nombres en GitHub](convencion-nombres-github.md) — labels en ../.github/labels.yml
 - [Decisiones (ADRs)](decisions/README.md)
 - [Mapa para agentes: docs según cambios, rutas sensibles](mapa-agentes.json)
+- [Contrato de los subagentes: reglas y salida común](agentes/contrato-subagentes.md)
 - [Lecciones de las retros de agentes (revisadas en PR; leer antes de implementar)](agentes/lecciones.md)
 - [AGENTS.md](../AGENTS.md)
 - [Spec](../README.md)
