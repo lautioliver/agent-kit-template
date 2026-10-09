@@ -167,6 +167,13 @@ afirmar $c "sin BASE, en la plantilla sin inicializar, toma el issue igual"
 grep -q "^Rama nueva: claude/47-sin-base (desde origin/main)" <<<"$s"; afirmar $? "sin BASE usa la rama por defecto del remoto"
 grep -qi "aviso.*main" <<<"$s"; afirmar $? "sin BASE avisa qué base usó"
 
+# --help explica --worktree (salió de implement-issue/SKILL.md) sin tocar GitHub ni el repo.
+: >"$GH_LOG"
+s=$(cd "$TMP/proj" && "$PREPARAR" --help 2>&1); c=$?
+afirmar $c "--help termina bien"
+grep -q "git worktree remove" <<<"$s" && grep -q "falla sin asignar" <<<"$s" && grep -q "git -C" <<<"$s"; afirmar $? "--help explica cómo trabajar en el worktree"
+! [ -s "$GH_LOG" ]; afirmar $? "--help no llama a gh"
+
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
 echo "Todos los tests pasan."
