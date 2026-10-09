@@ -76,7 +76,7 @@ for combinacion in "completo main|[main]" "chico main|[main]" "completo develop|
   read -r modo base rel <<<"$args"
   extra=(); [ "$modo" = chico ] && extra=(--chico)
   (cd "$p" && ./scripts/init-plantilla.sh Demo "$base" ${rel:+"$rel"} ${extra[@]+"${extra[@]}"} >/dev/null 2>&1)
-  grep -qxF "    branches: $esperado" "$p/.github/workflows/docs.yml"
+  grep -qxF "    branches: $esperado" "$p/.github/workflows/docs.yml" && ! grep -q 'plantilla misma' "$p/.github/workflows/docs.yml"
   afirmar $? "[$args] docs.yml corre en los pushes a $esperado"
 done
 
