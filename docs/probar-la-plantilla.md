@@ -1,8 +1,12 @@
 # Probar la plantilla
 
-Gracias por probarla. Lo que más sirve es saber **dónde te trabaste**, no si te gustó. Este archivo es de la plantilla, no de tu proyecto: `init-plantilla.sh` lo borra.
+Gracias por probarla. Lo que más sirve es saber **dónde te trabaste**, no si te gustó.
+
+Leé esta guía [en el repo de la plantilla](https://github.com/lautioliver/barrilete-kit/blob/main/docs/probar-la-plantilla.md), no en tu copia: `init-plantilla.sh` la borra en el paso 2.
 
 **Tiempo:** de 1 a 2 horas. **Herramienta:** la que uses todos los días (Claude Code, Codex, Copilot, Cursor…). Si no es Claude Code, mejor: es lo que menos se probó.
+
+Los pasos usan los comandos de Claude Code (`/implement-issue 3`). En otra herramienta, si no reconoce el comando, pedíselo por nombre: "seguí la skill implement-issue (`.claude/skills/implement-issue/SKILL.md`) para el issue 3". Anotá si tuviste que hacerlo: también es un dato.
 
 ## Antes de empezar
 

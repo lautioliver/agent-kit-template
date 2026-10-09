@@ -53,10 +53,10 @@ Plantilla de repo para trabajar con agentes de código **sin perder el control**
 
 ## 🚀 Empezar
 
-<!-- marca:inicio -->
+<!-- plantilla:inicio -->
 > [!NOTE]
 > ¿La probás por primera vez para contar cómo te fue? Seguí la [guía de prueba](docs/probar-la-plantilla.md): pasos, qué anotar y el formulario para reportarlo.
-<!-- marca:fin -->
+<!-- plantilla:fin -->
 
 > [!TIP]
 > Necesitás `gh` autenticado (`gh auth status`), `jq` y `python3`. Ver [Requisitos](#requisitos).
