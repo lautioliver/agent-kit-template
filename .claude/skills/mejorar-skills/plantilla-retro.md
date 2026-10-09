@@ -1,5 +1,5 @@
 ---
-skill: implement-issue | review-pr
+skill: implement-issue | review-pr | mejorar-skills
 issue: <n> (en review-pr, si el PR no cierra ninguno: "sin issue")
 pr: <n o "sin PR">
 area: <area: del issue, o "ninguna">

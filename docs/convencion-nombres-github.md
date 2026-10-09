@@ -72,6 +72,8 @@ Reglas de la spec:
 | `release/` | Preparar una versión | `release/v1.0.0` |
 | `claude/` | Rama creada por un agente de Claude | `claude/57-auditoria-flujo-pago` |
 
+**Excepción: `agentes/retros`.** Rama huérfana de larga vida donde los agentes guardan sus retros (un archivo por retro) con `.claude/skills/mejorar-skills/retro.sh`. Es una rama de datos: no lleva número de issue, no se mergea nunca y se escribe sin PR, siempre con ese script. Si el repo protege ramas con un patrón amplio (`*`), excluila, o las retros quedan pendientes en `.git/retros-pendientes/`.
+
 > **Decisión a tomar:** ¿usamos los alias cortos (`feat/`, `fix/`) o los largos (`feature/`, `bugfix/`)? Recomendado: **cortos**, porque coinciden con los tipos de commit.
 
 ---
@@ -300,6 +302,7 @@ Para incluir en `CLAUDE.md` / `AGENTS.md` del repo:
 - Scopes válidos: los de §2.
 - <REGLA_RAMAS>
 - Nunca pushear directo a las ramas troncales. Todo entra por PR.
+- Excepción: `agentes/retros` (rama de datos de las retros), solo con `retro.sh`.
 - Si el cambio modifica lógica de negocio ya definida, agregar el label `logica-negocio` y explicarlo en el PR.
 - Ver docs/convencion-nombres-github.md para el detalle.
 ```
@@ -324,7 +327,7 @@ Marcar la opción elegida por el equipo y fecha:
 
 | # | Tema | Opción elegida | Fecha | Notas |
 |---|---|---|---|---|
-| 1 | Ramas | ✅ Conventional Branch 1.1 | <FECHA> | <REGLA_RAMAS> |
+| 1 | Ramas | ✅ Conventional Branch 1.1 | <FECHA> | <REGLA_RAMAS> Excepción: `agentes/retros`, rama de datos de las retros (§1). |
 | 2 | Commits | | | ¿scopes confirmados? |
 | 3 | PRs | | | ¿squash merge? |
 | 4 | Títulos de issues | | | |

@@ -43,6 +43,7 @@ Qué puede hacer un agente solo y qué tiene que consultar antes. "Consultar" es
 - Refactors internos que no cambian comportamiento ni interfaces.
 - Actualizar docs para que reflejen lo que cambió.
 - Crear ramas `claude/…`, commitear y abrir PRs (nunca mergearlos).
+- Guardar retros en la rama `agentes/retros` con `retro.sh` (sin PR: es una rama de datos, no de código).
 
 **Tiene que consultar antes:**
 - Cambiar el schema de la base o escribir migraciones → skill `db-migration`.
@@ -78,7 +79,7 @@ Fuente de verdad: `docs/convencion-nombres-github.md`. Labels: `.github/labels.y
 - **Issues:** se abren con la skill `crear-issue`. Título en imperativo y sin prefijo; el tipo va en el label `tipo:`. Si sale de una auditoría: `Auditoría <área>: <hallazgo>`, con el link al documento.
 - **Decisiones irreversibles:** ADR nuevo en `docs/decisions/` (ver su README).
 
-Nada entra a las ramas troncales sin PR.
+Nada entra a las ramas troncales sin PR. La única rama que se escribe sin PR es `agentes/retros`, y solo con `retro.sh`.
 
 ## Docs
 

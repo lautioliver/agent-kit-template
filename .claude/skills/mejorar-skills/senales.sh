@@ -9,10 +9,11 @@ RAMA=agentes/retros
 cd "$(git rev-parse --show-toplevel)" || exit 1
 desde=$(date -u -v-"${DIAS}"d +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d "$DIAS days ago" +%Y-%m-%dT%H:%M:%SZ)
 
+# La del remoto si existe; si no, la local (retros guardadas antes de tener remoto).
 ref="refs/heads/$RAMA"
 if git remote get-url origin >/dev/null 2>&1; then
   git fetch -q origin "+$ref:refs/remotes/origin/$RAMA" 2>/dev/null || true
-  ref="refs/remotes/origin/$RAMA"
+  git rev-parse -q --verify "refs/remotes/origin/$RAMA" >/dev/null && ref="refs/remotes/origin/$RAMA"
 fi
 echo "# Señales para mejorar las skills"
 echo

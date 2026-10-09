@@ -23,6 +23,7 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
 
 - **GitHub con sub-issues y dependencias de issues** ("Blocked by" / "Blocking") habilitados. Son funciones nuevas de GitHub: si el repo o el plan no las tiene, las skills avisan con el error (404/422) y dejan el bloqueo escrito en el cuerpo del issue, pero `planificar.py`, `disponibles.sh`, `preparar.sh` y el workflow `desbloquear.yml` pierden la parte automática.
 - `gh` autenticado, `jq` y `python3` en la máquina donde corre el agente.
+- Que los agentes puedan pushear a la rama `agentes/retros`, donde guardan las retros. Si protegés ramas con un patrón amplio (`*`), excluila; si no, `retro.sh` deja las retros en `.git/retros-pendientes/`.
 
 ## Cómo usarla
 
