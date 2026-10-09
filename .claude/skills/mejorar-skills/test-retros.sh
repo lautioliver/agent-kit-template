@@ -10,7 +10,9 @@ RAMA=agentes/retros
 fallas=0
 ok() { echo "ok   - $1"; }
 falla() { echo "FAIL - $1"; fallas=$((fallas + 1)); }
-afirmar() { if eval "$2"; then ok "$1"; else falla "$1"; fi; }
+# Uso: <condición>; afirmar $? "descripción"
+afirmar() { if [ "$1" -eq 0 ]; then ok "$2"; else falla "$2"; fi; }
+igual() { [ "$1" = "$2" ]; }
 
 # gh falso: los scripts no pueden depender de GitHub para las retros.
 mkdir -p "$TMP/bin"
@@ -45,39 +47,40 @@ archivos() { git --git-dir="$TMP/remoto.git" ls-tree -r --name-only "$RAMA" -- r
 # 1. Crea un archivo con el frontmatter completo, pushea, y no toca la rama ni el índice.
 (cd "$TMP/a" && git switch -q -c claude/1-algo && echo x >sucio.txt && git add sucio.txt)
 retro a implement-issue 1 "primera" >/dev/null 2>"$TMP/err" || true
-afirmar "retro.sh pushea un archivo a $RAMA" '[ "$(archivos | wc -l | tr -d " ")" = 1 ]'
+igual "$(archivos | wc -l | tr -d " ")" 1; afirmar $? "retro.sh pushea un archivo a $RAMA"
 f=$(archivos | head -1)
-afirmar "el nombre es AAAA-MM-DD-<skill>-<n>.md" '[[ "$f" =~ ^retros/[0-9]{4}-[0-9]{2}-[0-9]{2}-implement-issue-1\.md$ ]]'
+grep -Eq '^retros/[0-9]{4}-[0-9]{2}-[0-9]{2}-implement-issue-1\.md$' <<<"$f"; afirmar $? "el nombre es AAAA-MM-DD-<skill>-<n>.md"
 c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$f" 2>/dev/null)
 for campo in skill issue pr area rutas skill_sha fecha; do
-  afirmar "el frontmatter tiene $campo" 'grep -Eq "^$campo: .+" <<<"$c"'
+  grep -Eq "^$campo: .+" <<<"$c"; afirmar $? "el frontmatter tiene $campo"
 done
 sha=$(cd "$TMP/a" && git log -1 --format=%h -- .claude/skills/implement-issue/SKILL.md)
-afirmar "skill_sha es el último commit del SKILL.md" 'grep -q "^skill_sha: $sha" <<<"$c"'
-afirmar "la rama actual no cambió" '[ "$(cd "$TMP/a" && git branch --show-current)" = claude/1-algo ]'
-afirmar "el índice no cambió" '[ "$(cd "$TMP/a" && git diff --cached --name-only)" = sucio.txt ]'
+grep -q "^skill_sha: $sha" <<<"$c"; afirmar $? "skill_sha es el último commit del SKILL.md"
+igual "$(cd "$TMP/a" && git branch --show-current)" claude/1-algo; afirmar $? "la rama actual no cambió"
+igual "$(cd "$TMP/a" && git diff --cached --name-only)" sucio.txt; afirmar $? "el índice no cambió"
 
 # Sin frontmatter obligatorio, no publica.
 printf '**Desvíos:** nada\n' >"$TMP/mal.md"
-afirmar "rechaza una retro sin skill ni issue" '! (cd "$TMP/a" && "$AQUI/retro.sh" "$TMP/mal.md" >/dev/null 2>&1)'
+! (cd "$TMP/a" && "$AQUI/retro.sh" "$TMP/mal.md" >/dev/null 2>&1); afirmar $? "rechaza una retro sin skill ni issue"
 
 # 2. Dos retros desde clones desactualizados (y la misma skill e issue el mismo día) no se pisan.
 retro b review-pr 1 "desde b" >/dev/null 2>&1 || true
 retro a review-pr 1 "desde a" >/dev/null 2>&1 || true
-afirmar "tres retros en el remoto" '[ "$(archivos | wc -l | tr -d " ")" = 3 ]'
+igual "$(archivos | wc -l | tr -d " ")" 3; afirmar $? "tres retros en el remoto"
 
 # 3 y 4. senales.sh muestra solo lo posterior a consolidado.md.
 s=$(cd "$TMP/a" && "$AQUI/senales.sh" 2>&1)
-afirmar "senales.sh sin consolidar muestra todas" 'grep -q primera <<<"$s" && grep -q "desde a" <<<"$s" && grep -q "desde b" <<<"$s"'
+grep -q primera <<<"$s" && grep -q "desde a" <<<"$s" && grep -q "desde b" <<<"$s"; afirmar $? "senales.sh sin consolidar muestra todas"
 punta=$(sed -n 's/.*consolidar hasta: \([0-9a-f]\{7,\}\).*/\1/p' <<<"$s" | head -1)
-afirmar "senales.sh imprime la punta para consolidar" '[ -n "$punta" ]'
+grep -q . <<<"$punta"; afirmar $? "senales.sh imprime la punta para consolidar"
 (cd "$TMP/a" && "$AQUI/retro.sh" --consolidado "$punta" https://example.test/pull/7 >/dev/null 2>&1) || true
 cons=$(git --git-dir="$TMP/remoto.git" show "$RAMA:consolidado.md" 2>/dev/null)
-afirmar "consolidado.md guarda hasta dónde y el PR" 'grep -q "^consolidado-hasta: $punta" <<<"$cons" && grep -q "pull/7" <<<"$cons"'
+grep -q "^consolidado-hasta: $punta" <<<"$cons" && grep -q "pull/7" <<<"$cons"; afirmar $? "consolidado.md guarda hasta dónde y el PR"
 retro b implement-issue 2 "despues" >/dev/null 2>&1 || true
 s=$(cd "$TMP/a" && "$AQUI/senales.sh" 2>&1)
-afirmar "senales.sh después de consolidar muestra solo las nuevas" 'grep -q despues <<<"$s" && ! grep -q primera <<<"$s"'
-afirmar "senales.sh no falla sin gh" 'grep -q "## Fallas de CI" <<<"$s"'
+grep -q despues <<<"$s" && ! grep -q primera <<<"$s"; afirmar $? "senales.sh después de consolidar muestra solo las nuevas"
+grep -q "## Fallas de CI" <<<"$s"; afirmar $? "senales.sh no falla sin gh"
 
 echo
-[ "$fallas" -eq 0 ] && echo "Todos los tests pasan." || { echo "$fallas test(s) fallaron."; exit 1; }
+if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
+echo "Todos los tests pasan."
