@@ -31,6 +31,8 @@ case "$*" in
 esac
 SH
 chmod +x "$TMP/bin/gh"
+# Aislado de la config de git de quien corre los tests (firma de commits, hooks globales…).
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 export PATH="$TMP/bin:$PATH" BASE=main GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=t@t
 issue() { # issue <n> <título>
   printf '{"state":"open","title":"%s","labels":[],"assignees":[],"html_url":"u","body":"cuerpo"}\n' "$2" >"$TMP/issues/$1.json"
@@ -139,6 +141,22 @@ git -C "$TMP/proj" remote set-url origin "$TMP/no-existe.git"
 (cd "$TMP/proj" && "$PREPARAR" 44 --worktree >/dev/null 2>&1); c=$?
 es "$c" -ne 0 && ! asignado 44; afirmar $? "con --worktree no asigna si no pudo crear el worktree"
 git -C "$TMP/proj" remote set-url origin "$TMP/remoto.git"
+
+# 8. Hallazgos de la revisión del PR #40.
+issue 45 "Con config bloqueada"; issue 46 "Worktree bloqueado"
+touch "$TMP/proj/.git/config.lock"
+(cd "$TMP/proj" && "$PREPARAR" 45 --worktree >/dev/null 2>&1); c=$?
+rm -f "$TMP/proj/.git/config.lock"
+afirmar $c "--worktree no necesita escribir .git/config (otro agente puede tenerlo bloqueado)"
+
+git -C "$TMP/proj" worktree add -q -b claude/46-worktree-bloqueado "$TMP/bloqueado" origin/main 2>/dev/null
+git -C "$TMP/proj" worktree lock "$TMP/bloqueado"; rm -rf "$TMP/bloqueado"
+for args in "--worktree" ""; do
+  # shellcheck disable=SC2086  # vacío a propósito
+  s=$(cd "$TMP/proj" && "$PREPARAR" 46 $args 2>&1); c=$?
+  es "$c" -eq 1 && grep -q "NO SE PUEDE TOMAR #46: .*bloqueado" <<<"$s"; afirmar $? "${args:-sin --worktree}: un worktree bloqueado y sin carpeta da un error claro"
+done
+! asignado 46; afirmar $? "no asigna si la rama está en un worktree bloqueado sin carpeta"
 
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
