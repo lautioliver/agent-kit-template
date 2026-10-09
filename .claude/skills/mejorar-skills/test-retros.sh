@@ -17,9 +17,11 @@ igual() { [ "$1" = "$2" ]; }
 # gh falso: los scripts no pueden depender de GitHub para las retros.
 mkdir -p "$TMP/bin"
 printf '#!/bin/sh\nexit 1\n' >"$TMP/bin/gh"; chmod +x "$TMP/bin/gh"
+# Aislado de la config de git de quien corre los tests (rama por defecto, firma, hooks globales…).
+export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 export PATH="$TMP/bin:$PATH" GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=t@t
 
-git init -q --bare "$TMP/remoto.git"
+git init -q --bare -b main "$TMP/remoto.git"
 clonar() {
   git clone -q "$TMP/remoto.git" "$1" 2>/dev/null
   mkdir -p "$1/.claude/skills"
@@ -125,6 +127,12 @@ git init -q "$TMP/d"; (cd "$TMP/d" && git commit -q --allow-empty -m base)
 (cd "$TMP/d" && "$AQUI/retro.sh" "$TMP/carrera.md" >/dev/null 2>&1)
 git -C "$TMP/d" ls-tree -r --name-only "$RAMA" 2>/dev/null | grep -q 'implement-issue-9\.md$'; afirmar $? "sin remoto guarda en la rama local"
 
+# En un repo sin commits la retro no se pierde: se guarda o queda pendiente.
+git init -q "$TMP/vacio"
+(cd "$TMP/vacio" && "$AQUI/retro.sh" "$TMP/carrera.md" >/dev/null 2>&1)
+git -C "$TMP/vacio" ls-tree -r --name-only "$RAMA" 2>/dev/null | grep -q 'implement-issue-9\.md$' \
+  || ls "$TMP/vacio/.git/retros-pendientes/"*.md >/dev/null 2>&1; afirmar $? "en un repo sin commits la retro no se pierde"
+
 # Revisión del PR #39.
 # --consolidado solo acepta commits de la rama de retros.
 otro=$(cd "$TMP/a" && git rev-parse HEAD)
@@ -159,7 +167,7 @@ igual "$(archivos | grep -c 'implement-issue-14')" 1; afirmar $? "la pendiente r
 ! [ -e "$pend" ]; afirmar $? "la pendiente reintentada se borra"
 
 # Retros guardadas sin remoto siguen visibles (y se suben) cuando se agrega uno.
-git init -q --bare "$TMP/remoto-d.git"
+git init -q --bare -b main "$TMP/remoto-d.git"
 (cd "$TMP/d" && git remote add origin "$TMP/remoto-d.git")
 s=$(cd "$TMP/d" && "$AQUI/senales.sh" 2>&1)
 grep -q 'implement-issue-9' <<<"$s"; afirmar $? "senales.sh ve las retros locales después de agregar un remoto"

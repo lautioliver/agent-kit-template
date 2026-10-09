@@ -71,7 +71,7 @@ else
   for f in $BLOQUES; do perl -0pi -e 's/\n<!-- releases:inicio -->.*?<!-- releases:fin -->\n//s' "$f"; done
   [ "$B" != "main" ] && perl -pi -e "s/branches: \[$B\]/branches: [main, $B]/" .github/workflows/labels.yml .github/workflows/docs.yml
 fi
-rm -- scripts/init-plantilla.sh
+rm -- scripts/init-plantilla.sh scripts/test-init.sh  # el test solo sirve con el init
 # Registro del init: con qué datos se creó el proyecto y la huella de cada archivo tal como
 # quedó. crecer.py lo usa para saber qué archivos no tocó el proyecto y puede reemplazar.
 MODO_KIT=$([ -n "$CHICO" ] && echo chico || echo completo) RELEASES="$MODO" python3 - <<'PY'

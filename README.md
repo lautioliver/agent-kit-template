@@ -171,7 +171,8 @@ Las skills tienen un máximo de 120 líneas, que controla `check-docs.py`. Dos c
 | 🌿 | Convenciones de GitHub | `docs/convencion-nombres-github.md`: ramas, commits, PRs, issues, labels |
 | 🏷️ | Labels | `.github/labels.yml` (fuente), `.github/labeler.yml` (auto-etiquetado), `.github/workflows/labels.yml` (sync + labeler + checks) |
 | 📬 | Issues y PRs | `.github/ISSUE_TEMPLATE/` (formularios con labels), `.github/pull_request_template.md`, `.github/workflows/desbloquear.yml` |
-| ✅ | Docs testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py`: links, rutas y ADRs rotos, rutas del mapa que ya no existen |
+| ✅ | Docs y scripts testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py`: links, rutas y ADRs rotos, rutas del mapa que ya no existen, lo que `AGENTS.md` dice ignorado y no lo está; shellcheck y los `test-*.sh`, aislados de la config de git |
+| 🔒 | Secretos fuera del repo | `.gitignore`: `.env*` (salvo `.env.example`) y lo que generan los scripts de agentes |
 | 🧪 | Verificación antes del PR | `scripts/agentes/verificar.py`: según lo que cambió, corre lint, typecheck, tests afectados, drift de migraciones… |
 | 🎨 | Marca | `.github/marca/`: Barrilete, la identidad de la plantilla (el init la borra) |
 
