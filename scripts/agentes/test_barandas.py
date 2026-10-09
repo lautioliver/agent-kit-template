@@ -278,6 +278,16 @@ class Registro(unittest.TestCase):
             frenado = r.returncode == 2 or '"deny"' in r.stdout
             self.assertTrue(frenado, (nombre, r.returncode, r.stdout, r.stderr))
 
+    def test_claude_lanzado_desde_un_subdirectorio(self):
+        """CLAUDE_PROJECT_DIR puede ser el subdirectorio donde se lanzó Claude, sin el script adentro."""
+        for nombre, comando, entrada in self.comandos():
+            if nombre != "claude":
+                continue
+            env = dict(os.environ, CLAUDE_PROJECT_DIR=AQUI)
+            r = subprocess.run(["bash", "-c", comando], input=json.dumps(entrada), capture_output=True, text=True,
+                               cwd=AQUI, env=env)
+            self.assertEqual(r.returncode, 2, r.stderr)
+
     def test_fuera_de_un_repo_no_traba_todo(self):
         import tempfile
         with tempfile.TemporaryDirectory() as d:
