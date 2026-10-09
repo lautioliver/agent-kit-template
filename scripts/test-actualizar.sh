@@ -11,6 +11,7 @@ ok() { echo "ok   - $1"; }
 falla() { echo "FAIL - $1"; fallas=$((fallas + 1)); }
 # Uso: <condición>; afirmar $? "descripción"
 afirmar() { if [ "$1" -eq 0 ]; then ok "$2"; else falla "$2"; fi; }
+es() { test "$@"; }
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=t@t
 
@@ -48,9 +49,9 @@ D="$TMP/completo"
 proyecto "$D" completo
 grep -q '"version": "0.1.0"' "$D/.agent-kit.json"; afirmar $? "el init registra la versión de la plantilla en .agent-kit.json"
 ! [ -e "$D/VERSION" ] && ! [ -e "$D/CHANGELOG.md" ]; afirmar $? "el init borra VERSION y CHANGELOG.md (son de la plantilla)"
-[ -f "$D/scripts/actualizar.py" ]; afirmar $? "el proyecto completo trae actualizar.py"
+es -f "$D/scripts/actualizar.py"; afirmar $? "el proyecto completo trae actualizar.py"
 (
-  cd "$D"
+  cd "$D" || exit 1
   perl -pi -e 's/^# .*/# AGENTS.md — Demo (editado)/ if $. == 1' AGENTS.md
   perl -pi -e 's/^# .*/# Convención del proyecto/ if $. == 1' docs/convencion-nombres-github.md
   echo "cambio del proyecto" >>.claude/skills/debug/viejo2.md
@@ -72,14 +73,14 @@ afirmar $? "fusiona un archivo que tocaron los dos lados en lugares distintos"
 head -1 "$D/docs/convencion-nombres-github.md" | grep -q "Convención del proyecto" \
   && grep -q '^<<<<<<<' "$D/.agent-kit/pendientes/docs/convencion-nombres-github.md"
 afirmar $? "con conflicto no pisa el archivo: deja la fusión con marcas en .agent-kit/pendientes/"
-[ -f "$D/.claude/skills/debug/nuevo.md" ]; afirmar $? "agrega un archivo nuevo de la plantilla"
+es -f "$D/.claude/skills/debug/nuevo.md"; afirmar $? "agrega un archivo nuevo de la plantilla"
 ! [ -e "$D/.claude/skills/debug/viejo.md" ]; afirmar $? "borra un archivo que la plantilla sacó y el proyecto no tocó"
 [ -f "$D/.claude/skills/debug/viejo2.md" ] && grep -q "viejo2.md" <<<"$s"
 afirmar $? "conserva y avisa un archivo que la plantilla sacó pero el proyecto modificó"
 ! [ -e "$D/.claude/skills/debug/borrado.md" ]; afirmar $? "no vuelve a traer un archivo que el proyecto borró"
 grep -q '"version": "0.2.0"' "$D/.agent-kit.json"; afirmar $? "registra la versión nueva en .agent-kit.json"
 grep -q "Cambio de prueba" <<<"$s"; afirmar $? "muestra el changelog de las versiones nuevas"
-[ "$(git -C "$D" rev-parse HEAD)" = "$antes" ] && [ -n "$(git -C "$D" status --porcelain)" ]
+es "$(git -C "$D" rev-parse HEAD)" = "$antes" && es -n "$(git -C "$D" status --porcelain)"
 afirmar $? "no commitea: los cambios quedan en el working tree"
 ! grep -rq '<PROYECTO>\|<RAMA_BASE>' "$D/.claude/skills/debug/SKILL.md" "$D/AGENTS.md"
 afirmar $? "los archivos traídos tienen los datos del proyecto, no los marcadores"
@@ -108,7 +109,7 @@ afirmar $? "crecer.py registra la versión de la plantilla que trajo"
 D="$TMP/anterior"
 proyecto "$D" completo
 (
-  cd "$D"
+  cd "$D" || exit 1
   python3 -c "import json; k=json.load(open('.agent-kit.json')); k.pop('version', None); json.dump(k, open('.agent-kit.json', 'w'), indent=2)"
   perl -pi -e 's/^# .*/# AGENTS.md — Demo (editado)/ if $. == 1' AGENTS.md
   git commit -qam anterior
