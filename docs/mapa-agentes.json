@@ -152,6 +152,13 @@
       "correr": "bash .claude/skills/mejorar-skills/test-retros.sh"
     },
     {
+      "nombre": "base",
+      "cuando": [
+        "scripts/agentes/**"
+      ],
+      "correr": "bash scripts/agentes/test-base.sh"
+    },
+    {
       "nombre": "lint",
       "siempre": true,
       "correr": "TODO: comando de lint (por ejemplo: npm run lint)"

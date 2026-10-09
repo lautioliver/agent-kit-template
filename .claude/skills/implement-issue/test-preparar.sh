@@ -158,6 +158,15 @@ for args in "--worktree" ""; do
 done
 ! asignado 46; afirmar $? "no asigna si la rama está en un worktree bloqueado sin carpeta"
 
+# Plantilla sin inicializar (BASE=<RAMA_BASE>) y sin BASE: usa la rama por defecto del remoto y avisa.
+issue 47 "Sin base"
+git -C "$TMP/remoto.git" symbolic-ref HEAD refs/heads/main
+git -C "$TMP/proj" remote set-head origin -d 2>/dev/null
+s=$(cd "$TMP/proj" && env -u BASE "$PREPARAR" 47 --worktree 2>&1); c=$?
+afirmar $c "sin BASE, en la plantilla sin inicializar, toma el issue igual"
+grep -q "^Rama nueva: claude/47-sin-base (desde origin/main)" <<<"$s"; afirmar $? "sin BASE usa la rama por defecto del remoto"
+grep -qi "aviso.*main" <<<"$s"; afirmar $? "sin BASE avisa qué base usó"
+
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
 echo "Todos los tests pasan."

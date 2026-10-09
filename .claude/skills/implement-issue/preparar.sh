@@ -18,6 +18,14 @@ for opcion in "$@"; do
 done
 [[ "$N" =~ ^[0-9]+$ ]] || { echo "$USO" >&2; exit 64; }
 BASE="${BASE:-<RAMA_BASE>}"   # el init de la plantilla reemplaza <RAMA_BASE>
+# Plantilla sin inicializar (sigue el marcador): la rama por defecto del remoto, con aviso.
+if [[ "$BASE" == "<"*">" ]]; then
+  defecto=$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null || true); defecto="${defecto#origin/}"
+  [ -n "$defecto" ] || defecto=$(git ls-remote --symref origin HEAD 2>/dev/null | sed -n 's|^ref: refs/heads/\([^[:space:]]*\)[[:space:]]*HEAD$|\1|p')
+  [ -n "$defecto" ] || { echo "preparar.sh: la rama base no está configurada ($BASE). Definí BASE=<rama>." >&2; exit 64; }
+  echo "Aviso: la rama base no está configurada ($BASE); uso la rama por defecto del remoto, $defecto. Para otra, definí BASE." >&2
+  BASE="$defecto"
+fi
 REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 YO=$(gh api user -q .login)
 
