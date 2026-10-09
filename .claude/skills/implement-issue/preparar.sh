@@ -13,7 +13,8 @@ $USO
 
 Valida que el issue se pueda tomar (abierto, no épica, no bloqueado, sin otra persona
 asignada, sin cambios sin commitear), lo asigna, crea la rama claude/<n>-<descripcion>
-desde la rama base (o retoma la que existe) e imprime el issue con su contexto.
+desde la rama base (o retoma la del issue, claude/<n>-*, local o en origin, aunque el título
+haya cambiado; si hay más de una, falla y las lista) e imprime el issue con su contexto.
 
   --revisar   Solo valida e imprime: no asigna ni crea la rama.
   --worktree  Lo mismo, pero en un worktree propio (../<repo>-wt/<n>), sin tocar el
@@ -73,6 +74,18 @@ titulo=$(jq -r .title <<<"$issue")
 slug=$(printf '%s' "$titulo" | perl -CS -MUnicode::Normalize -ne 'print lc NFD($_) =~ s/\pM//gr' \
   | perl -pe 's/[^a-z0-9]+/-/g; s/^-+|-+$//g; s/^(.{1,40})(-.*)?$/$1/ if length > 40')
 RAMA="claude/$N-$slug"
+# Si el issue ya tiene rama (claude/<n>-*, local o en origin), se retoma esa aunque el título haya
+# cambiado después de tomarlo (#41). Con más de una no se elige: se listan.
+locales=$(git for-each-ref --format='%(refname:strip=2)' "refs/heads/claude/$N-*")
+remotas=$(git ls-remote --heads origin "claude/$N-*" 2>/dev/null | sed 's|.*refs/heads/||' || true)
+existentes=$(printf '%s\n%s\n' "$locales" "$remotas" | grep -E "^claude/$N-" | sort -u || true)
+if [ "$(grep -c . <<<"$existentes")" -gt 1 ]; then
+  error "tiene más de una rama: $(paste -sd ' ' - <<<"$existentes"). Borrá las que sobran o retomá una a mano."
+fi
+[ -n "$existentes" ] && RAMA="$existentes"
+# Solo en origin: se crea la local desde ahí.
+SOLO_REMOTA=""
+[ -n "$existentes" ] && ! grep -qx "$RAMA" <<<"$locales" && SOLO_REMOTA=1
 # El worktree va al lado del checkout principal (el primero de la lista), aunque esto
 # se corra desde otro worktree.
 if [ -n "$WORKTREE" ]; then
@@ -114,6 +127,7 @@ traer() {
   done
   echo "$err" >&2; return 1
 }
+traer_rama() { git fetch -q origin "refs/heads/$RAMA:refs/remotes/origin/$RAMA"; }
 
 # Dónde está ya la rama (si está). prune olvida los worktrees cuya carpeta se borró a mano.
 git worktree prune
@@ -131,6 +145,8 @@ if [ -z "$WORKTREE" ]; then
   traer
   if git show-ref -q --verify "refs/heads/$RAMA"; then
     git switch -q "$RAMA"; echo "Rama existente: $RAMA (retomando)"
+  elif [ -n "$SOLO_REMOTA" ]; then
+    traer_rama; git switch -q --no-track -c "$RAMA" "origin/$RAMA"; echo "Rama existente: $RAMA (retomando desde origin)"
   else
     git switch -q -c "$RAMA" "origin/$BASE"; echo "Rama nueva: $RAMA (desde origin/$BASE)"
   fi
@@ -151,6 +167,9 @@ if [ -n "$en_uso" ]; then
 elif git show-ref -q --verify "refs/heads/$RAMA"; then
   mkdir -p "$(dirname "$WT")"; git worktree add -q "$WT" "$RAMA"
   echo "Rama existente: $RAMA (retomando)"
+elif [ -n "$SOLO_REMOTA" ]; then
+  traer_rama; mkdir -p "$(dirname "$WT")"; git worktree add -q --no-track -b "$RAMA" "$WT" "origin/$RAMA"
+  echo "Rama existente: $RAMA (retomando desde origin)"
 else
   mkdir -p "$(dirname "$WT")"; git worktree add -q --no-track -b "$RAMA" "$WT" "origin/$BASE"
   echo "Rama nueva: $RAMA (desde origin/$BASE)"

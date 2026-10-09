@@ -13,7 +13,7 @@ Si no te dieron un número ("tomá el siguiente"), corré `.claude/skills/estado
 
 ## 1. Tomar el issue
 
-`.claude/skills/implement-issue/preparar.sh <n>` valida que el issue esté abierto, que no sea una épica, que no esté bloqueado, que no lo tenga asignado otra persona y que no haya cambios sin commitear. Si pasa, lo asigna a quien corre el comando, crea la rama `claude/<n>-<descripcion>` desde `<RAMA_BASE>` (o retoma la que ya existe) e imprime el issue con sus comentarios, su épica y lo que desbloquea.
+`.claude/skills/implement-issue/preparar.sh <n>` valida que el issue esté abierto, que no sea una épica, que no esté bloqueado, que no lo tenga asignado otra persona y que no haya cambios sin commitear. Si pasa, lo asigna a quien corre el comando, crea la rama `claude/<n>-<descripcion>` desde `<RAMA_BASE>` (o retoma la que ya existe, `claude/<n>-*`, aunque se haya editado el título) e imprime el issue con sus comentarios, su épica y lo que desbloquea.
 
 Para varios issues en paralelo, `--worktree` (cómo trabajar ahí: `preparar.sh --help`). Para leer un issue sin tomarlo, `--revisar`. Si falla, **no fuerces nada**: contale al usuario por qué y, si sirve, proponé el siguiente disponible.
 
