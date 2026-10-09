@@ -12,6 +12,7 @@ Revisa:
 - Rutas del mapa (docs, sensibles, verificar) que no coinciden con ningún archivo (salvo las
   marcadas como opcionales con "?" al principio); avisa de
   carpetas con código que el mapa no cubre.
+- Lo que AGENTS.md dice que está ignorado (`.env*`…) y git no ignora.
 - Skills (.claude/skills/*/SKILL.md) de más de 120 líneas, y docs/agentes/lecciones.md de más de 40.
 Las rutas de "ignorar_check" del mapa (por ejemplo, bitácoras históricas) no se validan.
 """
@@ -152,6 +153,19 @@ if os.path.isdir(".claude/skills"):
             lineas = sum(1 for _ in open(ruta, encoding="utf-8"))
             if lineas > MAX_SKILL:
                 errores.append(f"{ruta}: {lineas} líneas (máximo {MAX_SKILL}). Pasá algo a un script o sacá lo que no aporta.")
+
+# Lo que AGENTS.md dice que está ignorado (`.env*` están ignorados) tiene que estarlo: el agente
+# confía en esa frase y, si es falsa, termina commiteando un secreto.
+if os.path.exists("AGENTS.md"):
+    for n, linea in enumerate(open("AGENTS.md", encoding="utf-8"), 1):
+        if not re.search(r"ignorad", linea, re.I):
+            continue
+        for patron in re.findall(r"`([^`\s]+)`", linea):
+            ejemplo = patron.replace("*", "")  # .env* → .env
+            r = subprocess.run(["git", "check-ignore", "-q", "--no-index", ejemplo], capture_output=True)
+            if ejemplo and r.returncode == 1:
+                errores.append(f"AGENTS.md:{n}: dice que `{patron}` está ignorado, pero {ejemplo} no lo está. "
+                               "Agregalo a .gitignore o corregí la frase.")
 
 # Lecciones de las retros: las lee cada agente antes de empezar, así que tienen que ser cortas.
 MAX_LECCIONES, LECCIONES = 40, "docs/agentes/lecciones.md"

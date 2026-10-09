@@ -137,6 +137,14 @@
       "correr": "bash scripts/agentes/test-base.sh"
     },
     {
+      "nombre": "init",
+      "cuando": [
+        "?scripts/init-plantilla.sh",
+        "?scripts/test-init.sh"
+      ],
+      "correr": "bash scripts/test-init.sh"
+    },
+    {
       "nombre": "lint",
       "siempre": true,
       "correr": "TODO: comando de lint (por ejemplo: npm run lint)"

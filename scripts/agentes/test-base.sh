@@ -14,6 +14,9 @@ afirmar() { if [ "$1" -eq 0 ]; then ok "$2"; else falla "$2"; fi; }
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=t@t
 unset BASE
+# Solo aplica a la plantilla sin inicializar: el init reemplaza el primer marcador por la rama base.
+# shellcheck disable=SC2050  # la comparación es constante hasta que el init la cambia
+if [ "<RAMA_BASE>" != "<RAMA""_BASE>" ]; then echo "La rama base ya está configurada: estos tests no aplican."; exit 0; fi
 
 # Remoto cuya rama por defecto es "trunk" (para no confundirla con un "main" fijo).
 git init -q --bare "$TMP/remoto.git"; git -C "$TMP/remoto.git" symbolic-ref HEAD refs/heads/trunk

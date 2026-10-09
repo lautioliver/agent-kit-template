@@ -84,7 +84,8 @@ else
   elif [[ "$pr" =~ ^[0-9]+$ ]]; then n="pr$pr"
   else echo "retro.sh: falta 'issue: <n>' o 'pr: <n>' en el frontmatter." >&2; exit 1
   fi
-  sha=$(git log -1 --format=%H -- ".claude/skills/$skill/SKILL.md"); sha="${sha:-desconocido}"
+  # En un repo sin commits git log falla: la retro se guarda igual, con skill_sha desconocido.
+  sha=$(git log -1 --format=%H -- ".claude/skills/$skill/SKILL.md" 2>/dev/null || true); sha="${sha:-desconocido}"
   # Retro normalizada, con fecha y skill_sha (si no están: una pendiente ya los tiene).
   {
     echo ---; echo "$fm"

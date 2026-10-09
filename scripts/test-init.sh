@@ -11,6 +11,7 @@ ok() { echo "ok   - $1"; }
 falla() { echo "FAIL - $1"; fallas=$((fallas + 1)); }
 # Uso: <condición>; afirmar $? "descripción"
 afirmar() { if [ "$1" -eq 0 ]; then ok "$2"; else falla "$2"; fi; }
+es() { test "$@"; }
 export GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_NOSYSTEM=1
 export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=t@t GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=t@t
 unset BASE
@@ -31,7 +32,7 @@ for modo in completo chico; do
 
   ! [ -e "$p/scripts/test-init.sh" ]; afirmar $? "[$modo] el init borra este test (no sirve sin init-plantilla.sh)"
   n=$(cd "$p" && git check-ignore .env .env.local scripts/agentes/__pycache__ | wc -l | tr -d ' ')
-  [ "$n" = 3 ]; afirmar $? "[$modo] .env, .env.local y __pycache__ están ignorados"
+  es "$n" = 3; afirmar $? "[$modo] .env, .env.local y __pycache__ están ignorados"
   ! (cd "$p" && git check-ignore -q .env.example); afirmar $? "[$modo] .env.example no está ignorado"
 
   echo "SECRET=x" >"$p/.env"
@@ -40,7 +41,7 @@ for modo in completo chico; do
     ! grep -q '\.env\|__pycache__' <<<"$s"; afirmar $? "[$modo] verificar.py no lista .env ni __pycache__"
   fi
   (cd "$p" && python3 scripts/agentes/check-docs.py >/dev/null 2>&1)
-  [ -z "$(cd "$p" && git status --porcelain)" ]; afirmar $? "[$modo] después de correr los scripts, git status queda limpio"
+  es -z "$(cd "$p" && git status --porcelain)"; afirmar $? "[$modo] después de correr los scripts, git status queda limpio"
 done
 
 # check-docs.py falla si AGENTS.md dice que algo está ignorado y no lo está.

@@ -39,7 +39,7 @@ issue() { # issue <n> <título>
 }
 issue 36 "Hacer algo"; issue 37 "Otra cosa"; issue 38 "Solo mirar"; issue 40 "Sin worktree"; issue 41 "Con lock"
 
-git init -q --bare "$TMP/remoto.git"
+git init -q --bare -b main "$TMP/remoto.git"
 git clone -q "$TMP/remoto.git" "$TMP/proj" 2>/dev/null
 (cd "$TMP/proj" && git switch -q -c main && echo base >README.md && git add README.md && git commit -qm base && git push -q origin main 2>/dev/null)
 WT="$TMP/proj-wt"
@@ -165,7 +165,11 @@ git -C "$TMP/proj" remote set-head origin -d 2>/dev/null
 s=$(cd "$TMP/proj" && env -u BASE "$PREPARAR" 47 --worktree 2>&1); c=$?
 afirmar $c "sin BASE, en la plantilla sin inicializar, toma el issue igual"
 grep -q "^Rama nueva: claude/47-sin-base (desde origin/main)" <<<"$s"; afirmar $? "sin BASE usa la rama por defecto del remoto"
-grep -qi "aviso.*main" <<<"$s"; afirmar $? "sin BASE avisa qué base usó"
+# Después del init la base ya está configurada y no hay nada que avisar (el init reemplaza el primer marcador).
+# shellcheck disable=SC2050  # constante hasta que el init la cambia
+if [ "<RAMA_BASE>" = "<RAMA""_BASE>" ]; then
+  grep -qi "aviso.*main" <<<"$s"; afirmar $? "sin BASE avisa qué base usó"
+fi
 
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
