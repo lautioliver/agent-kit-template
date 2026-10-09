@@ -45,7 +45,32 @@ E        +  where 0 = total([1, 2])
 FAILED test_x.py::test_t - assert 0 == 3
 1 failed in 0.02s"
 
+# pytest: el test corre pero falla antes de la aserción (FAILED no alcanza como evidencia).
+rojo 2 "pytest: TypeError por firma incorrecta" 1 "    def test_t():
+>       assert total([1, 2], 0) == 3
+E       TypeError: total() takes 1 positional argument but 2 were given
+=========================== short test summary info ============================
+FAILED test_x.py::test_t - TypeError: total() takes 1 positional argument but 2 were given
+1 failed in 0.02s"
+rojo 2 "pytest: KeyError" 1 "    def test_t():
+>       assert precios['total'] == 3
+E       KeyError: 'total'
+=========================== short test summary info ============================
+FAILED test_x.py::test_t - KeyError: 'total'
+1 failed in 0.02s"
+rojo 2 "pytest: AttributeError sobre un objeto (símbolo inexistente)" 1 "    def test_t():
+>       assert Carrito().total() == 3
+E       AttributeError: 'Carrito' object has no attribute 'total'
+=========================== short test summary info ============================
+FAILED test_x.py::test_t - AttributeError: 'Carrito' object has no attribute 'total'
+1 failed in 0.02s"
+
 # vitest / jest
+rojo 2 "vitest: TypeError sobre undefined" 1 " FAIL  src/suma.test.ts > suma > suma dos números
+TypeError: Cannot read properties of undefined (reading 'total')
+ ❯ src/suma.test.ts:5:23
+ × suma > suma dos números
+ Test Files  1 failed (1)"
 rojo 0 "vitest: aserción que falla de verdad" 1 " FAIL  src/suma.test.ts > suma > suma dos números
 AssertionError: expected 0 to be 3 // Object.is equality
 
