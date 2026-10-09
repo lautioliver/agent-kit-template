@@ -87,12 +87,13 @@ def archivos_cambiados(args):
         salir(f"no encuentro la rama '{base}' ni 'origin/{base}'. "
               f"Corré 'git fetch origin {base}' o pasá --base <rama>.")
     # Con -z los nombres llegan literales: sin -z, git pone entre comillas y escapa los que tienen
-    # espacios, tildes o ñ, y no coinciden con ningún glob del mapa.
+    # espacios, tildes o ñ, y no coinciden con ningún glob del mapa. Con -uall, una carpeta nueva
+    # sin trackear se lista archivo por archivo (si no, solo aparece "carpeta/").
     r = subprocess.run(["git", "diff", "--name-only", "-z", f"{ref}...HEAD"], capture_output=True, text=True)
     if r.returncode != 0:
         salir(f"git diff contra '{ref}' falló: {r.stderr.strip()}. ¿Tienen historia en común? Probá con --base.")
     nombres = set(r.stdout.split("\0"))
-    entradas = iter(subprocess.run(["git", "status", "--porcelain", "-z"], capture_output=True, text=True).stdout.split("\0"))
+    entradas = iter(subprocess.run(["git", "status", "--porcelain", "-z", "-uall"], capture_output=True, text=True).stdout.split("\0"))
     for e in entradas:
         nombres.add(e[3:])
         if "R" in e[:2] or "C" in e[:2]:
