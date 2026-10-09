@@ -23,6 +23,7 @@ cat >"$TMP/bin/gh" <<'SH'
 case "$*" in
   "repo view"*) echo o/r ;;
   api\ repos/o/r/issues/*) f="$GH_ISSUES/${2##*/}.json"; [ -f "$f" ] && cat "$f" || exit 1 ;;
+  "pr list --head "*) f="$GH_ISSUES/pr-${4//\//_}.json"; if [ -f "$f" ]; then cat "$f"; else echo '[]'; fi ;;
   *) echo "gh falso: $*" >&2; exit 1 ;;
 esac
 SH
@@ -132,19 +133,26 @@ git -C "$P" worktree unlock "$WT/13"
 s=$(cd "$P" && "$AQUI/limpiar.sh" --borrar 2>&1); c=$?
 afirmar $c "limpiar.sh --borrar termina bien"
 
-# Ramas de issues cerrados cuyo PR no se mergeó: se borran la local y la remota (sin gh --delete-branch).
+# Ramas de issues cerrados: se decide por el estado del PR en GitHub (sirve con squash y rebase).
+# Solo se borra (local y remota, sin gh --delete-branch) la de un PR cerrado sin mergear, sin commits
+# sin pushear y que no está en un worktree. Lo demás se lista para revisar a mano.
 git init -q --bare -b main "$TMP/remoto.git"; git -C "$P" remote add origin "$TMP/remoto.git"
 git -C "$P" push -q origin main 2>/dev/null; git -C "$P" remote set-head origin main
-for n in 15 16 17; do git -C "$P" branch "claude/$n-x" main; (cd "$P" && git switch -q "claude/$n-x" && git commit -q --allow-empty -m "r$n" && git push -q origin "claude/$n-x" 2>/dev/null && git switch -q main); done
-(cd "$P" && git merge -q --no-ff --no-edit claude/16-x && git push -q origin main 2>/dev/null)
-issue 15 closed "tipo:task" "Cerrado sin mergear."
-issue 16 closed "tipo:task" "Cerrado y mergeado."
-issue 17 open "tipo:task" "Abierto."
-s=$(cd "$P" && BASE=main "$AQUI/limpiar.sh" 2>&1)
-grep -q "claude/15-x.*sin mergear" <<<"$s" && ! grep -q "claude/16-x" <<<"$s" && ! grep -q "claude/17-x" <<<"$s"; afirmar $? "lista las ramas de issues cerrados que no se mergearon"
-(cd "$P" && BASE=main "$AQUI/limpiar.sh" --borrar >/dev/null 2>&1)
-! git -C "$P" rev-parse -q --verify claude/15-x >/dev/null && ! git --git-dir="$TMP/remoto.git" rev-parse -q --verify claude/15-x >/dev/null; afirmar $? "--borrar borra la rama local y la remota de un issue cerrado sin mergear"
-git -C "$P" rev-parse -q --verify claude/16-x >/dev/null && git -C "$P" rev-parse -q --verify claude/17-x >/dev/null; afirmar $? "--borrar no toca la rama mergeada ni la de un issue abierto"
+pr() { printf '[{"number": %s, "state": "%s"}]\n' "$2" "$3" >"$TMP/issues/pr-claude_$1-x.json"; } # pr <n> <pr> <estado>
+for n in 15 16 17 18 19 20; do git -C "$P" branch "claude/$n-x" main; (cd "$P" && git switch -q "claude/$n-x" && git commit -q --allow-empty -m "r$n" && git push -q origin "claude/$n-x" 2>/dev/null && git switch -q main); done
+(cd "$P" && git switch -q claude/19-x && git commit -q --allow-empty -m "sin pushear" && git switch -q main)
+git -C "$P" branch -q -D claude/20-x   # solo existe en el remoto
+for n in 15 16 18 19 20; do issue "$n" closed "tipo:task" "Cerrado."; done; issue 17 open "tipo:task" "Abierto."
+pr 15 115 CLOSED; pr 16 116 MERGED; pr 17 117 OPEN; pr 19 119 CLOSED; pr 20 120 CLOSED   # 18: sin PR
+s=$(cd "$P" && "$AQUI/limpiar.sh" 2>&1)
+grep -q "claude/15-x.*cerrado sin mergear" <<<"$s" && grep -q "claude/20-x.*cerrado sin mergear" <<<"$s"; afirmar $? "lista las ramas de PRs cerrados sin mergear, también las que solo están en el remoto"
+! grep -q "claude/16-x" <<<"$s" && ! grep -q "claude/17-x" <<<"$s"; afirmar $? "no lista la de un PR mergeado (aunque sea squash) ni la de un issue abierto"
+grep -q "claude/18-x.*sin PR" <<<"$s" && grep -q "claude/19-x.*sin pushear" <<<"$s"; afirmar $? "lista para revisar a mano la rama sin PR y la que tiene commits sin pushear"
+(cd "$P" && "$AQUI/limpiar.sh" --borrar >/dev/null 2>&1)
+! git -C "$P" rev-parse -q --verify claude/15-x >/dev/null && ! git --git-dir="$TMP/remoto.git" rev-parse -q --verify claude/15-x >/dev/null; afirmar $? "--borrar borra la rama local y la remota de un PR cerrado sin mergear"
+! git --git-dir="$TMP/remoto.git" rev-parse -q --verify claude/20-x >/dev/null; afirmar $? "--borrar borra una rama que solo está en el remoto"
+git -C "$P" rev-parse -q --verify claude/16-x >/dev/null && git -C "$P" rev-parse -q --verify claude/17-x >/dev/null && git -C "$P" rev-parse -q --verify claude/18-x >/dev/null; afirmar $? "--borrar no toca la mergeada, la abierta ni la que no tiene PR"
+git -C "$P" rev-parse -q --verify claude/19-x >/dev/null && git --git-dir="$TMP/remoto.git" rev-parse -q --verify claude/19-x >/dev/null; afirmar $? "--borrar no toca ni la local ni la remota de una rama con commits sin pushear"
 ! es -d "$WT/10" && ! es -d "$WT/13"; afirmar $? "--borrar borra los worktrees limpios de issues cerrados"
 es -d "$WT/11" && es -f "$WT/12/sucio.txt"; afirmar $? "--borrar no toca el abierto ni el que tiene cambios"
 git -C "$P" rev-parse -q --verify claude/10-x >/dev/null; afirmar $? "--borrar deja la rama (solo saca el worktree)"
@@ -159,9 +167,10 @@ for f in .claude/skills/implement-issue/SKILL.md .gitignore perfiles/chico/BORRA
 done
 R="$RAIZ/.claude/agents/revisor.md"
 grep -q 'refs/revision/<pr>-<sufijo>' "$R" && grep -q -- '-revision-<pr>-<sufijo>' "$R"; afirmar $? "revisor: ref y worktree con sufijo único (dos revisiones del mismo PR no chocan)"
-# shellcheck disable=SC2016  # $raiz literal del markdown
-! grep -q 'retro[^.]*desde el checkout principal\|cd "$raiz" && [^`]*retro.sh' "$R" "$RAIZ/docs/agentes/contrato-subagentes.md"; afirmar $? "la retro del revisor no depende del checkout principal (podía estar en una rama vieja)"
-grep -q 'worktree de revisión.*retro.sh\|retro.sh.*worktree de revisión' "$R"; afirmar $? "revisor: guarda la retro desde su worktree de revisión"
+! grep -q 'retro[^.]*desde el checkout principal' "$R" "$RAIZ/docs/agentes/contrato-subagentes.md"; afirmar $? "la retro del revisor no depende del checkout principal del repo (podía estar en una rama vieja)"
+grep -q 'checkout del orquestador.*retro.sh' "$R" && ! grep -q 'worktree de revisión.*retro.sh' "$R"; afirmar $? "revisor: corre el retro.sh del checkout del orquestador, no el del PR (no revisado)"
+grep -q 'skill_sha' "$R" && grep -q 'skill_sha' "$AQUI/SKILL.md"; afirmar $? "orquestar le pasa skill_sha al revisor (la versión de review-pr que corrió)"
+grep -q 'revisor.*agente_sha\|agente_sha.*revisor' "$AQUI/SKILL.md" && grep -q 'checkout del orquestador' "$AQUI/SKILL.md"; afirmar $? "orquestar le pasa al revisor agente_sha y el checkout del orquestador"
 for a in implementador implementador-liviano revisor; do
   grep -q 'agente_sha' "$RAIZ/.claude/agents/$a.md"; afirmar $? "$a: escribe en la retro el agente_sha que le pasa el orquestador"
 done
