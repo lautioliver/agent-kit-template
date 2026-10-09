@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "matcher": "bash",
+        "bash": "python3 scripts/agentes/barandas.py",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}

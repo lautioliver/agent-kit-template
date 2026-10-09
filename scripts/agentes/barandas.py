@@ -359,14 +359,36 @@ def a_ojo(comando):
     return None
 
 
+def comando_de(entrada):
+    """El comando de shell según la herramienta, o None si no es un comando de shell.
+
+    Claude Code y Codex: tool_name "Bash" y tool_input.command. Copilot: toolName "bash" y toolArgs
+    (objeto o texto JSON). Cursor (beforeShellExecution): command."""
+    if not isinstance(entrada, dict):
+        return None
+    if entrada.get("tool_name") == "Bash":
+        return (entrada.get("tool_input") or {}).get("command")
+    if entrada.get("toolName") == "bash":
+        args = entrada.get("toolArgs")
+        if isinstance(args, str):
+            try:
+                args = json.loads(args)
+            except ValueError:
+                return args
+        return args.get("command") if isinstance(args, dict) else None
+    if entrada.get("hook_event_name") == "beforeShellExecution":
+        return entrada.get("command")
+    return None
+
+
 def main():
     try:
         entrada = json.load(sys.stdin)
     except ValueError:
         return 0  # sin entrada válida no hay comando que frenar
-    if entrada.get("tool_name") != "Bash":
+    comando = comando_de(entrada)
+    if not comando:
         return 0
-    comando = (entrada.get("tool_input") or {}).get("command", "")
     try:
         m = motivo(comando, cwd=entrada.get("cwd"))
     except Exception:
@@ -375,7 +397,7 @@ def main():
         return 0
     print(f"Frenado por las barandas de la plantilla (scripts/agentes/barandas.py): {m}.\n"
           f"AGENTS.md (Autonomía): un agente no mergea, no aprueba PRs, no crea tags ni releases, no pushea a "
-          f"ramas troncales y no saltea checks. Si la persona lo pidió, pedile que lo corra ella en el chat:\n"
+          f"ramas troncales y no saltea checks. Si la persona lo pidió, pedile que lo corra ella (en Claude Code, en el chat):\n"
           f"! {comando.strip()}", file=sys.stderr)
     return 2
 

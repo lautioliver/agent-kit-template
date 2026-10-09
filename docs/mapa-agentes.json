@@ -69,7 +69,9 @@
     {
       "cuando": [
         ".claude/settings.json",
-        "scripts/agentes/barandas.py"
+        "scripts/agentes/barandas.py",
+        ".codex/hooks.json",
+        ".github/hooks/**"
       ],
       "revisar": [
         "AGENTS.md",
@@ -116,7 +118,9 @@
         "?.github/workflows/**",
         "?Dockerfile",
         ".claude/settings.json",
-        "scripts/agentes/barandas.py"
+        "scripts/agentes/barandas.py",
+        ".codex/hooks.json",
+        ".github/hooks/**"
       ]
     },
     {
@@ -195,7 +199,9 @@
       "cuando": [
         ".claude/settings.json",
         "scripts/agentes/barandas.py",
-        "scripts/agentes/test_barandas.py"
+        "scripts/agentes/test_barandas.py",
+        ".codex/hooks.json",
+        ".github/hooks/**"
       ],
       "correr": "python3 -m unittest scripts/agentes/test_barandas.py"
     },
