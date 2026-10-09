@@ -90,7 +90,10 @@ traer() {
 # Dónde está ya la rama (si está). prune olvida los worktrees cuya carpeta se borró a mano.
 git worktree prune
 en_uso=$(git worktree list --porcelain | awk -v r="branch refs/heads/$RAMA" '/^worktree /{w=substr($0, 10)} $0 == r {print w}')
-[ -n "$en_uso" ] && en_uso=$(cd "$en_uso" && pwd -P)
+if [ -n "$en_uso" ]; then
+  [ -d "$en_uso" ] || error "la rama $RAMA está en un worktree bloqueado cuya carpeta no existe ($en_uso). Si nadie lo usa: git worktree unlock \"$en_uso\" && git worktree prune"
+  en_uso=$(cd "$en_uso" && pwd -P)
+fi
 
 if [ -z "$WORKTREE" ]; then
   [ -n "$(git status --porcelain)" ] && error "hay cambios sin commitear en el working tree."
@@ -121,7 +124,7 @@ elif git show-ref -q --verify "refs/heads/$RAMA"; then
   mkdir -p "$(dirname "$WT")"; git worktree add -q "$WT" "$RAMA"
   echo "Rama existente: $RAMA (retomando)"
 else
-  mkdir -p "$(dirname "$WT")"; git worktree add -q -b "$RAMA" "$WT" "origin/$BASE"
+  mkdir -p "$(dirname "$WT")"; git worktree add -q --no-track -b "$RAMA" "$WT" "origin/$BASE"
   echo "Rama nueva: $RAMA (desde origin/$BASE)"
 fi
 gh issue edit "$N" -R "$REPO" --add-assignee @me >/dev/null
