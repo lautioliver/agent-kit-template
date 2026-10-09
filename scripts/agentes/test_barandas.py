@@ -103,7 +103,7 @@ class Permite(unittest.TestCase):
                   "gh pr checks 12 --watch", "gh pr review 12 --comment -b ok", "gh pr review 12 --request-changes -b x",
                   "gh api repos/a/b/pulls/12/merge", "gh api repos/a/b/branches/main/protection",
                   "gh api repos/a/b/releases", "gh release view v1", "gh release list",
-                  "git tag", "git tag -l", "git tag --list 'v*'", "git tag --contains abc", "git log --oneline",
+                  "git tag", "git tag -l", "git tag --sort=-v:refname", "git tag --list 'v*'", "git tag --contains abc", "git log --oneline",
                   "gh issue comment 3 --body 'no corras gh pr merge'", "grep -rn 'gh pr merge' .",
                   "echo 'git push origin main'", "rg \"git tag v1\""):
             self.assertPermite(c)
@@ -146,7 +146,8 @@ class Hook(unittest.TestCase):
 class Config(unittest.TestCase):
     def test_settings_registra_el_hook_para_bash(self):
         raiz = os.path.dirname(os.path.dirname(AQUI))
-        cfg = json.load(open(os.path.join(raiz, ".claude", "settings.json"), encoding="utf-8"))
+        with open(os.path.join(raiz, ".claude", "settings.json"), encoding="utf-8") as f:
+            cfg = json.load(f)
         hooks = [h for g in cfg["hooks"]["PreToolUse"] if g["matcher"] == "Bash" for h in g["hooks"]]
         self.assertTrue(any("scripts/agentes/barandas.py" in h["command"] for h in hooks))
 

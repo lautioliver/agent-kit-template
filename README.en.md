@@ -108,6 +108,8 @@ flowchart LR
 
 Agents do the work. The two knots on the leash, **approving the plan** and **merging** 🟡, always stay in human hands.
 
+**Guardrails.** It doesn't rely only on what `AGENTS.md` asks: a Claude Code hook (`.claude/settings.json` → `scripts/agentes/barandas.py`) stops, before they run, merging and approving PRs, pushing to `main` or `develop`, tags, releases, branch protection changes and `--no-verify`, also inside compound commands. If you asked for one of those steps, run it yourself in the chat: `! gh pr merge 12`. They are guardrails, not a lock: they stop the common mistake, but an agent with your token can get there another way (its own script, another tool). The lock is GitHub: a rule on the base branch that requires an approval. If you work alone, that rule also stops you (GitHub doesn't let you approve your own PR), so it's optional.
+
 During `/implement-issue`, `debug`, `db-migration` and `update-docs` come in as needed. If the PR touches sensitive paths, the review adds `/security-review`.
 
 <!-- marca:inicio -->
@@ -186,6 +188,7 @@ With no members, issues stay unassigned. The team is changed with `/add-member` 
 |---|---|---|
 | 🧭 | Rules for agents | `AGENTS.md` (source), `CLAUDE.md` (imports it), `llms.txt`, `docs/llms.txt` |
 | 🚦 | Agent autonomy | `AGENTS.md`: what it can do alone, what it must ask about and what never |
+| 🛑 | Guardrails | `.claude/settings.json` + `scripts/agentes/barandas.py`: hook that stops merges, tags, releases and pushes to trunk branches |
 | 🗺️ | Agent map | `docs/mapa-agentes.json`: which docs to review based on what changes, sensitive paths, required docs |
 | 📚 | Docs hub | `docs/README.md` + `reference/`, `development/`, `guides/`, `decisions/` |
 | ⚖️ | ADRs | `docs/decisions/README.md` (how to write them) + `ADR-000-plantilla.md` |

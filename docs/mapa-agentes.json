@@ -65,6 +65,17 @@
         "docs/agentes/contrato-subagentes.md"
       ],
       "motivo": "cambió un subagente (modelo, herramientas, escalado) o su contrato"
+    },
+    {
+      "cuando": [
+        ".claude/settings.json",
+        "scripts/agentes/barandas.py"
+      ],
+      "revisar": [
+        "AGENTS.md",
+        "README.md"
+      ],
+      "motivo": "cambiaron las barandas (qué comandos frena el hook)"
     }
   ],
   "sensibles": [
@@ -103,7 +114,9 @@
       "rutas": [
         "?infra/**",
         "?.github/workflows/**",
-        "?Dockerfile"
+        "?Dockerfile",
+        ".claude/settings.json",
+        "scripts/agentes/barandas.py"
       ]
     },
     {
@@ -176,6 +189,15 @@
         "scripts/agentes/**"
       ],
       "correr": "bash scripts/agentes/test-base.sh"
+    },
+    {
+      "nombre": "barandas",
+      "cuando": [
+        ".claude/settings.json",
+        "scripts/agentes/barandas.py",
+        "scripts/agentes/test_barandas.py"
+      ],
+      "correr": "python3 -m unittest scripts/agentes/test_barandas.py"
     },
     {
       "nombre": "init",
