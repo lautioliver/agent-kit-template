@@ -97,6 +97,13 @@ s=$(cd "$D" && python3 scripts/actualizar.py --plantilla "$P" 2>&1); c=$?
   && grep -q '"modo": "chico"' "$D/.agent-kit.json" && ! [ -e "$D/.claude/skills/review-pr" ]
 afirmar $? "[chico] actualiza sin traer lo del modo completo"
 
+# crecer.py (chico → completo) también registra la versión de la plantilla que trae.
+D="$TMP/crece"
+proyecto "$D" chico
+s=$(cd "$D" && AGENT_KIT_PLANTILLA="$P" python3 scripts/crecer.py 2>&1); c=$?
+[ "$c" -eq 0 ] && grep -q '"version": "0.2.0"' "$D/.agent-kit.json" && grep -q '"modo": "completo"' "$D/.agent-kit.json"
+afirmar $? "crecer.py registra la versión de la plantilla que trajo"
+
 # Proyecto anterior a las versiones: sin "version" en .agent-kit.json.
 D="$TMP/anterior"
 proyecto "$D" completo

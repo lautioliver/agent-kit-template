@@ -186,6 +186,15 @@
       "correr": "bash scripts/test-init.sh"
     },
     {
+      "nombre": "actualizar",
+      "cuando": [
+        "?scripts/actualizar.py",
+        "?scripts/test-actualizar.sh",
+        "?scripts/init-plantilla.sh"
+      ],
+      "correr": "bash scripts/test-actualizar.sh"
+    },
+    {
       "nombre": "lint",
       "siempre": true,
       "correr": "TODO: comando de lint (por ejemplo: npm run lint)"

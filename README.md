@@ -251,6 +251,24 @@ Los archivos del modo chico están en `perfiles/chico/` (más la lista `BORRAR`)
 
 </details>
 
+<a name="actualizar"></a>
+
+## 🔄 Actualizar
+
+La plantilla tiene versiones (tags `vX.Y.Z`, cambios en `CHANGELOG.md`), y el init anota en `.agent-kit.json` con cuál se creó el proyecto. Para traer la última:
+
+```bash
+python3 scripts/actualizar.py                    # o --version v1.2.0
+```
+
+Inicializa la versión nueva con los datos del proyecto y la compara archivo por archivo contra la versión de origen:
+
+- Lo que el proyecto no tocó se reemplaza, lo nuevo se agrega y lo que la plantilla sacó se borra.
+- Lo que tocaron los dos lados se fusiona con `git merge-file`. Si hay conflicto, **no se pisa**: la fusión con marcas queda en `.agent-kit/pendientes/`.
+- Lo que el proyecto borró no vuelve.
+
+Muestra qué cambió según el changelog y no commitea: revisás el diff y abrís un PR. Un proyecto creado antes de las versiones también se actualiza, pero sin fusionar: lo que modificó queda entero en `.agent-kit/pendientes/`.
+
 <a name="requisitos"></a>
 
 ## 🔧 Requisitos

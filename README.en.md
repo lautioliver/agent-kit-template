@@ -242,6 +242,24 @@ Small-mode files live in `perfiles/chico/` (plus the `BORRAR` list). What both m
 
 </details>
 
+<a name="update"></a>
+
+## 🔄 Updating
+
+The template has versions (`vX.Y.Z` tags, changes in `CHANGELOG.md`), and init records in `.agent-kit.json` which one the project was created from. To bring in the latest:
+
+```bash
+python3 scripts/actualizar.py                    # or --version v1.2.0
+```
+
+It initializes the new version with the project's data and compares it file by file against the original version:
+
+- Files the project never touched are replaced, new ones are added and files the template removed are deleted.
+- Files both sides changed are merged with `git merge-file`. On a conflict **nothing is overwritten**: the merge with markers lands in `.agent-kit/pendientes/`.
+- Files the project deleted don't come back.
+
+It shows what changed according to the changelog and doesn't commit: you review the diff and open a PR. A project created before versions can also be updated, but without merging: what it modified lands whole in `.agent-kit/pendientes/`.
+
 <a name="requirements"></a>
 
 ## 🔧 Requirements
