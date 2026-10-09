@@ -13,7 +13,7 @@ Sos la sesión principal: repartís, coordinás y le hablás a la persona. Los s
 
 - Esta sesión tiene que correr en Opus. Si no lo está, pedile a la persona `/model opus` y esperá.
 - La rama base de los PRs (`<base>`) es la de la regla de ramas de `AGENTS.md`; se la pasás a cada subagente como `BASE=<base>`.
-- Anotá la corrida (`date +%Y%m%d-%H%M`) para tu retro, y la ruta de tu checkout, el **checkout del orquestador** (`git rev-parse --show-toplevel`): todos los comandos de git van con `git -C <ruta>`. Tiene que estar sin cambios en `.claude/` (`git status --porcelain .claude`): los `agente_sha` y `skill_sha` que pasás salen de sus commits.
+- Anotá la corrida (`date +%Y%m%d-%H%M`) para tu retro, y la ruta de tu checkout, el **checkout del orquestador** (`git rev-parse --show-toplevel`): todos los comandos de git van con `git -C <ruta>`. Si `git status --porcelain .claude` muestra cambios, frená y pedí commitearlos: los `agente_sha` y `skill_sha` que pasás salen de los commits, y tienen que ser las definiciones que corren. No cambies de rama ni hagas `pull` durante la corrida.
 - Corré `.claude/skills/estado/disponibles.sh`. Solo se lanzan issues de **"Se pueden empezar ya"**: un issue bloqueado, ya asignado o con un PR abierto no se lanza nunca, aunque la persona lo nombre (decíselo).
 
 ## 2. Proponer y esperar confirmación
@@ -37,7 +37,7 @@ git -C <raíz> fetch -q origin        # una sola vez, antes de lanzar: fetch en 
 
 `preparar.sh` valida, asigna, crea el worktree en `../<repo>-wt/<n>` e imprime `Worktree: <ruta>`. Si falla para un issue, no lo lances y anotalo para el mensaje final.
 
-Lanzá los subagentes en paralelo, en un solo mensaje, con la herramienta Agent: `subagent_type` `implementador-liviano` (Haiku) o `implementador` (Sonnet). Sin `isolation`: el worktree ya existe. En el prompt: número de issue, ruta del worktree, rama base (`BASE=<base>`), `agente_sha` (`git log -1 --format=%H -- .claude/agents/<rol>.md` en tu checkout: es la versión que corre, aunque el worktree tenga otra) y que siga su definición. Al revisor: número de PR, la ruta del checkout del orquestador, `agente_sha` de `revisor.md` y `skill_sha` (`git log -1 --format=%H -- .claude/skills/review-pr/SKILL.md`). **Nunca más de 3 implementando a la vez**, contando los relanzados.
+Lanzá los subagentes en paralelo, en un solo mensaje, con la herramienta Agent: `subagent_type` `implementador-liviano` (Haiku) o `implementador` (Sonnet). Sin `isolation`: el worktree ya existe. En el prompt: número de issue, ruta del worktree, rama base (`BASE=<base>`), `agente_sha` (`git log -1 --format=%H -- .claude/agents/<rol>.md` en tu checkout: es la versión que corre, aunque el worktree tenga otra), `skill_sha` (lo mismo con `.claude/skills/implement-issue/SKILL.md`) y que siga su definición. Al revisor: número de PR, la ruta del checkout del orquestador, `agente_sha` de `revisor.md` y `skill_sha` (`git log -1 --format=%H -- .claude/skills/review-pr/SKILL.md`). **Nunca más de 3 implementando a la vez**, contando los relanzados.
 
 ## 4. Con cada resultado
 
@@ -84,4 +84,4 @@ Las retros de los subagentes ya están guardadas: recibís su ruta, pero no abra
 .claude/skills/orquestar/limpiar.sh --borrar   # los borra, si la persona dice que sí
 ```
 
-También lista las ramas `claude/<n>-…` de issues cerrados que no se mergearon (PRs cerrados sin mergear) y, con `--borrar`, borra la local y la remota (`git push origin --delete`; `gh pr close --delete-branch` falla desde un detached HEAD). No borra un worktree con cambios sin commitear, ni ninguno si quedan retros en `retros-pendientes/` (la corrida no está cerrada hasta guardarlas): en ese caso, reintentá cada retro con `retro.sh <archivo>` y volvé a correrlo.
+También lista las ramas `claude/<n>-…` cuyo PR se cerró sin mergear, con el comando para borrarlas (`git push origin --delete`; `gh pr close --delete-branch` falla desde un detached HEAD). No las borra: ofrecéselo a la persona, rama por rama, y avisale si alguna tiene commits sin pushear. No borra un worktree con cambios sin commitear, ni ninguno si quedan retros en `retros-pendientes/` (la corrida no está cerrada hasta guardarlas): en ese caso, reintentá cada retro con `retro.sh <archivo>` y volvé a correrlo.

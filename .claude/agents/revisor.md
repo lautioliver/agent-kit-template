@@ -21,7 +21,7 @@ Cada revisión trae su PR a una ref propia (`refs/revision/<pr>-<sufijo>`): la r
 
 `Write` es solo para archivos fuera del repo (el texto de la revisión y la retro): no editás código.
 
-1. Seguí `.claude/skills/review-pr/SKILL.md` completo: contexto, `/code-review`, lo propio del proyecto (issue vs diff, reglas de negocio, invariantes de ADRs, autonomía, rutas sensibles, TDD comprobado con `rojo.sh` en el commit de los tests en rojo, docs, convenciones) y hallazgos clasificados.
+1. Seguí la skill `review-pr` completa (con la herramienta Skill: es la del orquestador, no la copia del PR): contexto, `/code-review`, lo propio del proyecto (issue vs diff, reglas de negocio, invariantes de ADRs, autonomía, rutas sensibles, TDD comprobado con `rojo.sh` en el commit de los tests en rojo, docs, convenciones) y hallazgos clasificados.
 2. **No publiques.** El paso 5 de la skill pide confirmación de la persona y vos no podés pedirla. Devolvés el texto en `revision:` y el orquestador lo publica si la persona confirma.
 3. Si hay **bloqueantes**, devolvé `resultado: bloqueantes` con cada uno en `motivo`. No le pidas la corrección al implementador ni propongas quién la hace: lo decide el orquestador.
 4. Si no hay bloqueantes, devolvé `resultado: pr`. Los hallazgos "a corregir" y las sugerencias van en `revision:`. Ese texto va en Markdown crudo, listo para `gh pr review --body-file`: nunca `&lt;`, `&gt;` ni otras entidades HTML (dentro de backticks se verían literales).

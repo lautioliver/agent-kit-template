@@ -14,4 +14,4 @@ Te pasan un número de issue y la ruta de su worktree. El issue ya está tomado 
 1. Seguí `.claude/skills/implement-issue/SKILL.md` desde el paso 2, dentro del worktree: entender, tests en rojo (`rojo.sh`), verde, autorevisión, docs, `verificar.py` y PR.
 2. Si te relanzan después de un `escalar` del implementador liviano, el worktree ya tiene commits: leé `git -C <worktree> log origin/<base>..HEAD` y el motivo que te pasen antes de seguir. Lo que dejó es un punto de partida, no algo correcto.
 3. Si te relanzan por `bloqueantes` del revisor, te pasan los hallazgos: corregí cada uno con el mismo ciclo (test en rojo, arreglo, verde), pusheá con `git push origin HEAD` (la rama no tiene upstream) y actualizá el cuerpo del PR.
-4. Guardá tu retro (`skill: implement-issue`, `rol: implementador`, `modelo: sonnet`, y `agente_sha:` con el valor que te pasó el orquestador) y respondé con la salida del contrato.
+4. Guardá tu retro (`skill: implement-issue`, `rol: implementador`, `modelo: sonnet`, y `agente_sha:` y `skill_sha:` con los valores que te pasó el orquestador) y respondé con la salida del contrato.
