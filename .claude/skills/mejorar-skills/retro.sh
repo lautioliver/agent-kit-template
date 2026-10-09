@@ -56,7 +56,7 @@ frontmatter() {
   tr -d '\r' <"$1" | awk 'NR==1 && $0!="---"{exit 1} NR>1 && $0=="---"{c=1; exit} NR>1{print} END{exit !c}' \
     | sed -E 's/^([a-z_]+): *"(.*)" *$/\1: \2/; s/^([a-z_]+): *'"'"'(.*)'"'"' *$/\1: \2/'
 }
-campo() { sed -n "s/^$1: *//p" <<<"$2" | head -1; }
+campo() { sed -n "s/^$1: *//p" <<<"$2" | head -1 | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//'; }
 
 if [ "$1" = "--consolidado" ]; then
   # Solo un commit de la rama de retros: con otro, senales.sh volvería a mostrar todo.
@@ -82,28 +82,34 @@ else
   esac
   # Identifica la retro por el issue (en orquestar, la épica); si no hay, por la corrida
   # (AAAAMMDD-HHMM) o, si no hay tampoco, por el PR (un PR sin issue).
+  # La corrida solo identifica una corrida de orquestar.
   if [[ "$issue" =~ ^[0-9]+$ ]]; then n="$issue"
-  elif [[ "$corrida" =~ ^[0-9]{8}-[0-9]{4}$ ]]; then n="$corrida"
+  elif [ "$skill" = orquestar ] && [[ "$corrida" =~ ^[0-9]{8}-[0-9]{4}$ ]]; then n="$corrida"
   elif [[ "$pr" =~ ^[0-9]+$ ]]; then n="pr$pr"
-  else echo "retro.sh: falta 'issue: <n>', 'corrida: <AAAAMMDD-HHMM>' o 'pr: <n>' en el frontmatter." >&2; exit 1
+  else echo "retro.sh: falta 'issue: <n>', 'pr: <n>' o (en orquestar) 'corrida: <AAAAMMDD-HHMM>' en el frontmatter." >&2; exit 1
   fi
   sha=$(git log -1 --format=%H -- ".claude/skills/$skill/SKILL.md"); sha="${sha:-desconocido}"
-  # Modelo y rol: si faltan, la retro igual se guarda (de sesiones anteriores a #35).
-  # Un subagente (rol con archivo en .claude/agents/) registra la versión de su definición.
+  # Modelo y rol: si faltan o están vacíos, la retro igual se guarda como desconocido / sesion
+  # (sesiones anteriores a #35, o una plantilla copiada sin completar).
   modelo=$(campo modelo "$fm"); modelo="${modelo:-desconocido}"
   rol=$(campo rol "$fm"); rol="${rol:-sesion}"
+  # Un subagente (rol con archivo en .claude/agents/) registra la versión de su definición.
   agente_sha=""
   case "$rol" in implementador|implementador-liviano|revisor)
-    agente_sha=$(git log -1 --format=%H -- ".claude/agents/$rol.md"); agente_sha="${agente_sha:-desconocido}";;
+    agente_sha=$(campo agente_sha "$fm")
+    if [ -z "$agente_sha" ]; then
+      agente_sha=$(git log -1 --format=%H -- ".claude/agents/$rol.md"); agente_sha="${agente_sha:-desconocido}"
+    fi;;
   esac
-  # Retro normalizada, con fecha, skill_sha, modelo y rol (si no están: una pendiente ya los tiene).
+  # Retro normalizada: modelo, rol y agente_sha se escriben una sola vez, ya normalizados.
+  fm_limpio=$(grep -vE '^(modelo|rol|agente_sha):' <<<"$fm" || true)
   {
-    echo ---; echo "$fm"
-    grep -q '^fecha:' <<<"$fm" || echo "fecha: $hoy"
-    grep -q '^skill_sha:' <<<"$fm" || echo "skill_sha: $sha"
-    grep -q '^modelo:' <<<"$fm" || echo "modelo: $modelo"
-    grep -q '^rol:' <<<"$fm" || echo "rol: $rol"
-    if [ -n "$agente_sha" ] && ! grep -q '^agente_sha:' <<<"$fm"; then echo "agente_sha: $agente_sha"; fi
+    echo ---; echo "$fm_limpio"
+    grep -q '^fecha:' <<<"$fm_limpio" || echo "fecha: $hoy"
+    grep -q '^skill_sha:' <<<"$fm_limpio" || echo "skill_sha: $sha"
+    echo "modelo: $modelo"
+    echo "rol: $rol"
+    if [ -n "$agente_sha" ]; then echo "agente_sha: $agente_sha"; fi
     echo ---; tr -d '\r' <"$ARCHIVO" | awk 'NR>1 && $0=="---" && !c {c=1; next} c'
   } >"$contenido"
   base="retros/$hoy-$skill-$n"; mensaje="retro: $skill $n"; modo=retro
