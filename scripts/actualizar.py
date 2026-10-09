@@ -7,7 +7,7 @@ Clona la plantilla, la inicializa con los datos de .agent-kit.json (mismo modo, 
 fecha) en la versión pedida (por defecto, el último tag vX.Y.Z; sin tags, la rama por defecto) y
 también en la versión de origen del proyecto. Por cada archivo de la plantilla:
   - si el proyecto no lo tiene → lo agrega (salvo que lo haya borrado el proyecto);
-  - si el proyecto no lo tocó → lo reemplaza;
+  - si el proyecto no lo tocó → lo reemplaza (contenido y permisos);
   - si lo tocó → lo fusiona con `git merge-file` contra la versión de origen. Si la fusión tiene
     conflictos, NO lo pisa: deja el resultado con marcas en .agent-kit/pendientes/<ruta>;
   - si la plantilla lo sacó → lo borra si el proyecto no lo tocó; si lo tocó, avisa.
@@ -20,6 +20,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -28,6 +29,7 @@ PLANTILLA = os.environ.get("AGENT_KIT_PLANTILLA", "https://github.com/lautiolive
 # Del proyecto, aunque la plantilla también los tenga: el README de la plantilla la explica a ella.
 NO_TRAER = {"README.md", "README.en.md", ".agent-kit.json", ".github/equipo.json"}
 PENDIENTES = ".agent-kit/pendientes"
+USO = "Uso: python3 scripts/actualizar.py [--version vX.Y.Z] [--plantilla <url o ruta>]"
 
 
 def salir(msg):
@@ -35,9 +37,9 @@ def salir(msg):
     sys.exit(1)
 
 
-def sh(*cmd, cwd=None, env=None, ok=(0,)):
+def sh(*cmd, cwd=None, env=None):
     r = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, env=env)
-    if r.returncode not in ok:
+    if r.returncode != 0:
         salir(f"{' '.join(cmd[:3])}… falló: {(r.stderr or r.stdout).strip()}")
     return r
 
@@ -47,6 +49,10 @@ def huella(ruta):
         return hashlib.sha1(f.read()).hexdigest()
 
 
+def ejecutable(ruta):
+    return bool(os.stat(ruta).st_mode & stat.S_IXUSR)
+
+
 def archivos(raiz):
     for base, dirs, files in os.walk(raiz):
         dirs[:] = [d for d in dirs if d != ".git"]
@@ -54,14 +60,24 @@ def archivos(raiz):
             yield os.path.relpath(os.path.join(base, n), raiz)
 
 
-def version_de(tag):
-    m = re.fullmatch(r"v(\d+)\.(\d+)\.(\d+)", tag)
+def numero(version):
+    """(X, Y, Z) de "X.Y.Z" o "vX.Y.Z", ignorando sufijos como -rc.1; None si no se entiende."""
+    m = re.match(r"v?(\d+)\.(\d+)\.(\d+)", version or "")
     return tuple(int(x) for x in m.groups()) if m else None
+
+
+def opcion(args, nombre):
+    if nombre not in args:
+        return None
+    i = args.index(nombre)
+    if i + 1 >= len(args) or args[i + 1].startswith("--"):
+        salir(f"{nombre} necesita un valor.\n{USO}")
+    return args[i + 1]
 
 
 def tags(clon):
     nombres = sh("git", "tag", "--list", "v*", cwd=clon).stdout.split()
-    return sorted((t for t in nombres if version_de(t)), key=version_de)
+    return sorted((t for t in nombres if re.fullmatch(r"v\d+\.\d+\.\d+", t)), key=numero)
 
 
 def inicializar(clon, ref, destino, kit):
@@ -77,10 +93,7 @@ def inicializar(clon, ref, destino, kit):
         args.append("releases")
     if kit.get("modo") == "chico":
         args.append("--chico")
-    env = dict(os.environ, AGENT_KIT_FECHA=kit.get("fecha", ""))
-    sh(*args, cwd=destino, env=env)
-    with open(os.path.join(destino, ".agent-kit.json"), encoding="utf-8") as f:
-        return json.load(f)
+    sh(*args, cwd=destino, env=dict(os.environ, AGENT_KIT_FECHA=kit.get("fecha", "")))
 
 
 def changelog(clon, ref, desde):
@@ -88,28 +101,102 @@ def changelog(clon, ref, desde):
     r = subprocess.run(["git", "show", f"{ref}:CHANGELOG.md"], cwd=clon, capture_output=True, text=True)
     if r.returncode != 0:
         return ""
-    secciones = re.split(r"(?m)^(?=## )", r.stdout)
     nuevas = []
-    for s in secciones:
-        m = re.match(r"## \[?v?(\d+)\.(\d+)\.(\d+)", s)
-        if m and (desde is None or tuple(map(int, m.groups())) > desde):
+    for s in re.split(r"(?m)^(?=## )", r.stdout):
+        n = numero(s[3:].strip("[ ")) if s.startswith("## ") else None
+        if n and (desde is None or n > desde):
             nuevas.append(s.rstrip())
     return "\n\n".join(nuevas)
 
 
 def fusionar(proyecto, base, nueva):
-    """git merge-file: (texto fusionado, hay_conflictos)."""
+    """git merge-file: (texto fusionado o None si no se puede, hay_conflictos)."""
     r = subprocess.run(["git", "merge-file", "-p", "-L", "proyecto", "-L", "versión anterior", "-L",
                         "versión nueva", proyecto, base, nueva], capture_output=True)
-    if r.returncode < 0 or r.returncode > 127:
+    if r.returncode < 0 or r.returncode > 127:  # binarios o error: 255
         return None, True
     return r.stdout, r.returncode != 0
 
 
+def planear(nueva, base, registradas):
+    """Qué hacer con cada archivo, sin tocar nada todavía: lista de (acción, ruta, dato)."""
+    en_nueva = set(archivos(nueva)) - NO_TRAER
+
+    def sin_tocar(ruta):
+        """Igual que como lo dejó la plantilla: en la versión de origen o al crear el proyecto (que
+        puede ser posterior al tag, si se creó desde main)."""
+        if registradas.get(ruta) == huella(ruta):
+            return True
+        origen = os.path.join(base, ruta) if base else None
+        return bool(origen and os.path.exists(origen) and huella(origen) == huella(ruta))
+
+    plan = []
+    for ruta in sorted(en_nueva):
+        nuevo = os.path.join(nueva, ruta)
+        origen = os.path.join(base, ruta) if base else None
+        if not os.path.lexists(ruta):
+            # Lo tuvo el proyecto (registro) y ya no: lo borró a propósito.
+            plan.append(("saltar" if ruta in registradas else "agregar", ruta, None))
+        elif not os.path.isfile(ruta):
+            plan.append(("conflicto", ruta, None))  # en el proyecto es un directorio u otra cosa
+        elif huella(ruta) == huella(nuevo):
+            if ejecutable(ruta) != ejecutable(nuevo) and sin_tocar(ruta):
+                plan.append(("permisos", ruta, None))
+            else:
+                plan.append(("igual", ruta, None))
+        elif sin_tocar(ruta):
+            plan.append(("reemplazar", ruta, None))
+        elif origen and os.path.exists(origen):
+            texto, conflicto = fusionar(ruta, origen, nuevo)
+            plan.append(("conflicto" if conflicto else "fusionar", ruta, texto))
+        else:
+            plan.append(("pendiente", ruta, None))
+    # Lo que la plantilla sacó: estaba en la versión de origen o en el registro, y ya no está.
+    antes = (set(archivos(base)) if base else set()) | set(registradas)
+    for ruta in sorted(antes - en_nueva - NO_TRAER):
+        if os.path.isfile(ruta):
+            plan.append(("borrar" if sin_tocar(ruta) else "conservar", ruta, None))
+    return plan
+
+
+def aplicar(plan, nueva):
+    """Aplica el plan. Un error en un archivo no corta el resto: queda anotado."""
+    hechos, errores = {}, []
+    for accion, ruta, texto in plan:
+        nuevo = os.path.join(nueva, ruta)
+        try:
+            if accion in ("agregar", "reemplazar"):
+                os.makedirs(os.path.dirname(ruta) or ".", exist_ok=True)
+                shutil.copy2(nuevo, ruta)
+            elif accion == "permisos":
+                shutil.copymode(nuevo, ruta)
+            elif accion == "fusionar":
+                with open(ruta, "wb") as f:
+                    f.write(texto)
+                shutil.copymode(nuevo, ruta)
+            elif accion in ("conflicto", "pendiente"):
+                destino = os.path.join(PENDIENTES, ruta)
+                os.makedirs(os.path.dirname(destino), exist_ok=True)
+                if texto is None:
+                    shutil.copy2(nuevo, destino)
+                else:
+                    with open(destino, "wb") as f:
+                        f.write(texto)
+            elif accion == "borrar":
+                os.remove(ruta)
+        except OSError as e:
+            errores.append(f"{ruta}: {e}")
+            continue
+        hechos.setdefault(accion, []).append(ruta)
+    return hechos, errores
+
+
 def main():
     args = sys.argv[1:]
-    plantilla = args[args.index("--plantilla") + 1] if "--plantilla" in args else PLANTILLA
-    pedida = args[args.index("--version") + 1] if "--version" in args else None
+    plantilla = opcion(args, "--plantilla") or PLANTILLA
+    if os.path.exists(plantilla):  # una ruta local, relativa a donde se corrió
+        plantilla = os.path.abspath(plantilla)
+    pedida = opcion(args, "--version")
     os.chdir(sh("git", "rev-parse", "--show-toplevel").stdout.strip())
 
     if not os.path.exists(".agent-kit.json"):
@@ -118,6 +205,9 @@ def main():
         kit = json.load(f)
     if sh("git", "status", "--porcelain").stdout.strip():
         salir("hay cambios sin commitear. Commitealos o guardalos antes de actualizar.")
+    if os.path.isdir(PENDIENTES) and any(archivos(PENDIENTES)):
+        salir(f"quedan archivos en {PENDIENTES}/ de una actualización anterior. Integralos y borrá la carpeta "
+              "antes de actualizar de nuevo.")
     actual = kit.get("version")
 
     tmp = tempfile.mkdtemp(prefix="agent-kit-")
@@ -134,9 +224,14 @@ def main():
             ref = disponibles[-1] if disponibles else "HEAD"
         r = subprocess.run(["git", "show", f"{ref}:VERSION"], cwd=clon, capture_output=True, text=True)
         objetivo = r.stdout.strip() if r.returncode == 0 else None
-        if objetivo and objetivo == actual and ref != "HEAD":
-            print(f"El proyecto ya está en la versión {actual} de la plantilla. Nada que actualizar.")
-            return
+        if numero(objetivo) and numero(actual):
+            if numero(objetivo) < numero(actual):
+                salir(f"{ref} ({objetivo}) es más vieja que la versión del proyecto ({actual}). "
+                      "actualizar.py no vuelve atrás.")
+            if objetivo == actual and ref != "HEAD":
+                print(f"El proyecto ya está en la versión {actual} de la plantilla. Nada que actualizar.")
+                return
+        notas = changelog(clon, ref, numero(actual))
 
         nueva = os.path.join(tmp, "nueva")
         inicializar(clon, ref, nueva, kit)
@@ -146,71 +241,15 @@ def main():
             inicializar(clon, f"v{actual}", base, kit)
 
         registradas = kit.get("archivos", {})
-        agregados, reemplazados, fusionados, conflictos, pendientes = [], [], [], [], []
-        borrados, conservados, saltados, iguales = [], [], [], 0
-        en_nueva = set(archivos(nueva)) - NO_TRAER
-
-        def sin_tocar(ruta):
-            """El proyecto tiene el archivo igual que como lo dejó la plantilla de origen."""
-            if base:
-                origen = os.path.join(base, ruta)
-                return os.path.exists(origen) and huella(origen) == huella(ruta)
-            return registradas.get(ruta) == huella(ruta)
-
-        for ruta in sorted(en_nueva):
-            nuevo = os.path.join(nueva, ruta)
-            origen = os.path.join(base, ruta) if base else None
-            if not os.path.exists(ruta):
-                if (origen and os.path.exists(origen)) or ruta in registradas:
-                    saltados.append(ruta)  # lo borró el proyecto: no se vuelve a traer
-                    continue
-                os.makedirs(os.path.dirname(ruta) or ".", exist_ok=True)
-                shutil.copy2(nuevo, ruta)
-                agregados.append(ruta)
-            elif huella(ruta) == huella(nuevo):
-                iguales += 1
-            elif sin_tocar(ruta):
-                shutil.copy2(nuevo, ruta)
-                reemplazados.append(ruta)
-            elif origen and os.path.exists(origen):
-                texto, conflicto = fusionar(ruta, origen, nuevo)
-                if texto is not None and not conflicto:
-                    with open(ruta, "wb") as f:
-                        f.write(texto)
-                    fusionados.append(ruta)
-                else:
-                    destino = os.path.join(PENDIENTES, ruta)
-                    os.makedirs(os.path.dirname(destino), exist_ok=True)
-                    if texto is None:
-                        shutil.copy2(nuevo, destino)
-                    else:
-                        with open(destino, "wb") as f:
-                            f.write(texto)
-                    conflictos.append(ruta)
-            else:
-                destino = os.path.join(PENDIENTES, ruta)
-                os.makedirs(os.path.dirname(destino), exist_ok=True)
-                shutil.copy2(nuevo, destino)
-                pendientes.append(ruta)
-
-        # Lo que la plantilla sacó: estaba en la versión de origen (o en el registro) y ya no está.
-        antes = set(archivos(base)) if base else set(registradas)
-        for ruta in sorted(antes - en_nueva - NO_TRAER):
-            if not os.path.exists(ruta):
-                continue
-            if sin_tocar(ruta):
-                os.remove(ruta)
-                borrados.append(ruta)
-            else:
-                conservados.append(ruta)
-
-        notas = changelog(clon, ref, tuple(map(int, actual.split("."))) if actual else None)
+        plan = planear(nueva, base, registradas)
+        hechos, errores = aplicar(plan, nueva)
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    for ruta in agregados + reemplazados:
-        registradas[ruta] = huella(ruta)
-    for ruta in borrados:
+    for accion in ("agregar", "reemplazar", "permisos"):
+        for ruta in hechos.get(accion, []):
+            registradas[ruta] = huella(ruta)
+    for ruta in hechos.get("borrar", []):
         registradas.pop(ruta, None)
     kit["archivos"] = dict(sorted(registradas.items()))
     if objetivo:
@@ -219,23 +258,32 @@ def main():
         json.dump(kit, f, ensure_ascii=False, indent=2)
         f.write("\n")
 
+    n = {a: len(hechos.get(a, [])) for a in ("agregar", "reemplazar", "permisos", "fusionar", "igual", "borrar")}
     print(f"\nListo: de {actual or 'una versión sin número'} a {objetivo or ref}.")
-    print(f"  {len(agregados)} agregados, {len(reemplazados)} reemplazados (no los habías tocado), "
-          f"{len(fusionados)} fusionados, {iguales} ya iguales, {len(borrados)} borrados.")
-    for titulo, lista in (("Fusionados (revisá el diff)", fusionados),
-                          ("Con conflictos: no los pisé, la fusión con marcas está en " + PENDIENTES, conflictos),
-                          ("Modificados por vos, sin versión de origen para fusionar: la versión nueva está en "
-                           + PENDIENTES, pendientes),
-                          ("La plantilla los sacó, pero los modificaste: decidí si los borrás", conservados),
-                          ("Los habías borrado y la plantilla los cambió: no los traje", saltados)):
-        if lista:
+    print(f"  {n['agregar']} agregados, {n['reemplazar'] + n['permisos']} reemplazados (no los habías tocado), "
+          f"{n['fusionar']} fusionados, {n['igual']} ya iguales, {n['borrar']} borrados.")
+    for titulo, accion in (("Fusionados (revisá el diff)", "fusionar"),
+                           (f"Con conflictos: no los pisé, la fusión con marcas está en {PENDIENTES}/", "conflicto"),
+                           ("Modificados por vos, sin versión de origen para fusionar: la versión nueva está en "
+                            f"{PENDIENTES}/", "pendiente"),
+                           ("La plantilla los sacó, pero los modificaste: decidí si los borrás", "conservar"),
+                           ("Los habías borrado y la plantilla los cambió: no los traje", "saltar")):
+        if hechos.get(accion):
             print(f"\n{titulo}:")
-            for ruta in lista:
+            for ruta in hechos[accion]:
                 print(f"  - {ruta}")
+    if errores:
+        print("\nNo pude aplicar (el resto sí se aplicó):")
+        for e in errores:
+            print(f"  - {e}")
     if notas:
         print(f"\nQué cambió en la plantilla:\n\n{notas}")
     print("\nPasos siguientes:")
-    print(f"  1. Integrá lo de {PENDIENTES}/ (si hay) y borrá la carpeta .agent-kit/.")
+    if hechos.get("conflicto") or hechos.get("pendiente"):
+        print(f"  1. Integrá ahora lo de {PENDIENTES}/ y borrá la carpeta. La próxima actualización parte de la")
+        print(f"     versión {objetivo or ref}: lo que no integres de esta no vuelve a aparecer.")
+    else:
+        print("  1. Nada pendiente para integrar a mano.")
     print("  2. python3 scripts/agentes/check-docs.py, y revisá el diff.")
     print("  3. Commiteá y abrí un PR. Si cambió .github/labels.yml, después del merge corré el workflow Labels.")
 
