@@ -1,11 +1,21 @@
 #!/usr/bin/env bash
 # Prepara la implementación de un issue: valida que se pueda tomar, lo asigna
 # y crea la rama. Imprime el contexto del issue para el agente.
-# Uso: preparar.sh <n°issue> [--revisar]
-#   --revisar: solo valida e imprime; no asigna ni crea la rama.
+# Uso: preparar.sh <n°issue> [--revisar] [--worktree]
+#   --revisar:  solo valida e imprime; no asigna ni crea la rama.
+#   --worktree: crea (o retoma) la rama en su propio worktree, ../<repo>-wt/<n>,
+#               sin tocar el checkout actual. Imprime "Worktree: <ruta>".
 set -euo pipefail
-N="${1:?Uso: $0 <n°issue> [--revisar]}"; N="${N#\#}"
-REVISAR="${2:-}"
+USO="Uso: $0 <n°issue> [--revisar] [--worktree]"
+N="${1:?$USO}"; N="${N#\#}"; shift
+REVISAR=""; WORKTREE=""
+for opcion in "$@"; do
+  case "$opcion" in
+    --revisar) REVISAR=1 ;;
+    --worktree) WORKTREE=1 ;;
+    *) echo "$USO" >&2; exit 64 ;;
+  esac
+done
 BASE="${BASE:-<RAMA_BASE>}"   # el init de la plantilla reemplaza <RAMA_BASE>
 REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 YO=$(gh api user -q .login)
@@ -34,6 +44,11 @@ titulo=$(jq -r .title <<<"$issue")
 slug=$(printf '%s' "$titulo" | perl -CS -MUnicode::Normalize -ne 'print lc NFD($_) =~ s/\pM//gr' \
   | perl -pe 's/[^a-z0-9]+/-/g; s/^-+|-+$//g; s/^(.{1,40})(-.*)?$/$1/ if length > 40')
 RAMA="claude/$N-$slug"
+# El worktree va al lado del checkout principal, aunque esto se corra desde otro worktree.
+if [ -n "$WORKTREE" ]; then
+  raiz=$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd -P)
+  WT="$(dirname "$raiz")/$(basename "$raiz")-wt/$N"
+fi
 
 echo "# Issue #$N: $titulo"
 echo "Labels: $(jq -r '[.labels[].name] | join(", ")' <<<"$issue")"
@@ -53,17 +68,54 @@ comentarios=$(gh api "repos/$REPO/issues/$N/comments" -q '.[] | "\n--- @\(.user.
 [ -n "$comentarios" ] && { echo; echo "## Comentarios"; echo "$comentarios"; }
 echo
 
-if [ "$REVISAR" = "--revisar" ]; then
-  echo "(--revisar: no se asignó ni se creó la rama. Rama propuesta: $RAMA)"
+if [ -n "$REVISAR" ]; then
+  echo "(--revisar: no se asignó ni se creó la rama. Rama propuesta: $RAMA${WORKTREE:+, worktree propuesto: $WT})"
   exit 0
 fi
 
-[ -n "$(git status --porcelain)" ] && error "hay cambios sin commitear en el working tree."
-gh issue edit "$N" -R "$REPO" --add-assignee @me >/dev/null
-git fetch -q origin "$BASE"
-if git show-ref -q --verify "refs/heads/$RAMA"; then
-  git switch -q "$RAMA"; echo "Rama existente: $RAMA (retomando)"
-else
-  git switch -q -c "$RAMA" "origin/$BASE"; echo "Rama nueva: $RAMA (desde origin/$BASE)"
+# Varios agentes en paralelo pueden chocar en los locks de .git: se reintenta solo eso.
+traer() {
+  local intento err
+  for intento in 1 2 3; do
+    err=$(git fetch -q origin "$BASE" 2>&1) && return 0
+    grep -Eq "\.lock'|cannot lock ref" <<<"$err" || break
+    sleep "$intento"
+  done
+  echo "$err" >&2; return 1
+}
+
+if [ -z "$WORKTREE" ]; then
+  [ -n "$(git status --porcelain)" ] && error "hay cambios sin commitear en el working tree."
+  gh issue edit "$N" -R "$REPO" --add-assignee @me >/dev/null
+  traer
+  if git show-ref -q --verify "refs/heads/$RAMA"; then
+    git switch -q "$RAMA"; echo "Rama existente: $RAMA (retomando)"
+  else
+    git switch -q -c "$RAMA" "origin/$BASE"; echo "Rama nueva: $RAMA (desde origin/$BASE)"
+  fi
+  echo "Asignado a @$YO."
+  exit 0
 fi
+
+# --worktree: todo se valida antes de asignar.
+en_uso=$(git worktree list --porcelain | awk -v r="branch refs/heads/$RAMA" '/^worktree /{w=substr($0, 10)} $0 == r {print w}')
+[ -n "$en_uso" ] && [ -d "$en_uso" ] && en_uso=$(cd "$en_uso" && pwd -P)
+[ -n "$en_uso" ] && [ "$en_uso" != "$WT" ] && error "la rama $RAMA ya está en uso en otro worktree: $en_uso"
+if [ -n "$en_uso" ]; then
+  [ -n "$(git -C "$WT" status --porcelain)" ] && error "hay cambios sin commitear en el worktree $WT."
+elif [ -e "$WT" ]; then
+  error "$WT ya existe y no es el worktree de $RAMA."
+fi
+gh issue edit "$N" -R "$REPO" --add-assignee @me >/dev/null
+traer
+if [ -n "$en_uso" ]; then
+  echo "Rama existente: $RAMA (retomando)"
+elif git show-ref -q --verify "refs/heads/$RAMA"; then
+  mkdir -p "$(dirname "$WT")"; git worktree add -q "$WT" "$RAMA"
+  echo "Rama existente: $RAMA (retomando)"
+else
+  mkdir -p "$(dirname "$WT")"; git worktree add -q -b "$RAMA" "$WT" "origin/$BASE"
+  echo "Rama nueva: $RAMA (desde origin/$BASE)"
+fi
+echo "Worktree: $WT"
 echo "Asignado a @$YO."
