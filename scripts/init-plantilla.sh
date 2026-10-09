@@ -50,6 +50,9 @@ if [ -n "$CHICO" ]; then
   perl -pi -e 's/ Si sí: cuál, y agregá el label `logica-negocio`\./ Si sí: cuál, y por qué cambia./' .github/pull_request_template.md
 fi
 rm -rf perfiles
+# La marca (Barrilete) es de la plantilla, no del proyecto nuevo.
+rm -rf .github/marca
+perl -0pi -e 's/<!-- marca:inicio -->.*?<!-- marca:fin -->\n\n?//s' README.md
 # crecer.py solo sirve en proyectos chicos (para pasar al modo completo).
 [ -z "$CHICO" ] && rm -f scripts/crecer.py
 # shellcheck disable=SC2016  # $ENV{…} lo expande perl, no bash
