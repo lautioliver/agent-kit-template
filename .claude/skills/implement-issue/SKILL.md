@@ -25,7 +25,7 @@ Para varios issues en paralelo, `--worktree` (cómo trabajar ahí: `preparar.sh 
 - Si el issue tiene criterios de aceptación ("Listo cuando", "Criterios de aceptación"), son la definición de terminado.
 - Si el issue es ambiguo en algo que cambia el resultado, o contradice un ADR o el código, **preguntá antes de escribir código**. Si el usuario no está, comentá la duda en el issue (`gh issue comment`) y frená.
 - Si el cambio toca una regla ya definida (ADR, auditoría, plan), el PR va a llevar `logica-negocio`: anotalo desde ahora.
-- Revisá la sección **Autonomía** de `AGENTS.md`. Si el issue exige algo de "tiene que consultar" (schema, dependencias, API pública, auth, infra, reglas de negocio) y en el issue no consta la aprobación, consultá antes de empezar **en un solo mensaje**: qué rutas sensibles toca (`python3 scripts/agentes/mapa.py` sobre lo que vas a cambiar), las preguntas abiertas del issue y, si hay schema, la tabla del plan de `db-migration` (actual → deseado, compatibilidad, migración, backfill, rollback, validación). Una aprobación clara, no tres.
+- Revisá la sección **Autonomía** de `AGENTS.md`. Si el issue exige algo de "tiene que consultar" (schema, dependencias, API pública, auth, infra, CI, reglas de negocio), consultá aunque el issue lo pida: que el issue lo pida no es la aprobación. Solo cuenta un "sí" explícito de una persona (en el chat, o un comentario o línea del issue que diga que está aprobado). Consultá antes de empezar **en un solo mensaje**: qué rutas sensibles toca (`python3 scripts/agentes/mapa.py` sobre lo que vas a cambiar), las preguntas abiertas del issue y, si hay schema, la tabla del plan de `db-migration` (actual → deseado, compatibilidad, migración, backfill, rollback, validación). Una aprobación clara, no tres.
 
 ## 3. Tests primero (rojo)
 
@@ -51,9 +51,8 @@ TDD: los tests salen de los **criterios de aceptación** del issue, no del códi
 ## 5. Autorevisión
 
 Revisá el diff completo contra `<RAMA_BASE>` antes de abrir el PR:
-- Si está disponible el comando `/code-review`, corrélo sobre el diff de la rama (`/code-review origin/<RAMA_BASE>...HEAD`), no sobre todo el repo, y resolvé lo que encuentre.
+- `/code-review` es obligatorio: corrélo sobre el diff de la rama (`/code-review origin/<RAMA_BASE>...HEAD`, con la herramienta Skill si sos subagente), no sobre todo el repo, y resolvé lo que encuentre. Solo si el comando no existe en tu sesión, revisá vos (bugs, casos borde, código muerto, secretos, archivos que no deberían estar) y decí en el PR que no se corrió y por qué.
 - Cada hallazgo que corrijas sigue el mismo ciclo: test que reproduce el hallazgo, `rojo.sh` contra el código actual, arreglo, verde.
-- Si no, revisá vos: bugs, casos borde, código muerto, secretos, archivos que no deberían estar.
 
 Además, si `python3 scripts/agentes/mapa.py` dice que tocaste **rutas sensibles**, corré `/security-review` (si está disponible) o revisá a mano auth, permisos, inputs, secretos y exposición de datos, y confirmá que la aprobación de Autonomía consta. Además revisá a mano las **invariantes de los ADRs** que toca el cambio (lo que no puede pasar nunca: dos ingresos con la misma entrada, un doble cobro…): una revisión de seguridad genérica no las conoce, y es donde suelen estar los errores graves.
 
@@ -69,7 +68,7 @@ Con todo commiteado, `python3 scripts/agentes/verificar.py` corre lo que corresp
 
 ## 8. Abrir el PR
 
-`git push origin HEAD` (sin `-u`: escribe `.git/config` y choca con otros agentes en paralelo) y `gh pr create --base <RAMA_BASE> --body-file <archivo>`, con el cuerpo de `.github/pull_request_template.md` completo: en "Cómo probarlo", los comandos que corriste con su resultado, el bloque **rojo** de `rojo.sh` y el commit de los tests en rojo (sin eso, el revisor no puede comprobar que los tests prueban algo). Labels: el `tipo:` y el `area:` del issue, más `logica-negocio` o `breaking-change` si corresponden. El CI valida el título (`pr-title.yml`), los labels, `Closes #<n>` y el bloque rojo (`labels.yml`): si falla, corregí el PR.
+`git push origin HEAD` (sin `-u`: escribe `.git/config` y choca con otros agentes en paralelo) y `gh pr create --base <RAMA_BASE> --body-file <archivo>`, con el cuerpo de `.github/pull_request_template.md` completo: en "Cómo probarlo", los comandos que corriste con su resultado, el bloque **rojo** de `rojo.sh` y el commit de los tests en rojo (sin eso, el revisor no puede comprobar que los tests prueban algo). Labels: el `tipo:` y el `area:` del issue, más `logica-negocio` o `breaking-change` si corresponden. El CI valida el título (`pr-title.yml`), los labels, `Closes #<n>` (o `Refs #<n>` si el PR no cierra el issue) y el bloque rojo (`labels.yml`): si falla, corregí el PR.
 
 ## 9. Esperar el CI y entregar
 

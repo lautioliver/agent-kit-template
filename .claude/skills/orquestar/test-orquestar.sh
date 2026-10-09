@@ -166,7 +166,7 @@ grep -q "claude/21-x.*--borrar" <<<"$s"; afirmar $? "sin --borrar avisa que la r
 grep -q "git push origin --delete claude/15-x" <<<"$s"; afirmar $? "da el comando concreto de cada rama"
 s=$(cd "$P" && "$AQUI/limpiar.sh" --borrar 2>&1)
 b=$(grep -n "Borrado: $WT/21" <<<"$s" | cut -d: -f1); d=$(grep -n "git branch -D claude/21-x" <<<"$s" | cut -d: -f1)
-[ -n "$b" ] && [ -n "$d" ] && [ "$d" -gt "$b" ]; afirmar $? "--borrar da los comandos de las ramas después de sacar los worktrees"
+es -n "$b" && es -n "$d" && es "$d" -gt "$b"; afirmar $? "--borrar da los comandos de las ramas después de sacar los worktrees"
 (cd "$P" && eval "$(grep "git branch -D claude/21-x" <<<"$s")" >/dev/null 2>&1) && ! git -C "$P" rev-parse -q --verify claude/21-x >/dev/null; afirmar $? "el comando que da limpiar.sh borra la rama (ya sin worktree)"
 
 # 3. Lo que hace falta para correr en paralelo (criterios de #37).
@@ -196,7 +196,7 @@ grep -qi 'relanzado.*consulta\|consulta.*relanzado' "$AQUI/SKILL.md"; afirmar $?
 C="$RAIZ/docs/agentes/contrato-subagentes.md"; I="$RAIZ/.claude/skills/implement-issue/SKILL.md"
 grep -qi 'markdown crudo' "$C"; afirmar $? "contrato: todo texto para GitHub va en Markdown crudo (también el de los implementadores)"
 grep -q '^autorevision:' "$C" && grep -q 'autorevision' "$AQUI/SKILL.md"; afirmar $? "contrato: la salida dice si hubo /code-review, y orquestar lo informa"
-! grep -qi 'si está disponible el comando `/code-review`' "$I" && grep -qi 'code-review.*obligatori' "$I"; afirmar $? "implement-issue: /code-review es obligatorio"
+! grep -qi "si está disponible el comando \`/code-review\`" "$I" && grep -qi 'code-review.*obligatori' "$I"; afirmar $? "implement-issue: /code-review es obligatorio"
 grep -qi 'que el issue lo pida no es la aprobación' "$I" && grep -qi 'que el issue lo pida no es la aprobación' "$C"; afirmar $? "un issue que pide tocar algo de consultar no es la aprobación"
 grep -qi 'que el issue lo pida no es la aprobación' "$RAIZ/AGENTS.md"; afirmar $? "AGENTS.md: pedirlo en el issue no aprueba algo de consultar"
 grep -q 'code-review.*origin/<RAMA_BASE>\.\.\.HEAD' "$RAIZ/.claude/skills/implement-issue/SKILL.md"; afirmar $? "implement-issue corre /code-review sobre el diff de la rama"

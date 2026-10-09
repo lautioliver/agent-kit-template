@@ -137,7 +137,7 @@ TODO: `<scope-1>`, `<scope-2>`, `db`, `api`, `docs`
 ### Opción A — Título = Conventional Commit + squash merge ⭐ recomendada
 - Título del PR con el mismo formato que un commit: `feat(usuario): unificar cuentas por email`.
 - Se mergea con **Squash and merge**, así el título del PR queda como el commit en `main`.
-- Cuerpo con `Closes #42` para cerrar el issue automáticamente.
+- Cuerpo con `Closes #42` para cerrar el issue automáticamente, o `Refs #42` si el PR es parte del issue pero no lo cierra (un diagnóstico, un paso de varios).
 - ✅ Historial de `main` limpio aunque los commits intermedios sean desprolijos.
 
 ### Opción B — Título libre + merge commit

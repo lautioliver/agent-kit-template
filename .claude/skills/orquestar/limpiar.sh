@@ -69,13 +69,33 @@ if [ $((${#cerrados[@]} + ${#sucios[@]} + ${#ramas[@]} + ${#avisos[@]})) -eq 0 ]
 fi
 for r in ${cerrados[@]+"${cerrados[@]}"}; do echo "- worktree $r (issue cerrado)"; done
 for r in ${sucios[@]+"${sucios[@]}"}; do echo "- worktree $r (issue cerrado, con cambios sin commitear: no se borra)"; done
-for r in ${ramas[@]+"${ramas[@]}"}; do echo "- rama $r (PR cerrado sin mergear)"; done
+# Ramas que todavía están en un worktree: git branch -D falla hasta sacarlo.
+EN_WT=$(git worktree list --porcelain | sed -n 's|^branch refs/heads/||p')
+for r in ${ramas[@]+"${ramas[@]}"}; do
+  if [ -z "$BORRAR" ] && grep -qxF "$r" <<<"$EN_WT"; then
+    echo "- rama $r (PR cerrado sin mergear; tiene worktree: se borra después de --borrar)"
+  else echo "- rama $r (PR cerrado sin mergear)"; fi
+done
 for r in ${avisos[@]+"${avisos[@]}"}; do echo "- rama $r"; done
-if [ ${#ramas[@]} -gt 0 ]; then
-  echo; echo "Las ramas no se borran solas. Si la persona confirma, por cada una:"
-  echo "  git push origin --delete <rama>; git branch -D <rama>"
+
+# Los comandos para borrar las ramas, al final: después de sacar los worktrees.
+comandos_ramas() {
+  [ ${#ramas[@]} -gt 0 ] || return 0
+  echo; echo "Las ramas no se borran solas. Si la persona confirma, una por una:"
+  local en_wt; en_wt=$(git worktree list --porcelain | sed -n 's|^branch refs/heads/||p')
+  for r in "${ramas[@]}"; do
+    if [ -n "$BORRAR" ] && grep -qxF "$r" <<<"$en_wt"; then
+      echo "  $r: sigue en un worktree (con cambios o bloqueado); sacalo antes de borrarla"
+    elif git rev-parse -q --verify "refs/heads/$r" >/dev/null; then
+      echo "  git push origin --delete $r; git branch -D $r"
+    else echo "  git push origin --delete $r"; fi
+  done
+}
+if [ -z "$BORRAR" ]; then
+  comandos_ramas
+  echo; echo "Para sacar los worktrees: $0 --borrar"
+  exit "$errores"
 fi
-[ -n "$BORRAR" ] || { echo; echo "Para sacar los worktrees: $0 --borrar"; exit "$errores"; }
 
 if ls "$PENDIENTES"/*.md >/dev/null 2>&1; then
   echo "No borro nada: hay retros sin guardar en $PENDIENTES. Reintentá cada una con" >&2
@@ -86,4 +106,5 @@ for r in ${cerrados[@]+"${cerrados[@]}"}; do
   if git worktree remove "$r" 2>/dev/null; then echo "Borrado: $r"
   else echo "limpiar.sh: no se pudo borrar $r (¿bloqueado con git worktree lock?)." >&2; errores=1; fi
 done
+comandos_ramas
 exit "$errores"
