@@ -158,10 +158,11 @@ if os.path.isdir(".claude/skills"):
 # confía en esa frase y, si es falsa, termina commiteando un secreto.
 if os.path.exists("AGENTS.md"):
     for n, linea in enumerate(open("AGENTS.md", encoding="utf-8"), 1):
-        # Solo las afirmaciones: "`dist/` no está ignorado" no dice que dist/ esté ignorado.
-        if not re.search(r"ignorad", linea, re.I) or re.search(r"\bno\s+(?:est[aá]n?|se)\b[^`]*ignor", linea, re.I):
-            continue
-        for patron in re.findall(r"`([^`\s]+)`", linea):
+        # Por frase, y solo las afirmaciones: en "`.env*` están ignorados; `dist/` no está ignorado"
+        # se valida .env* y no dist/.
+        frases = [f for f in re.split(r"[;.]\s|,\s+(?:y|pero)\s", linea)
+                  if re.search(r"ignorad", f, re.I) and not re.search(r"\bno\s+(?:est[aá]n?|se)\b[^`]*ignor", f, re.I)]
+        for patron in re.findall(r"`([^`\s]+)`", " ".join(frases)):
             ejemplo = patron.replace("*", "")  # .env* → .env
             if not ejemplo:
                 continue
