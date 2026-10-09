@@ -66,19 +66,14 @@ PY
 afirmar $? "los pasos del formulario de prueba coinciden con los de la guía"
 
 # El CI de docs corre en los pushes a main de la plantilla, y el init deja el filtro de cada modo (#101).
+# main/develop y chico se prueban en el loop de abajo; acá, solo el modo releases.
 grep -Eq '^    branches: \[main, <RAMA_BASE>\]$' "$RAIZ/.github/workflows/docs.yml"
 afirmar $? "la plantilla corre el CI de docs en los pushes a main"
-for combinacion in "completo main|[main]" "chico main|[main]" "completo develop|[main, develop]" \
-  "completo develop releases|[main, develop, 'release/**']"; do
-  IFS='|' read -r args esperado <<<"$combinacion"
-  p="$TMP/ramas-${args// /-}"
-  copiar "$p"
-  read -r modo base rel <<<"$args"
-  extra=(); [ "$modo" = chico ] && extra=(--chico)
-  (cd "$p" && ./scripts/init-plantilla.sh Demo "$base" ${rel:+"$rel"} ${extra[@]+"${extra[@]}"} >/dev/null 2>&1)
-  grep -qxF "    branches: $esperado" "$p/.github/workflows/docs.yml" && ! grep -q 'plantilla misma' "$p/.github/workflows/docs.yml"
-  afirmar $? "[$args] docs.yml corre en los pushes a $esperado"
-done
+p="$TMP/ramas-releases"
+copiar "$p"
+(cd "$p" && ./scripts/init-plantilla.sh Demo develop releases >/dev/null 2>&1); afirmar $? "[completo develop releases] el init termina bien"
+grep -qxF "    branches: [main, develop, 'release/**']" "$p/.github/workflows/docs.yml" && ! grep -q 'plantilla misma' "$p/.github/workflows/docs.yml"
+afirmar $? "[completo develop releases] docs.yml corre en los pushes a [main, develop, 'release/**']"
 
 # Los test-*.sh que deja el init pasan en el proyecto nuevo (los corre el CI), con cualquier rama base.
 for combinacion in "completo main" "chico main" "completo develop" "chico develop"; do
@@ -87,6 +82,9 @@ for combinacion in "completo main" "chico main" "completo develop" "chico develo
   copiar "$p"
   extra=(); [ "$modo" = chico ] && extra=(--chico)
   (cd "$p" && ./scripts/init-plantilla.sh Demo "$base" ${extra[@]+"${extra[@]}"} >/dev/null 2>&1 && git add -A && git commit -qm init)
+  esperado="[main]"; [ "$base" = develop ] && esperado="[main, develop]"
+  grep -qxF "    branches: $esperado" "$p/.github/workflows/docs.yml" && ! grep -q 'plantilla misma' "$p/.github/workflows/docs.yml"
+  afirmar $? "[$modo, base $base] docs.yml corre en los pushes a $esperado"
   # Si uno falla, se muestran sus líneas FAIL: una falla que no se repite (#77) no se puede
   # investigar si el log del CI solo dice qué archivo falló.
   rotos=""
