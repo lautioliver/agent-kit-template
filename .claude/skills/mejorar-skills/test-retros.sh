@@ -125,6 +125,12 @@ git init -q "$TMP/d"; (cd "$TMP/d" && git commit -q --allow-empty -m base)
 (cd "$TMP/d" && "$AQUI/retro.sh" "$TMP/carrera.md" >/dev/null 2>&1)
 git -C "$TMP/d" ls-tree -r --name-only "$RAMA" 2>/dev/null | grep -q 'implement-issue-9\.md$'; afirmar $? "sin remoto guarda en la rama local"
 
+# En un repo sin commits la retro no se pierde: se guarda o queda pendiente.
+git init -q "$TMP/vacio"
+(cd "$TMP/vacio" && "$AQUI/retro.sh" "$TMP/carrera.md" >/dev/null 2>&1)
+git -C "$TMP/vacio" ls-tree -r --name-only "$RAMA" 2>/dev/null | grep -q 'implement-issue-9\.md$' \
+  || ls "$TMP/vacio/.git/retros-pendientes/"*.md >/dev/null 2>&1; afirmar $? "en un repo sin commits la retro no se pierde"
+
 # Revisión del PR #39.
 # --consolidado solo acepta commits de la rama de retros.
 otro=$(cd "$TMP/a" && git rev-parse HEAD)
