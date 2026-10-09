@@ -23,6 +23,7 @@ cat >"$TMP/bin/gh" <<'SH'
 case "$*" in
   "repo view"*) echo o/r ;;
   api\ repos/o/r/issues/*) f="$GH_ISSUES/${2##*/}.json"; [ -f "$f" ] && cat "$f" || exit 1 ;;
+  "pr list --head "*) f="$GH_ISSUES/pr-${4//\//_}.json"; if [ -f "$f" ]; then cat "$f"; else echo '[]'; fi ;;
   *) echo "gh falso: $*" >&2; exit 1 ;;
 esac
 SH
@@ -121,7 +122,7 @@ rm -rf "$P/.git/retros-pendientes"
 mkdir -p "$WT"; git -C "$P" worktree add -q -b claude/14-x "$WT/14" 2>/dev/null
 s=$(cd "$P" && "$AQUI/limpiar.sh" 2>&1); c=$?
 ! es "$c" -eq 0 && grep -q "#14" <<<"$s"; afirmar $? "si no puede leer el estado de un issue, lo dice y sale con error"
-git -C "$P" worktree remove "$WT/14"
+git -C "$P" worktree remove "$WT/14"; git -C "$P" branch -q -D claude/14-x
 
 # Un worktree que no se puede borrar (bloqueado) se reporta y el script sale con error.
 git -C "$P" worktree lock "$WT/13"
@@ -131,14 +132,48 @@ git -C "$P" worktree unlock "$WT/13"
 
 s=$(cd "$P" && "$AQUI/limpiar.sh" --borrar 2>&1); c=$?
 afirmar $c "limpiar.sh --borrar termina bien"
+
+# Ramas de issues cerrados: se decide por el estado del PR en GitHub (sirve con squash y rebase).
+# limpiar.sh solo las lista, sin fetch: borrar una rama (local o remota) lo decide la persona.
+git init -q --bare -b main "$TMP/remoto.git"; git -C "$P" remote add origin "$TMP/remoto.git"
+git -C "$P" push -q origin main 2>/dev/null; git -C "$P" remote set-head origin main
+pr() { printf '[{"number": %s, "state": "%s"}]\n' "$2" "$3" >"$TMP/issues/pr-claude_$1-x.json"; } # pr <n> <pr> <estado>
+for n in 15 16 17 18 19 20; do git -C "$P" branch "claude/$n-x" main; (cd "$P" && git switch -q "claude/$n-x" && git commit -q --allow-empty -m "r$n" && git push -q origin "claude/$n-x" 2>/dev/null && git switch -q main); done
+(cd "$P" && git switch -q claude/19-x && git commit -q --allow-empty -m "sin pushear" && git switch -q main)
+git -C "$P" branch -q -D claude/20-x   # solo existe en el remoto
+for n in 15 16 18 19 20; do issue "$n" closed "tipo:task" "Cerrado."; done; issue 17 open "tipo:task" "Abierto."
+pr 15 115 CLOSED; pr 16 116 MERGED; pr 17 117 OPEN; pr 19 119 CLOSED; pr 20 120 CLOSED   # 18: sin PR
+antes=$(git -C "$P" for-each-ref --format='%(refname) %(objectname)' refs/remotes)
+s=$(cd "$P" && "$AQUI/limpiar.sh" 2>&1)
+grep -q "claude/15-x.*cerrado sin mergear" <<<"$s" && grep -q "claude/20-x.*cerrado sin mergear" <<<"$s"; afirmar $? "lista las ramas de PRs cerrados sin mergear, también las que solo están en el remoto"
+! grep -q "claude/16-x" <<<"$s" && ! grep -q "claude/17-x" <<<"$s"; afirmar $? "no lista la de un PR mergeado (aunque sea squash) ni la de un issue abierto"
+grep -q "claude/18-x.*sin PR" <<<"$s" && grep -q "claude/19-x.*sin pushear" <<<"$s"; afirmar $? "avisa de la rama sin PR y de la que tiene commits sin pushear"
+grep -q "git push origin --delete" <<<"$s"; afirmar $? "dice cómo borrar las ramas a mano (sin gh --delete-branch)"
+es "$(git -C "$P" for-each-ref --format='%(refname) %(objectname)' refs/remotes)" = "$antes"; afirmar $? "listar no hace fetch ni toca las refs remotas"
+(cd "$P" && "$AQUI/limpiar.sh" --borrar >/dev/null 2>&1)
+git -C "$P" rev-parse -q --verify claude/15-x >/dev/null && git --git-dir="$TMP/remoto.git" rev-parse -q --verify claude/15-x >/dev/null && git --git-dir="$TMP/remoto.git" rev-parse -q --verify claude/20-x >/dev/null; afirmar $? "--borrar no borra ramas (ni locales ni remotas): eso lo decide la persona"
 ! es -d "$WT/10" && ! es -d "$WT/13"; afirmar $? "--borrar borra los worktrees limpios de issues cerrados"
 es -d "$WT/11" && es -f "$WT/12/sucio.txt"; afirmar $? "--borrar no toca el abierto ni el que tiene cambios"
 git -C "$P" rev-parse -q --verify claude/10-x >/dev/null; afirmar $? "--borrar deja la rama (solo saca el worktree)"
 
+# Una rama de PR cerrado que todavía tiene worktree: git branch -D falla hasta sacarlo, así que
+# los comandos para borrar ramas salen después de sacar los worktrees, y sin --borrar lo avisa.
+git -C "$P" worktree add -q -b claude/21-x "$WT/21" main 2>/dev/null
+(cd "$WT/21" && git commit -q --allow-empty -m r21 && git push -q origin claude/21-x 2>/dev/null)
+issue 21 closed "tipo:task" "Cerrado."; pr 21 121 CLOSED
+s=$(cd "$P" && "$AQUI/limpiar.sh" 2>&1)
+grep -q "claude/21-x.*--borrar" <<<"$s"; afirmar $? "sin --borrar avisa que la rama con worktree se borra después de --borrar"
+! grep -q "git branch -D claude/21-x" <<<"$s" && ! grep -q "push origin --delete claude/21-x" <<<"$s"; afirmar $? "sin --borrar no da el comando de una rama con worktree (borraría la remota y fallaría la local)"
+grep -q "git branch -D claude/15-x && git push origin --delete claude/15-x" <<<"$s"; afirmar $? "el comando borra primero la local y la remota solo si eso anduvo"
+grep -q "git push origin --delete claude/15-x" <<<"$s"; afirmar $? "da el comando concreto de cada rama"
+s=$(cd "$P" && "$AQUI/limpiar.sh" --borrar 2>&1)
+b=$(grep -n "Borrado: $WT/21" <<<"$s" | cut -d: -f1); d=$(grep -n "git branch -D claude/21-x" <<<"$s" | cut -d: -f1)
+es -n "$b" && es -n "$d" && es "$d" -gt "$b"; afirmar $? "--borrar da los comandos de las ramas después de sacar los worktrees"
+(cd "$P" && eval "$(grep "git branch -D claude/21-x" <<<"$s")" >/dev/null 2>&1) && ! git -C "$P" rev-parse -q --verify claude/21-x >/dev/null; afirmar $? "el comando que da limpiar.sh borra la rama (ya sin worktree)"
+
 # 3. Lo que hace falta para correr en paralelo (criterios de #37).
 ! grep -q 'push -u' "$RAIZ/.claude/skills/implement-issue/SKILL.md"; afirmar $? "implement-issue pushea sin -u (el -u escribe .git/config y choca en paralelo)"
 ! grep -Eq 'pushe[aá] de nuevo[^`]*$' "$RAIZ/.claude/skills/implement-issue/SKILL.md" && grep -q 'git push origin HEAD' "$RAIZ/.claude/agents/implementador.md"; afirmar $? "cada push dice git push origin HEAD (la rama no tiene upstream)"
-grep -q 'revisor.*checkout principal.*retro' "$RAIZ/docs/agentes/contrato-subagentes.md"; afirmar $? "el contrato dice que el revisor guarda la retro desde el checkout principal"
 M="$RAIZ/docs/mapa-agentes.json"
 for f in .claude/skills/implement-issue/SKILL.md .gitignore perfiles/chico/BORRAR; do
   python3 -c "import json,sys; v=[x for x in json.load(open('$M'))['verificar'] if x['nombre']=='orquestar'][0]; sys.exit(0 if any(g.lstrip('?')=='$f' for g in v['cuando']) else 1)"
@@ -146,8 +181,48 @@ for f in .claude/skills/implement-issue/SKILL.md .gitignore perfiles/chico/BORRA
 done
 R="$RAIZ/.claude/agents/revisor.md"
 grep -q 'refs/revision/<pr>-<sufijo>' "$R" && grep -q -- '-revision-<pr>-<sufijo>' "$R"; afirmar $? "revisor: ref y worktree con sufijo único (dos revisiones del mismo PR no chocan)"
-# shellcheck disable=SC2016  # $raiz literal del markdown
-grep -q 'cd "$raiz" && .*retro.sh' "$R"; afirmar $? "revisor: guarda la retro desde el checkout principal (agente_sha de la versión que corrió)"
+! grep -q 'retro[^.]*desde el checkout principal' "$R" "$RAIZ/docs/agentes/contrato-subagentes.md"; afirmar $? "la retro del revisor no depende del checkout principal del repo (podía estar en una rama vieja)"
+grep -q 'checkout del orquestador.*retro.sh' "$R" && ! grep -q 'worktree de revisión.*retro.sh' "$R"; afirmar $? "revisor: corre el retro.sh del checkout del orquestador, no el del PR (no revisado)"
+grep -q 'skill_sha' "$R" && grep -q 'skill_sha' "$AQUI/SKILL.md"; afirmar $? "orquestar le pasa skill_sha al revisor (la versión de review-pr que corrió)"
+for a in implementador implementador-liviano; do
+  grep -q 'skill_sha' "$RAIZ/.claude/agents/$a.md"; afirmar $? "$a: escribe en la retro el skill_sha que le pasa el orquestador"
+done
+grep -qi 'frená.*\.claude\|\.claude.*frená' "$AQUI/SKILL.md"; afirmar $? "orquestar frena si su checkout tiene cambios en .claude/"
+grep -q 'revisor.*agente_sha\|agente_sha.*revisor' "$AQUI/SKILL.md" && grep -q 'checkout del orquestador' "$AQUI/SKILL.md"; afirmar $? "orquestar le pasa al revisor agente_sha y el checkout del orquestador"
+for a in implementador implementador-liviano revisor; do
+  grep -q 'agente_sha' "$RAIZ/.claude/agents/$a.md"; afirmar $? "$a: escribe en la retro el agente_sha que le pasa el orquestador"
+done
+grep -q 'agente_sha' "$AQUI/SKILL.md"; afirmar $? "orquestar le pasa agente_sha a cada subagente"
+grep -qi 'markdown crudo' "$R"; afirmar $? "revisor: el texto de la revisión va en Markdown crudo, sin entidades HTML"
+grep -qi 'relanzado.*consulta\|consulta.*relanzado' "$AQUI/SKILL.md"; afirmar $? "orquestar: dice qué hacer si un relanzado devuelve consulta"
+C="$RAIZ/docs/agentes/contrato-subagentes.md"; I="$RAIZ/.claude/skills/implement-issue/SKILL.md"
+grep -qi 'markdown crudo' "$C"; afirmar $? "contrato: todo texto para GitHub va en Markdown crudo (también el de los implementadores)"
+grep -q '^autorevision:' "$C" && grep -q 'autorevision' "$AQUI/SKILL.md"; afirmar $? "contrato: la salida dice si hubo /code-review, y orquestar lo informa"
+! grep -qi "si está disponible el comando \`/code-review\`" "$I" && grep -qi 'code-review.*obligatori' "$I"; afirmar $? "implement-issue: /code-review es obligatorio"
+grep -qi 'que el issue lo pida no es la aprobación' "$I" && grep -qi 'que el issue lo pida no es la aprobación' "$C"; afirmar $? "un issue que pide tocar algo de consultar no es la aprobación"
+grep -qi 'que el issue lo pida no es la aprobación' "$RAIZ/AGENTS.md"; afirmar $? "AGENTS.md: pedirlo en el issue no aprueba algo de consultar"
+# Una sola definición de aprobación: el cuerpo del issue lo puede escribir un agente.
+V="$RAIZ/.claude/skills/review-pr/SKILL.md"
+for f in "$RAIZ/AGENTS.md" "$C" "$I" "$V"; do
+  grep -q 'un "sí" de una persona en el chat o en un comentario suyo en el issue o el PR, nunca el cuerpo del issue' "$f"; afirmar $? "${f#"$RAIZ"/}: define la aprobación igual que AGENTS.md"
+done
+! grep -q 'línea del issue' "$I"; afirmar $? "implement-issue: una línea del issue no es aprobación"
+grep -qi 'sin aprobación.*bloqueante' "$V"; afirmar $? "review-pr: algo de consultar sin aprobación registrada es bloqueante"
+! grep -qi 'si está disponible ./code-review.' "$V" && grep -q 'code-review origin/<RAMA_BASE>\.\.\.HEAD' "$V"; afirmar $? "review-pr: /code-review obligatorio y sobre origin/<base>...HEAD"
+grep -q 'fetch' "$V"; afirmar $? "review-pr: hace fetch antes de /code-review (la base local puede estar atrasada)"
+L="$RAIZ/.github/workflows/labels.yml"
+node -e '
+const src=require("fs").readFileSync(process.argv[1],"utf8");
+const m=src.match(/const cierra = (\/.*\/[a-z]*);/), r=src.match(/const refiere = (\/.*\/[a-z]*);/);
+if(!m||!r) process.exit(1);
+const ok=b=>eval(m[1]).test(b)||eval(r[1]).test(b);
+const casos=[["Closes #1",1],["Refs #77",1],["texto\nRefs: #3\n",1],["  Ref #2",1],["ver ref #38 de pasada",0],["prefs #4",0],["Refs 77",0]];
+process.exit(casos.every(([b,e])=>ok(b)===!!e)?0:1);' "$L" 2>/dev/null; afirmar $? "check de labels: Refs #n solo en su propia línea, Closes en cualquier parte"
+if [ -d "$RAIZ/perfiles/chico" ]; then
+  grep -qi 'que el issue lo pida no es la aprobación' "$RAIZ/perfiles/chico/AGENTS.md"; afirmar $? "chico: pedirlo en el issue no es la aprobación"
+  ! grep -qi 'si está disponible ./code-review.' "$RAIZ/perfiles/chico/.claude/skills/implement-issue/SKILL.md"; afirmar $? "chico: /code-review obligatorio"
+fi
+grep -q 'code-review.*origin/<RAMA_BASE>\.\.\.HEAD' "$RAIZ/.claude/skills/implement-issue/SKILL.md"; afirmar $? "implement-issue corre /code-review sobre el diff de la rama"
 (cd "$RAIZ" && git check-ignore -q .claude/worktrees/agente-x); afirmar $? ".claude/worktrees/ está ignorado (el aislamiento de Claude Code no ensucia el checkout)"
 grep -qx '.claude/skills/orquestar' "$RAIZ/perfiles/chico/BORRAR" 2>/dev/null || ! [ -d "$RAIZ/perfiles" ]; afirmar $? "el modo chico borra la skill orquestar"
 

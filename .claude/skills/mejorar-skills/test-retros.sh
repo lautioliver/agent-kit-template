@@ -191,6 +191,12 @@ c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'implement-iss
 grep -q '^modelo: haiku$' <<<"$c" && grep -q '^rol: implementador-liviano$' <<<"$c"; afirmar $? "guarda modelo y rol tal como vienen"
 grep -q "^agente_sha: $agsha$" <<<"$c"; afirmar $? "un subagente guarda agente_sha del .claude/agents/<rol>.md"
 
+# Un agente_sha explícito (el que pasa el orquestador) se respeta, aunque el checkout tenga otro.
+printf -- '---\nskill: implement-issue\nissue: 75\nmodelo: sonnet\nrol: implementador\nagente_sha: 0123456789abcdef0123456789abcdef01234567\n---\nexplicito\n' >"$TMP/expl.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/expl.md" >/dev/null 2>&1)
+c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'implement-issue-75' | head -1)" 2>/dev/null)
+grep -q '^agente_sha: 0123456789abcdef0123456789abcdef01234567$' <<<"$c" && igual "$(grep -c '^agente_sha:' <<<"$c")" 1; afirmar $? "un agente_sha explícito se guarda tal cual, una sola vez"
+
 printf -- '---\nskill: review-pr\npr: 46\nmodelo: opus\nrol: revisor\n---\nrev\n' >"$TMP/rev.md"
 (cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/rev.md" >/dev/null 2>&1)
 c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'review-pr-pr46' | head -1)" 2>/dev/null)

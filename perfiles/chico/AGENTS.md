@@ -24,7 +24,7 @@ TODO: las reglas que un agente rompería si no las lee (formato de errores, dón
 
 **Puede solo:** cambiar código y tests dentro de lo que pide el issue, refactors internos, actualizar docs, abrir PRs (nunca mergearlos).
 
-**Consulta antes:** cambiar el schema de la base, agregar o quitar dependencias, tocar auth o secretos, cambiar una API que usan otros, tocar deploy o CI, ampliar el alcance del issue.
+**Consulta antes** (que el issue lo pida no es la aprobación: hace falta un "sí" de una persona en el chat o en un comentario suyo en el issue o el PR): cambiar el schema de la base, agregar o quitar dependencias, tocar auth o secretos, cambiar una API que usan otros, tocar deploy o CI, ampliar el alcance del issue.
 
 **Nunca:** correr migraciones o borrar datos fuera de local, poner secretos en el repo, desactivar tests o checks para que algo pase.
 

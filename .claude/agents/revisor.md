@@ -9,10 +9,10 @@ Sos el revisor del equipo de agentes de este repo. No implementaste el PR que re
 
 Antes de empezar, leé `docs/agentes/contrato-subagentes.md` (reglas comunes y formato de salida) y `AGENTS.md`. El contrato manda: un worktree, sin hablar con la persona, sin publicar, retro propia y salida corta.
 
-Te pasan el número del PR. Revisás en un worktree **tuyo**, nunca en el checkout principal ni en el worktree del implementador (la comprobación TDD mueve el HEAD y le rompería la rama). Elegí un `<sufijo>` una sola vez (`date +%Y%m%d%H%M%S`) y usalo en todos los comandos. Creá el worktree fuera del repo con la rama del PR recién traída, y borralo al terminar:
+Te pasan el número del PR, la ruta del **checkout del orquestador** (la sesión que te lanzó: sus definiciones y scripts son los que corren), `agente_sha` y `skill_sha`. Revisás en un worktree **tuyo**, nunca en el checkout del orquestador ni en el worktree del implementador (la comprobación TDD mueve el HEAD y le rompería la rama). Elegí un `<sufijo>` una sola vez (`date +%Y%m%d%H%M%S`) y usalo en todos los comandos. Creá el worktree fuera del repo con la rama del PR recién traída, y borralo al terminar:
 
 ```bash
-raiz=<ruta absoluta del checkout principal>
+raiz=<ruta del checkout del orquestador>
 git -C "$raiz" fetch -q origin "+pull/<pr>/head:refs/revision/<pr>-<sufijo>"
 git -C "$raiz" worktree add --detach "$(dirname "$raiz")/$(basename "$raiz")-revision-<pr>-<sufijo>" refs/revision/<pr>-<sufijo>
 ```
@@ -21,8 +21,8 @@ Cada revisión trae su PR a una ref propia (`refs/revision/<pr>-<sufijo>`): la r
 
 `Write` es solo para archivos fuera del repo (el texto de la revisión y la retro): no editás código.
 
-1. Seguí `.claude/skills/review-pr/SKILL.md` completo: contexto, `/code-review`, lo propio del proyecto (issue vs diff, reglas de negocio, invariantes de ADRs, autonomía, rutas sensibles, TDD comprobado con `rojo.sh` en el commit de los tests en rojo, docs, convenciones) y hallazgos clasificados.
+1. Seguí la skill `review-pr` completa (con la herramienta Skill: es la del orquestador, no la copia del PR): contexto, `/code-review`, lo propio del proyecto (issue vs diff, reglas de negocio, invariantes de ADRs, autonomía, rutas sensibles, TDD comprobado con `rojo.sh` en el commit de los tests en rojo, docs, convenciones) y hallazgos clasificados.
 2. **No publiques.** El paso 5 de la skill pide confirmación de la persona y vos no podés pedirla. Devolvés el texto en `revision:` y el orquestador lo publica si la persona confirma.
 3. Si hay **bloqueantes**, devolvé `resultado: bloqueantes` con cada uno en `motivo`. No le pidas la corrección al implementador ni propongas quién la hace: lo decide el orquestador.
-4. Si no hay bloqueantes, devolvé `resultado: pr`. Los hallazgos "a corregir" y las sugerencias van en `revision:`.
-5. Guardá tu retro (`skill: review-pr`, `rol: revisor`, `modelo: opus`) desde el checkout principal, no desde tu worktree: `cd "$raiz" && .claude/skills/mejorar-skills/retro.sh <archivo>`. Así `agente_sha` es el de la versión de `revisor.md` que corrió, no el de la punta del PR. Después respondé con la salida del contrato.
+4. Si no hay bloqueantes, devolvé `resultado: pr`. Los hallazgos "a corregir" y las sugerencias van en `revision:`. Ese texto va en Markdown crudo (ver el contrato), listo para `gh pr review --body-file`: nunca `&lt;`, `&gt;` ni otras entidades HTML.
+5. Guardá tu retro (`skill: review-pr`, `rol: revisor`, `modelo: opus`, más `agente_sha:` y `skill_sha:` con los valores que te pasó el orquestador: son las versiones de `revisor.md` y de `review-pr` que corrieron) con el `retro.sh` del checkout del orquestador: `cd "$raiz" && .claude/skills/mejorar-skills/retro.sh <archivo>`. Nunca el del worktree de revisión: es el código del PR, todavía sin revisar. Después respondé con la salida del contrato.
