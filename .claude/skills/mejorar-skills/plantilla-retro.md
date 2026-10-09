@@ -1,6 +1,6 @@
 ---
 skill: implement-issue | review-pr
-issue: <n>
+issue: <n> (en review-pr, si el PR no cierra ninguno: "sin issue")
 pr: <n o "sin PR">
 area: <area: del issue, o "ninguna">
 rutas: <archivos o carpetas principales que tocó, separados por coma>

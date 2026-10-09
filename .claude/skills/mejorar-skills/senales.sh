@@ -21,9 +21,10 @@ if ! punta=$(git rev-parse -q --verify "$ref"); then
   echo "_Todavía no hay retros (no existe la rama $RAMA)._"
 else
   hasta=$(git show "$punta:consolidado.md" 2>/dev/null | sed -n 's/^consolidado-hasta: *//p' | head -1 || true)
-  if [ -n "$hasta" ] && git cat-file -e "$hasta^{commit}" 2>/dev/null; then
+  if [ -n "$hasta" ] && git merge-base --is-ancestor "$hasta" "$punta" 2>/dev/null; then
     nuevas=$(git diff --name-only --diff-filter=A "$hasta" "$punta" -- retros/)
   else
+    [ -n "$hasta" ] && echo "_Aviso: consolidado.md apunta a $hasta, que no está en $RAMA; muestro todas las retros._"
     nuevas=$(git ls-tree -r --name-only "$punta" -- retros/)
   fi
   if [ -z "$nuevas" ]; then
@@ -33,7 +34,7 @@ else
       echo "### $f"; git show "$punta:$f"; echo
     done <<<"$nuevas"
   fi
-  echo "Para marcar esto como consolidado, consolidar hasta: $(git rev-parse --short "$punta")"
+  echo "Para marcar esto como consolidado, consolidar hasta: $punta"
 fi
 
 echo
