@@ -83,11 +83,13 @@ comandos_ramas() {
   [ ${#ramas[@]} -gt 0 ] || return 0
   echo; echo "Las ramas no se borran solas. Si la persona confirma, una por una:"
   local en_wt; en_wt=$(git worktree list --porcelain | sed -n 's|^branch refs/heads/||p')
+  # La local primero y con &&: si no se puede borrar (sigue en un worktree), la remota no se toca.
   for r in "${ramas[@]}"; do
-    if [ -n "$BORRAR" ] && grep -qxF "$r" <<<"$en_wt"; then
-      echo "  $r: sigue en un worktree (con cambios o bloqueado); sacalo antes de borrarla"
+    if grep -qxF "$r" <<<"$en_wt"; then
+      if [ -n "$BORRAR" ]; then echo "  $r: sigue en un worktree (con cambios o bloqueado); sacalo antes de borrarla"
+      else echo "  $r: después de --borrar"; fi
     elif git rev-parse -q --verify "refs/heads/$r" >/dev/null; then
-      echo "  git push origin --delete $r; git branch -D $r"
+      echo "  git branch -D $r && git push origin --delete $r"
     else echo "  git push origin --delete $r"; fi
   done
 }

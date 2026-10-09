@@ -208,7 +208,7 @@ for f in "$RAIZ/AGENTS.md" "$C" "$I" "$V"; do
 done
 ! grep -q 'línea del issue' "$I"; afirmar $? "implement-issue: una línea del issue no es aprobación"
 grep -qi 'sin aprobación.*bloqueante' "$V"; afirmar $? "review-pr: algo de consultar sin aprobación registrada es bloqueante"
-! grep -qi 'si está disponible `/code-review`' "$V" && grep -q 'code-review origin/<RAMA_BASE>\.\.\.HEAD' "$V"; afirmar $? "review-pr: /code-review obligatorio y sobre origin/<base>...HEAD"
+! grep -qi 'si está disponible ./code-review.' "$V" && grep -q 'code-review origin/<RAMA_BASE>\.\.\.HEAD' "$V"; afirmar $? "review-pr: /code-review obligatorio y sobre origin/<base>...HEAD"
 grep -q 'fetch' "$V"; afirmar $? "review-pr: hace fetch antes de /code-review (la base local puede estar atrasada)"
 L="$RAIZ/.github/workflows/labels.yml"
 node -e '
@@ -220,7 +220,7 @@ const casos=[["Closes #1",1],["Refs #77",1],["texto\nRefs: #3\n",1],["  Ref #2",
 process.exit(casos.every(([b,e])=>ok(b)===!!e)?0:1);' "$L" 2>/dev/null; afirmar $? "check de labels: Refs #n solo en su propia línea, Closes en cualquier parte"
 if [ -d "$RAIZ/perfiles/chico" ]; then
   grep -qi 'que el issue lo pida no es la aprobación' "$RAIZ/perfiles/chico/AGENTS.md"; afirmar $? "chico: pedirlo en el issue no es la aprobación"
-  ! grep -qi 'si está disponible `/code-review`' "$RAIZ/perfiles/chico/.claude/skills/implement-issue/SKILL.md"; afirmar $? "chico: /code-review obligatorio"
+  ! grep -qi 'si está disponible ./code-review.' "$RAIZ/perfiles/chico/.claude/skills/implement-issue/SKILL.md"; afirmar $? "chico: /code-review obligatorio"
 fi
 grep -q 'code-review.*origin/<RAMA_BASE>\.\.\.HEAD' "$RAIZ/.claude/skills/implement-issue/SKILL.md"; afirmar $? "implement-issue corre /code-review sobre el diff de la rama"
 (cd "$RAIZ" && git check-ignore -q .claude/worktrees/agente-x); afirmar $? ".claude/worktrees/ está ignorado (el aislamiento de Claude Code no ensucia el checkout)"
