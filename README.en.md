@@ -74,7 +74,7 @@ A repo template for working with coding agents **without losing control**: clear
    - `docs/convencion-nombres-github.md` §2: commit scopes.
 4. Load the team: `/add-member @user` for each member, with the areas they cover. From then on, every issue the agents create is born assigned (see [Team and assignment](#team)).
 5. Create the labels: **Actions → Labels → Run workflow**.
-6. Using Cursor? Link the skills: `ln -s ../.claude/skills .cursor/skills`.
+6. Using Codex? Link the skills: `mkdir -p .agents && ln -s ../.claude/skills .agents/skills`. Copilot and Cursor read them from `.claude/skills` as is. See [Tools](#tools).
 
 > [!IMPORTANT]
 > The docs check fails on purpose while `docs/mapa-agentes.json` still has `TODO/` paths: with example paths, an agent would never notice it touched something sensitive. Paths starting with `?` are optional stack alternatives; your own paths go without `?`, so the check fails if they stop existing.
@@ -108,7 +108,7 @@ flowchart LR
 
 Agents do the work. The two knots on the leash, **approving the plan** and **merging** 🟡, always stay in human hands.
 
-**Guardrails.** It doesn't rely only on what `AGENTS.md` asks: a Claude Code hook (`.claude/settings.json` → `scripts/agentes/barandas.py`) stops, before they run, merging and approving PRs, pushing to `main` or `develop`, tags, releases, branch protection changes and `--no-verify`, also inside compound commands. If you asked for one of those steps, run it yourself in the chat: `! gh pr merge 12`. They are guardrails, not a lock: they stop the common mistake, but an agent with your token can get there another way (its own script, another tool). The lock is GitHub: a rule on the base branch that requires an approval. If you work alone, that rule also stops you (GitHub doesn't let you approve your own PR), so it's optional.
+**Guardrails.** It doesn't rely only on what `AGENTS.md` asks: a Claude Code hook (`.claude/settings.json` → `scripts/agentes/barandas.py`) stops, before they run, merging and approving PRs, pushing to `main` or `develop`, tags, releases, branch protection changes and `--no-verify`, also inside compound commands. The same script is registered for Codex, Copilot and Cursor (see [Tools](#tools)). If you asked for one of those steps, run it yourself in the chat: `! gh pr merge 12`. Open Claude Code at the repo root: from a subdirectory it doesn't load `.claude/settings.json` and the hook doesn't run. They are guardrails, not a lock: they stop the common mistake, but an agent with your token can get there another way (its own script, another tool). The lock is GitHub: a rule on the base branch that requires an approval. If you work alone, that rule also stops you (GitHub doesn't let you approve your own PR), so it's optional.
 
 During `/implement-issue`, `debug`, `db-migration` and `update-docs` come in as needed. If the PR touches sensitive paths, the review adds `/security-review`.
 
@@ -242,6 +242,33 @@ The small mode keeps only the Spanish README.
 It doesn't commit: you review the diff and open a PR.
 
 Small-mode files live in `perfiles/chico/` (plus the `BORRAR` list). What both modes share (skills like `debug`, `check-docs.py`, `preparar.sh`) is the same file, so fixes reach both.
+
+</details>
+
+<a name="tools"></a>
+
+## 🧩 Tools
+
+The template is built and tested with Claude Code. The others read much of the same:
+
+| | Claude Code | Codex | GitHub Copilot | Cursor |
+|---|---|---|---|---|
+| Rules (`AGENTS.md`) | ✅ | 📄 | 📄 cloud agent, VS Code and CLI | 📄 |
+| Skills (`.claude/skills`) | ✅ `/implement-issue 3` | 📄 from `.agents/skills`: link them (step 6 of [Get started](#get-started)) | 📄 reads them as is | 📄 reads them as is |
+| Subagents and `/orquestar` | ✅ | ❌ uses another format (`.codex/agents/*.toml`) | 📄 only VS Code reads `.claude/agents` | 📄 reads `.claude/agents`; models (`sonnet`, `haiku`) are not mapped |
+| [Guardrails](#the-flow) | ✅ `.claude/settings.json` | 📄 `.codex/hooks.json`, if you trust the project and approve the hook with `/hooks` | 📄 `.github/hooks/barandas.json` (cloud and CLI). In VS Code, only with `chat.useClaudeHooks` | 📄 `.cursor/hooks.json` |
+
+✅ tested in this repo. 📄 per the tool's documentation (October 2026), not tested here: [Codex](https://learn.chatgpt.com/docs/build-skills) ([hooks](https://learn.chatgpt.com/docs/hooks)), [Copilot](https://docs.github.com/en/copilot/concepts/agents/about-agent-skills) ([hooks](https://docs.github.com/en/copilot/reference/hooks-reference), [VS Code](https://code.visualstudio.com/docs/copilot/customization/custom-agents)), [Cursor](https://cursor.com/docs/context/skills) ([hooks](https://cursor.com/docs/agent/hooks), [subagents](https://cursor.com/docs/context/subagents)). ❌ doesn't work. Guardrails need `bash`, `git` and `python3`: on Windows, only with WSL.
+
+Skills have nothing specific to Claude Code: they are Markdown with bash and Python scripts. What is specific is the orchestration: subagents per model, worktrees and the output contract. Copilot's cloud agent also can't merge: it only pushes to its `copilot/…` branch.
+
+<details>
+<summary><b>✅ Trying it in another tool</b></summary>
+
+1. **Rules:** ask it "what can't you do without asking?". It should quote the Autonomy section of `AGENTS.md`.
+2. **Skills:** ask it to "follow the implement-issue skill for issue N" (or `/implement-issue N` if it recognizes it). It should take the issue with `preparar.sh`, commit the red tests with `rojo.sh` and open the PR without merging it.
+3. **Guardrails:** ask it to run `gh pr merge 999999`. The hook should stop it before it runs.
+4. If something fails, open an issue with the tool, its version, the step and the exact error. That moves the table from 📄 to ✅ or ❌.
 
 </details>
 
