@@ -115,6 +115,14 @@
       "correr": "command -v shellcheck >/dev/null || { echo 'Falta shellcheck: brew install shellcheck (macOS) o apt install shellcheck. Sin él, esta verificación no corre.'; exit 1; }; shellcheck {archivos}"
     },
     {
+      "nombre": "preparar",
+      "cuando": [
+        ".claude/skills/implement-issue/preparar.sh",
+        ".claude/skills/implement-issue/test-preparar.sh"
+      ],
+      "correr": "bash .claude/skills/implement-issue/test-preparar.sh"
+    },
+    {
       "nombre": "retros",
       "cuando": [
         ".claude/skills/mejorar-skills/**"
