@@ -1,3 +1,5 @@
+<p align="right"><b>🇦🇷 Español</b> · <a href="README.en.md">🇬🇧 English</a></p>
+
 <!-- marca:inicio -->
 <p align="center"><img src=".github/marca/dron-con-correa.svg" width="240" alt="Barrilete, un dron atado a una correa con dos nudos"></p>
 <h3 align="center">Los agentes vuelan. Vos tenés la rienda.</h3>
@@ -19,7 +21,6 @@
   <img src="https://img.shields.io/badge/Python-3-3776AB?logo=python&logoColor=white" alt="Python 3">
   <img src="https://img.shields.io/badge/Bash-scripts-4EAA25?logo=gnubash&logoColor=white" alt="Bash">
   <img src="https://img.shields.io/badge/Conventional_Commits-1.0-FE5196?logo=conventionalcommits&logoColor=white" alt="Conventional Commits">
-  <img src="https://img.shields.io/badge/idioma-español-B4122B" alt="En español">
 </p>
 
 Plantilla de repo para trabajar con agentes de código **sin perder el control**: reglas claras, documentación que se testea y un flujo de issue a PR donde **las personas aprueban el plan y mergean**.

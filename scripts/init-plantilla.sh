@@ -52,8 +52,11 @@ fi
 rm -rf perfiles
 # La marca (Barrilete) es de la plantilla, no del proyecto nuevo.
 rm -rf .github/marca
-perl -0pi -e 's/<!-- marca:inicio -->.*?<!-- marca:fin -->\n\n?//gs' README.md
-perl -ni -e 'print unless m{^\|.*`\.github/marca/`}' README.md  # fila "Marca" de la tabla
+for f in README.md README.en.md; do
+  [ -f "$f" ] || continue
+  perl -0pi -e 's/<!-- marca:inicio -->.*?<!-- marca:fin -->\n\n?//gs' "$f"
+  perl -ni -e 'print unless m{^\|.*`\.github/marca/`}' "$f"  # fila "Marca" de la tabla
+done
 # crecer.py solo sirve en proyectos chicos (para pasar al modo completo).
 [ -z "$CHICO" ] && rm -f scripts/crecer.py
 # shellcheck disable=SC2016  # $ENV{…} lo expande perl, no bash
