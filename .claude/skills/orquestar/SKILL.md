@@ -13,7 +13,7 @@ Sos la sesión principal: repartís, coordinás y le hablás a la persona. Los s
 
 - Esta sesión tiene que correr en Opus. Si no lo está, pedile a la persona `/model opus` y esperá.
 - La rama base de los PRs (`<base>`) es la de la regla de ramas de `AGENTS.md`; se la pasás a cada subagente como `BASE=<base>`.
-- Anotá la corrida (`date +%Y%m%d-%H%M`) para tu retro, y la raíz del checkout principal (`git rev-parse --show-toplevel`): todos los comandos de git van con `git -C <ruta>`.
+- Anotá la corrida (`date +%Y%m%d-%H%M`) para tu retro, y la ruta de tu checkout, el **checkout del orquestador** (`git rev-parse --show-toplevel`): todos los comandos de git van con `git -C <ruta>`. Tiene que estar sin cambios en `.claude/` (`git status --porcelain .claude`): los `agente_sha` y `skill_sha` que pasás salen de sus commits.
 - Corré `.claude/skills/estado/disponibles.sh`. Solo se lanzan issues de **"Se pueden empezar ya"**: un issue bloqueado, ya asignado o con un PR abierto no se lanza nunca, aunque la persona lo nombre (decíselo).
 
 ## 2. Proponer y esperar confirmación
@@ -37,7 +37,7 @@ git -C <raíz> fetch -q origin        # una sola vez, antes de lanzar: fetch en 
 
 `preparar.sh` valida, asigna, crea el worktree en `../<repo>-wt/<n>` e imprime `Worktree: <ruta>`. Si falla para un issue, no lo lances y anotalo para el mensaje final.
 
-Lanzá los subagentes en paralelo, en un solo mensaje, con la herramienta Agent: `subagent_type` `implementador-liviano` (Haiku) o `implementador` (Sonnet). Sin `isolation`: el worktree ya existe. En el prompt: número de issue, ruta del worktree, rama base (`BASE=<base>`), `agente_sha` (`git log -1 --format=%H -- .claude/agents/<rol>.md` en tu checkout: es la versión que corre, aunque el worktree tenga otra) y que siga su definición. Al revisor, lo mismo con `revisor.md`. **Nunca más de 3 implementando a la vez**, contando los relanzados.
+Lanzá los subagentes en paralelo, en un solo mensaje, con la herramienta Agent: `subagent_type` `implementador-liviano` (Haiku) o `implementador` (Sonnet). Sin `isolation`: el worktree ya existe. En el prompt: número de issue, ruta del worktree, rama base (`BASE=<base>`), `agente_sha` (`git log -1 --format=%H -- .claude/agents/<rol>.md` en tu checkout: es la versión que corre, aunque el worktree tenga otra) y que siga su definición. Al revisor: número de PR, la ruta del checkout del orquestador, `agente_sha` de `revisor.md` y `skill_sha` (`git log -1 --format=%H -- .claude/skills/review-pr/SKILL.md`). **Nunca más de 3 implementando a la vez**, contando los relanzados.
 
 ## 4. Con cada resultado
 
@@ -45,7 +45,7 @@ Cada subagente devuelve el bloque del contrato. Leé solo eso: nunca diffs ni re
 
 | `resultado` | Qué hacés |
 |---|---|
-| `pr` (implementador) | Lanzás un `revisor` con el número de PR y la raíz del checkout. **Una sola revisión por PR a la vez.** |
+| `pr` (implementador) | Lanzás un `revisor` con lo que dice el paso 3 (PR, checkout del orquestador, `agente_sha`, `skill_sha`). **Una sola revisión por PR a la vez.** |
 | `escalar` | Relanzás `implementador` (Sonnet) en el **mismo worktree**, con el `motivo`. Cuenta para el máximo de 3. |
 | `consulta` / `soltado` | Lo anotás para el mensaje final. Ya está comentado en el issue. Vale igual para un relanzado: si Sonnet, relanzado tras un `escalar`, devuelve `consulta` (por ejemplo, el issue toca CI y eso pide consulta a cualquier modelo), no hay otro relanzado. |
 | `pr` (revisor) | Lo anotás con su `revision:` para el mensaje final. |

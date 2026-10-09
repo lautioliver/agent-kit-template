@@ -122,7 +122,7 @@ rm -rf "$P/.git/retros-pendientes"
 mkdir -p "$WT"; git -C "$P" worktree add -q -b claude/14-x "$WT/14" 2>/dev/null
 s=$(cd "$P" && "$AQUI/limpiar.sh" 2>&1); c=$?
 ! es "$c" -eq 0 && grep -q "#14" <<<"$s"; afirmar $? "si no puede leer el estado de un issue, lo dice y sale con error"
-git -C "$P" worktree remove "$WT/14"
+git -C "$P" worktree remove "$WT/14"; git -C "$P" branch -q -D claude/14-x
 
 # Un worktree que no se puede borrar (bloqueado) se reporta y el script sale con error.
 git -C "$P" worktree lock "$WT/13"
