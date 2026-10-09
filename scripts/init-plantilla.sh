@@ -62,8 +62,9 @@ for f in README.md README.en.md; do
 done
 # crecer.py solo sirve en proyectos chicos (para pasar al modo completo).
 [ -z "$CHICO" ] && rm -f scripts/crecer.py
-# docs.yml y labels.yml también corren en main para la plantilla misma; el proyecto parte de su rama base.
-for w in .github/workflows/docs.yml .github/workflows/labels.yml; do
+# Los workflows marcados con "# main: para la plantilla misma" (docs.yml, labels.yml) también corren en
+# main para la plantilla; el proyecto parte de su rama base.
+for w in .github/workflows/*.yml; do
   [ -f "$w" ] || continue
   perl -0pi -e 's/ *# main: para la plantilla misma[^\n]*\n( *branches: )\[main, <RAMA_BASE>\]/$1\[<RAMA_BASE>\]/' "$w"
   if grep -q 'branches: \[main, <RAMA_BASE>\]\|plantilla misma' "$w"; then

@@ -65,7 +65,8 @@ sys.exit(0 if guia and [(n, t.strip()) for n, t in guia] == [(n, t.strip()) for 
 PY
 afirmar $? "los pasos del formulario de prueba coinciden con los de la guía"
 
-# El CI de docs corre en los pushes a main de la plantilla, y el init deja el filtro de cada modo (#101).
+# docs.yml (#101) y labels.yml (#103) corren en los pushes a main de la plantilla, y el init deja el filtro de cada modo.
+# En chico, los workflows vienen de perfiles/chico/ y ya tienen [<RAMA_BASE>]: el loop no tiene nada que sacar.
 # main/develop y chico se prueban en el loop de abajo; acá, solo el modo releases.
 for w in docs labels; do
   grep -Eq '^    branches: \[main, <RAMA_BASE>\]$' "$RAIZ/.github/workflows/$w.yml"
