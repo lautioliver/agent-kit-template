@@ -19,6 +19,8 @@ Si no te dieron un número ("tomá el siguiente"), corré `.claude/skills/estado
 
 Valida que el issue esté abierto, que no sea una épica, que no esté bloqueado, que no lo tenga asignado otra persona y que no haya cambios sin commitear. Si pasa, lo asigna a quien corre el comando, crea la rama `claude/<n>-<descripcion>` desde `<RAMA_BASE>` (o retoma la que ya existe) e imprime el issue con sus comentarios, su épica y lo que desbloquea.
 
+Con `--worktree` hace lo mismo pero en un worktree propio (`../<repo>-wt/<n>`), sin tocar el checkout actual, para correr varios issues en paralelo. Imprime `Worktree: <ruta>`; trabajá ahí con rutas absolutas o `git -C <ruta>` (si el directorio actual se reinicia entre comandos, commitearías en el checkout principal). Si la rama ya está en otro worktree, falla sin asignar. Con el PR mergeado, borralo con `git worktree remove <ruta>`.
+
 Si falla, **no fuerces nada**: contale al usuario por qué y, si sirve, proponé el siguiente disponible. Para leer un issue sin tomarlo: `preparar.sh <n> --revisar`.
 
 ## 2. Entender antes de tocar
