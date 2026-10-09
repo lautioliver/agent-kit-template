@@ -1,3 +1,9 @@
+<!-- marca:inicio -->
+<p align="center"><img src=".github/marca/dron-con-correa.svg" width="200" alt="Barrilete, un dron atado a una correa con dos nudos"></p>
+<p align="center"><b>Los agentes vuelan. Vos tenés la rienda.</b></p>
+<p align="center"><a href=".github/marca/README.md">Marca</a></p>
+<!-- marca:fin -->
+
 # Plantilla de repo: reglas para agentes + documentación
 
 Repo plantilla para arrancar proyectos con una estructura de documentación y reglas para LLMs lista para usar.
@@ -18,6 +24,7 @@ Repo plantilla para arrancar proyectos con una estructura de documentación y re
 | Mapa para agentes | `docs/mapa-agentes.json` → qué docs revisar según lo que cambia, rutas sensibles, docs obligatorios |
 | Docs testeados en CI | `.github/workflows/docs.yml` + `scripts/agentes/check-docs.py` → links, rutas y ADRs rotos, rutas del mapa que ya no existen |
 | Verificación antes del PR | `scripts/agentes/verificar.py` → según lo que cambió, corre lint, typecheck, tests afectados, drift de migraciones… (sección `verificar` del mapa) |
+| Marca | `.github/marca/` → Barrilete: ícono, estados, paleta y social preview de la plantilla (el init la borra) |
 
 ## Requisitos
 
