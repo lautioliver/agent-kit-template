@@ -13,6 +13,8 @@ Revisa:
   marcadas como opcionales con "?" al principio); avisa de
   carpetas con código que el mapa no cubre.
 - Skills (.claude/skills/*/SKILL.md) de más de 120 líneas, y docs/agentes/lecciones.md de más de 40.
+- Subagentes (.claude/agents/*.md) sin name, description o tools, con un model que no es opus,
+  sonnet ni haiku, o que no remiten al contrato común (docs/agentes/contrato-subagentes.md).
 Las rutas de "ignorar_check" del mapa (por ejemplo, bitácoras históricas) no se validan.
 """
 import json
@@ -159,6 +161,24 @@ if os.path.exists(LECCIONES):
     lineas = sum(1 for _ in open(LECCIONES, encoding="utf-8"))
     if lineas > MAX_LECCIONES:
         errores.append(f"{LECCIONES}: {lineas} líneas (máximo {MAX_LECCIONES}). Sacá la lección más vieja o la que ya pasó a una skill.")
+
+# Subagentes: el orquestador elige el modelo por rol, y todos devuelven la misma salida.
+CONTRATO, AGENTES = "docs/agentes/contrato-subagentes.md", ".claude/agents"
+if os.path.isdir(AGENTES):
+    for nombre in sorted(os.listdir(AGENTES)):
+        if not nombre.endswith(".md"):
+            continue
+        ruta = os.path.join(AGENTES, nombre)
+        texto = open(ruta, encoding="utf-8").read()
+        m = re.match(r"---\n(.*?)\n---\n", texto, re.S)
+        campos = dict(re.findall(r"^(\w+): *(.*)$", m.group(1), re.M)) if m else {}
+        for campo in ("name", "description", "tools"):
+            if not campos.get(campo):
+                errores.append(f"{ruta}: falta '{campo}:' en el frontmatter.")
+        if campos.get("model") not in ("opus", "sonnet", "haiku"):
+            errores.append(f"{ruta}: model '{campos.get('model', '')}' (tiene que ser opus, sonnet o haiku).")
+        if CONTRATO not in texto:
+            errores.append(f"{ruta}: no remite al contrato común ({CONTRATO}).")
 
 for a in avisos:
     print(f"Aviso: {a}")

@@ -52,11 +52,11 @@ copia
 check >/dev/null; afirmar $? "check-docs pasa con los subagentes del repo"
 mkdir -p "$TMP/r/$AGENTES"
 printf -- '---\nname: x\ndescription: d\ntools: Read\nmodel: gpt-4\n---\nVer %s.\n' "$CONTRATO" >"$TMP/r/$AGENTES/x.md"
-check | grep -q "$AGENTES/x.md.*model"; afirmar $? "check-docs rechaza un model que no es opus, sonnet ni haiku"
+salida=$(check); grep -q "$AGENTES/x.md.*model" <<<"$salida"; afirmar $? "check-docs rechaza un model que no es opus, sonnet ni haiku"
 printf -- '---\nname: x\ndescription: d\nmodel: haiku\n---\nVer %s.\n' "$CONTRATO" >"$TMP/r/$AGENTES/x.md"
-check | grep -q "$AGENTES/x.md.*tools"; afirmar $? "check-docs rechaza un subagente sin tools"
+salida=$(check); grep -q "$AGENTES/x.md.*tools" <<<"$salida"; afirmar $? "check-docs rechaza un subagente sin tools"
 printf -- '---\nname: x\ndescription: d\ntools: Read\nmodel: haiku\n---\nSin contrato.\n' >"$TMP/r/$AGENTES/x.md"
-check | grep -q "$AGENTES/x.md.*contrato"; afirmar $? "check-docs rechaza un subagente que no remite al contrato"
+salida=$(check); grep -q "$AGENTES/x.md.*contrato" <<<"$salida"; afirmar $? "check-docs rechaza un subagente que no remite al contrato"
 
 # 5. El modo chico no deja los subagentes.
 grep -qx "$AGENTES" "$RAIZ/perfiles/chico/BORRAR"; afirmar $? "el modo chico borra $AGENTES"

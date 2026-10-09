@@ -16,3 +16,4 @@ scripts/agentes/mapa.py
 scripts/agentes/verificar.py
 .claude/skills/mejorar-skills
 docs/agentes
+.claude/agents

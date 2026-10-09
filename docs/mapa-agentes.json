@@ -123,6 +123,16 @@
       "correr": "bash .claude/skills/implement-issue/test-preparar.sh"
     },
     {
+      "nombre": "agentes",
+      "cuando": [
+        ".claude/agents/**",
+        "docs/agentes/contrato-subagentes.md",
+        "scripts/agentes/check-docs.py",
+        "scripts/agentes/test-agentes.sh"
+      ],
+      "correr": "bash scripts/agentes/test-agentes.sh"
+    },
+    {
       "nombre": "retros",
       "cuando": [
         ".claude/skills/mejorar-skills/**"
