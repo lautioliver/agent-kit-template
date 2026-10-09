@@ -62,11 +62,14 @@ for f in README.md README.en.md; do
 done
 # crecer.py solo sirve en proyectos chicos (para pasar al modo completo).
 [ -z "$CHICO" ] && rm -f scripts/crecer.py
-# docs.yml también corre en main para la plantilla misma; el proyecto parte de su rama base.
-[ -f .github/workflows/docs.yml ] && perl -0pi -e 's/ *# main: para la plantilla misma[^\n]*\n( *branches: )\[main, <RAMA_BASE>\]/$1\[<RAMA_BASE>\]/' .github/workflows/docs.yml
-if grep -q 'branches: \[main, <RAMA_BASE>\]\|plantilla misma' .github/workflows/docs.yml 2>/dev/null; then
-  echo "init: no pude ajustar el filtro de ramas de .github/workflows/docs.yml"; exit 1
-fi
+# docs.yml y labels.yml también corren en main para la plantilla misma; el proyecto parte de su rama base.
+for w in .github/workflows/docs.yml .github/workflows/labels.yml; do
+  [ -f "$w" ] || continue
+  perl -0pi -e 's/ *# main: para la plantilla misma[^\n]*\n( *branches: )\[main, <RAMA_BASE>\]/$1\[<RAMA_BASE>\]/' "$w"
+  if grep -q 'branches: \[main, <RAMA_BASE>\]\|plantilla misma' "$w"; then
+    echo "init: no pude ajustar el filtro de ramas de $w"; exit 1
+  fi
+done
 # shellcheck disable=SC2016  # $ENV{…} lo expande perl, no bash
 grep -rlE '<PROYECTO>|<RAMA_BASE>|<FECHA>|<REGLA_RAMAS>' --exclude-dir=.git --exclude=init-plantilla.sh . \
   | xargs perl -pi -e 's/<PROYECTO>/$ENV{P}/g; s/<RAMA_BASE>/$ENV{B}/g; s/<FECHA>/$ENV{F}/g; s/<REGLA_RAMAS>/$ENV{R}/g'

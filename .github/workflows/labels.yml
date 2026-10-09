@@ -8,7 +8,8 @@ name: Labels
 
 on:
   push:
-    branches: [<RAMA_BASE>]
+    # main: para la plantilla misma. El init lo deja en [<RAMA_BASE>].
+    branches: [main, <RAMA_BASE>]
     paths: ['.github/labels.yml']
   pull_request_target:
     types: [opened, synchronize, reopened, edited, labeled, unlabeled]
