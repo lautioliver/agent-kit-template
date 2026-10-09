@@ -157,10 +157,19 @@ if os.path.isdir(".claude/skills"):
 # Lo que AGENTS.md dice que está ignorado (`.env*` están ignorados) tiene que estarlo: el agente
 # confía en esa frase y, si es falsa, termina commiteando un secreto.
 if os.path.exists("AGENTS.md"):
+    NIEGA = re.compile(r"\b(?:no|nunca)\s+(?:est[aá]n?\s+|es\s+|son\s+|se\s+)?ignor", re.I)
     for n, linea in enumerate(open("AGENTS.md", encoding="utf-8"), 1):
         if not re.search(r"ignorad", linea, re.I):
             continue
-        for patron in re.findall(r"`([^`\s]+)`", linea):
+        # Cada patrón entre backticks se decide por lo que viene después, hasta el siguiente:
+        # en "`.env*` está ignorado y `dist/` no está ignorado" se valida .env* y no dist/.
+        ms = list(re.finditer(r"`([^`\s]+)`", linea))
+        fin = [sig.start() for sig in ms[1:]] + [len(linea)]
+        tramos = [(m.group(1), linea[m.end():f]) for m, f in zip(ms, fin)]
+        afirmados = [p for p, t in tramos if re.search(r"ignor", t, re.I) and not NIEGA.search(t)]
+        if not any(re.search(r"ignor", t, re.I) for _, t in tramos) and not NIEGA.search(linea):
+            afirmados = [p for p, _ in tramos]  # "Están ignorados: `.env*`, `x`": la afirmación va antes
+        for patron in afirmados:
             ejemplo = patron.replace("*", "")  # .env* → .env
             if not ejemplo:
                 continue

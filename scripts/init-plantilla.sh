@@ -72,6 +72,16 @@ else
   [ "$B" != "main" ] && perl -pi -e "s/branches: \[$B\]/branches: [main, $B]/" .github/workflows/labels.yml .github/workflows/docs.yml
 fi
 rm -- scripts/init-plantilla.sh scripts/test-init.sh  # el test solo sirve con el init
+# La verificación "init" del mapa corre ese test: sin él, es una regla muerta.
+if [ -f docs/mapa-agentes.json ]; then
+  python3 - <<'PY'
+import json
+ruta = "docs/mapa-agentes.json"
+mapa = json.load(open(ruta, encoding="utf-8"))
+mapa["verificar"] = [v for v in mapa.get("verificar", []) if v.get("nombre") != "init"]
+open(ruta, "w", encoding="utf-8").write(json.dumps(mapa, ensure_ascii=False, indent=2) + "\n")
+PY
+fi
 # Registro del init: con qué datos se creó el proyecto y la huella de cada archivo tal como
 # quedó. crecer.py lo usa para saber qué archivos no tocó el proyecto y puede reemplazar.
 MODO_KIT=$([ -n "$CHICO" ] && echo chico || echo completo) RELEASES="$MODO" python3 - <<'PY'

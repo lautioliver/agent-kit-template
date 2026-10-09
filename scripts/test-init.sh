@@ -42,7 +42,13 @@ for modo in completo chico; do
   fi
   (cd "$p" && python3 scripts/agentes/check-docs.py >/dev/null 2>&1)
   es -z "$(cd "$p" && git status --porcelain)"; afirmar $? "[$modo] después de correr los scripts, git status queda limpio"
+  if [ "$modo" = chico ]; then
+    ! [ -e "$p/docs/mapa-agentes.json" ]; afirmar $? "[$modo] el modo chico no tiene mapa (ni verificación init)"
+  else
+    ! grep -q '"nombre": "init"' "$p/docs/mapa-agentes.json"; afirmar $? "[$modo] el init saca del mapa la verificación init (su test ya no existe)"
+  fi
 done
+grep -q '"nombre": "init"' "$RAIZ/docs/mapa-agentes.json"; afirmar $? "la plantilla sin inicializar conserva la verificación init"
 
 # Los test-*.sh que deja el init pasan en el proyecto nuevo (los corre el CI), con cualquier rama base.
 for combinacion in "completo main" "chico main" "completo develop" "chico develop"; do
@@ -59,9 +65,36 @@ done
 p="$TMP/completo"
 s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1)
 ! grep -q 'ignorad' <<<"$s"; afirmar $? "check-docs.py no se queja si lo que AGENTS.md dice ignorado lo está"
+# Una frase que dice que algo NO está ignorado no es una afirmación de que lo esté.
+cp "$p/AGENTS.md" "$TMP/AGENTS.md"
+# shellcheck disable=SC2016  # backticks de Markdown literales
+echo '- `dist/` no está ignorado: se commitea.' >>"$p/AGENTS.md"
+s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1)
+! grep -q 'dist/' <<<"$s"; afirmar $? "check-docs.py no se queja de una frase que dice que algo no está ignorado"
+cp "$TMP/AGENTS.md" "$p/AGENTS.md"
 (cd "$p" && git rm -q .gitignore)
 s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1); c=$?
 [ "$c" -ne 0 ] && grep -q 'AGENTS.md.*\.env.*ignorad' <<<"$s"; afirmar $? "check-docs.py falla si AGENTS.md dice que .env* está ignorado y no lo está"
+# Una línea que afirma una cosa y niega otra: la negación no tapa la afirmación.
+grep -v 'ignorad' "$TMP/AGENTS.md" >"$p/AGENTS.md"
+# shellcheck disable=SC2016  # backticks de Markdown literales
+echo '- `.env*` están ignorados; `dist/` no está ignorado.' >>"$p/AGENTS.md"
+s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1)
+grep -q 'AGENTS.md.*\.env.*ignorad' <<<"$s" && ! grep -q 'dist/' <<<"$s"; afirmar $? "check-docs.py valida la afirmación aunque la misma línea niegue otra cosa"
+
+# La negación se decide por cada patrón, aunque la afirmación y la negación estén en la misma frase.
+# Sin .gitignore: tiene que reclamar por .env* y nunca por dist/.
+while IFS= read -r frase; do
+  grep -v 'ignorad' "$TMP/AGENTS.md" >"$p/AGENTS.md"; printf -- '- %s\n' "$frase" >>"$p/AGENTS.md"
+  s=$(cd "$p" && python3 scripts/agentes/check-docs.py 2>&1)
+  grep -q 'AGENTS.md.*\.env.*ignorad' <<<"$s" && ! grep -q 'dist/' <<<"$s"; afirmar $? "check-docs.py valida .env* en: $frase"
+done <<'FRASES'
+`.env*` está ignorado y `dist/` no está ignorado.
+`dist/` no está ignorado, `.env*` sí está ignorado.
+`.env*` no se commitea porque está ignorado.
+`dist/` nunca está ignorado; `.env*` está ignorado.
+Están ignorados: `.env*`.
+FRASES
 
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
