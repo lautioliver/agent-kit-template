@@ -210,6 +210,9 @@ class OtrasHerramientas(unittest.TestCase):
     def test_copilot_con_argumentos_como_texto_json(self):
         r = self.correr({"toolName": "bash", "toolArgs": json.dumps({"command": "gh pr merge 1"}), "cwd": AQUI})
         self.assertEqual(r.returncode, 2)
+        salida = json.loads(r.stdout)  # Copilot le pasa el motivo al agente desde el JSON
+        self.assertEqual(salida["permissionDecision"], "deny")
+        self.assertIn("pedile", salida["permissionDecisionReason"])
 
     def test_copilot_con_argumentos_como_objeto(self):
         r = self.correr({"toolName": "bash", "toolArgs": {"command": "gh pr merge 1"}, "cwd": AQUI})
@@ -221,12 +224,66 @@ class OtrasHerramientas(unittest.TestCase):
 
     def test_cursor_before_shell_execution(self):
         r = self.correr({"hook_event_name": "beforeShellExecution", "command": "git push origin main", "cwd": AQUI})
-        self.assertEqual(r.returncode, 2)
+        salida = json.loads(r.stdout)  # Cursor lee la decisión y los mensajes del JSON (con exit 0)
+        self.assertEqual(r.returncode, 0)
+        self.assertEqual(salida["permission"], "deny")
+        self.assertIn("pedile", salida["agent_message"])
+
+    def test_entradas_malformadas_no_rompen_el_hook(self):
+        frenan = ({"tool_name": "Bash", "tool_input": "gh pr merge 1"},
+                  {"toolName": "bash", "toolArgs": json.dumps("gh pr merge 1")},
+                  {"toolName": "bash", "toolArgs": "gh pr merge 1"},
+                  {"tool_name": "Bash", "tool_input": {"command": ["gh", "pr", "merge", "1"]}})
+        for e in frenan:
+            r = self.correr(e)
+            self.assertEqual(r.returncode, 2, (e, r.stderr))
+        for e in ({"tool_name": "Bash", "tool_input": {"command": 3}}, [1, 2], {"toolName": "bash", "toolArgs": 5}):
+            self.assertEqual(self.correr(e).returncode, 0, e)
 
     def test_deja_pasar_un_comando_permitido_en_cualquier_formato(self):
         for e in ({"toolName": "bash", "toolArgs": {"command": "gh pr view 1"}},
                   {"hook_event_name": "beforeShellExecution", "command": "git status"}):
             self.assertEqual(self.correr(e).returncode, 0)
+
+
+class Registro(unittest.TestCase):
+    """El comando registrado en cada herramienta encuentra el script desde cualquier directorio,
+    y fuera de un repo (o sin el script) no traba todo."""
+
+    RAIZ = os.path.dirname(os.path.dirname(AQUI))
+
+    def comandos(self):
+        r = self.RAIZ
+        with open(os.path.join(r, ".claude", "settings.json"), encoding="utf-8") as f:
+            yield "claude", f'{json.load(f)["hooks"]["PreToolUse"][0]["hooks"][0]["command"]}', \
+                {"tool_name": "Bash", "tool_input": {"command": "gh pr merge 1"}}
+        with open(os.path.join(r, ".codex", "hooks.json"), encoding="utf-8") as f:
+            yield "codex", json.load(f)["hooks"]["PreToolUse"][0]["hooks"][0]["command"], \
+                {"tool_name": "Bash", "tool_input": {"command": "gh pr merge 1"}}
+        with open(os.path.join(r, ".github", "hooks", "barandas.json"), encoding="utf-8") as f:
+            yield "copilot", json.load(f)["hooks"]["preToolUse"][0]["bash"], \
+                {"toolName": "bash", "toolArgs": {"command": "gh pr merge 1"}}
+        with open(os.path.join(r, ".cursor", "hooks.json"), encoding="utf-8") as f:
+            yield "cursor", json.load(f)["hooks"]["beforeShellExecution"][0]["command"], \
+                {"hook_event_name": "beforeShellExecution", "command": "gh pr merge 1"}
+
+    def correr(self, comando, entrada, cwd):
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDE_PROJECT_DIR"}
+        return subprocess.run(["bash", "-c", comando], input=json.dumps(entrada), capture_output=True, text=True,
+                              cwd=cwd, env=env)
+
+    def test_frena_desde_un_subdirectorio(self):
+        for nombre, comando, entrada in self.comandos():
+            r = self.correr(comando, entrada, cwd=AQUI)
+            frenado = r.returncode == 2 or '"deny"' in r.stdout
+            self.assertTrue(frenado, (nombre, r.returncode, r.stdout, r.stderr))
+
+    def test_fuera_de_un_repo_no_traba_todo(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            for nombre, comando, _ in self.comandos():
+                r = self.correr(comando, {"tool_name": "Bash", "tool_input": {"command": "ls"}}, cwd=d)
+                self.assertEqual(r.returncode, 0, (nombre, r.stderr))
 
 
 class Config(unittest.TestCase):
