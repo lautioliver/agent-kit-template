@@ -16,6 +16,7 @@ for opcion in "$@"; do
     *) echo "$USO" >&2; exit 64 ;;
   esac
 done
+[[ "$N" =~ ^[0-9]+$ ]] || { echo "$USO" >&2; exit 64; }
 BASE="${BASE:-<RAMA_BASE>}"   # el init de la plantilla reemplaza <RAMA_BASE>
 REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 YO=$(gh api user -q .login)
@@ -44,9 +45,11 @@ titulo=$(jq -r .title <<<"$issue")
 slug=$(printf '%s' "$titulo" | perl -CS -MUnicode::Normalize -ne 'print lc NFD($_) =~ s/\pM//gr' \
   | perl -pe 's/[^a-z0-9]+/-/g; s/^-+|-+$//g; s/^(.{1,40})(-.*)?$/$1/ if length > 40')
 RAMA="claude/$N-$slug"
-# El worktree va al lado del checkout principal, aunque esto se corra desde otro worktree.
+# El worktree va al lado del checkout principal (el primero de la lista), aunque esto
+# se corra desde otro worktree.
 if [ -n "$WORKTREE" ]; then
-  raiz=$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd -P)
+  raiz=$(git worktree list --porcelain | awk '/^worktree /{print substr($0, 10); exit}')
+  raiz=$(cd "$raiz" && pwd -P)
   WT="$(dirname "$raiz")/$(basename "$raiz")-wt/$N"
 fi
 
@@ -79,13 +82,20 @@ traer() {
   for intento in 1 2 3; do
     err=$(git fetch -q origin "$BASE" 2>&1) && return 0
     grep -Eq "\.lock'|cannot lock ref" <<<"$err" || break
-    sleep "$intento"
+    [ "$intento" -lt 3 ] && sleep "$intento"
   done
   echo "$err" >&2; return 1
 }
 
+# Dónde está ya la rama (si está). prune olvida los worktrees cuya carpeta se borró a mano.
+git worktree prune
+en_uso=$(git worktree list --porcelain | awk -v r="branch refs/heads/$RAMA" '/^worktree /{w=substr($0, 10)} $0 == r {print w}')
+[ -n "$en_uso" ] && en_uso=$(cd "$en_uso" && pwd -P)
+
 if [ -z "$WORKTREE" ]; then
   [ -n "$(git status --porcelain)" ] && error "hay cambios sin commitear en el working tree."
+  actual=$(cd "$(git rev-parse --show-toplevel)" && pwd -P)
+  [ -n "$en_uso" ] && [ "$en_uso" != "$actual" ] && error "la rama $RAMA ya está en uso en otro worktree: $en_uso"
   gh issue edit "$N" -R "$REPO" --add-assignee @me >/dev/null
   traer
   if git show-ref -q --verify "refs/heads/$RAMA"; then
@@ -97,16 +107,13 @@ if [ -z "$WORKTREE" ]; then
   exit 0
 fi
 
-# --worktree: todo se valida antes de asignar.
-en_uso=$(git worktree list --porcelain | awk -v r="branch refs/heads/$RAMA" '/^worktree /{w=substr($0, 10)} $0 == r {print w}')
-[ -n "$en_uso" ] && [ -d "$en_uso" ] && en_uso=$(cd "$en_uso" && pwd -P)
+# --worktree: se valida y se crea el worktree antes de asignar, así una falla no deja el issue asignado.
 [ -n "$en_uso" ] && [ "$en_uso" != "$WT" ] && error "la rama $RAMA ya está en uso en otro worktree: $en_uso"
 if [ -n "$en_uso" ]; then
   [ -n "$(git -C "$WT" status --porcelain)" ] && error "hay cambios sin commitear en el worktree $WT."
 elif [ -e "$WT" ]; then
   error "$WT ya existe y no es el worktree de $RAMA."
 fi
-gh issue edit "$N" -R "$REPO" --add-assignee @me >/dev/null
 traer
 if [ -n "$en_uso" ]; then
   echo "Rama existente: $RAMA (retomando)"
@@ -117,5 +124,6 @@ else
   mkdir -p "$(dirname "$WT")"; git worktree add -q -b "$RAMA" "$WT" "origin/$BASE"
   echo "Rama nueva: $RAMA (desde origin/$BASE)"
 fi
+gh issue edit "$N" -R "$REPO" --add-assignee @me >/dev/null
 echo "Worktree: $WT"
 echo "Asignado a @$YO."
