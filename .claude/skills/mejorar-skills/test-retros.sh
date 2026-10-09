@@ -53,9 +53,11 @@ igual "$(archivos | wc -l | tr -d " ")" 1; afirmar $? "retro.sh pushea un archiv
 f=$(archivos | head -1)
 grep -Eq '^retros/[0-9]{4}-[0-9]{2}-[0-9]{2}-implement-issue-1\.md$' <<<"$f"; afirmar $? "el nombre es AAAA-MM-DD-<skill>-<n>.md"
 c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$f" 2>/dev/null)
-for campo in skill issue pr area rutas skill_sha fecha; do
+for campo in skill issue pr area rutas skill_sha fecha modelo rol; do
   grep -Eq "^$campo: .+" <<<"$c"; afirmar $? "el frontmatter tiene $campo"
 done
+grep -q '^modelo: desconocido$' <<<"$c" && grep -q '^rol: sesion$' <<<"$c"; afirmar $? "sin modelo ni rol se guardan como desconocido y sesion"
+! grep -q '^agente_sha:' <<<"$c"; afirmar $? "una retro sin rol de subagente no lleva agente_sha"
 sha=$(cd "$TMP/a" && git log -1 --format=%h -- .claude/skills/implement-issue/SKILL.md)
 sha=$(cd "$TMP/a" && git log -1 --format=%H -- .claude/skills/implement-issue/SKILL.md)
 grep -q "^skill_sha: $sha$" <<<"$c"; afirmar $? "skill_sha es el commit completo del último cambio del SKILL.md"
@@ -174,6 +176,65 @@ grep -q 'implement-issue-9' <<<"$s"; afirmar $? "senales.sh ve las retros locale
 printf -- '---\nskill: implement-issue\nissue: 15\n---\nd\n' >"$TMP/d.md"
 (cd "$TMP/d" && "$AQUI/retro.sh" "$TMP/d.md" >/dev/null 2>&1)
 git --git-dir="$TMP/remoto-d.git" ls-tree -r --name-only "$RAMA" 2>/dev/null | grep -q 'implement-issue-9'; afirmar $? "al agregar un remoto, las retros locales se suben"
+
+# 5. Modelo, rol, agente_sha y skill orquestar (#35).
+"$AQUI/retro.sh" 2>/dev/null | grep -Eq '^modelo: .*haiku'; afirmar $? "retro.sh sin argumentos muestra el campo modelo"
+"$AQUI/retro.sh" 2>/dev/null | grep -Eq '^rol: .*implementador-liviano'; afirmar $? "retro.sh sin argumentos muestra el campo rol"
+
+clonar "$TMP/g"; (cd "$TMP/g" && git fetch -q && git reset -q --hard origin/main)
+mkdir -p "$TMP/g/.claude/agents"; echo "# implementador liviano" >"$TMP/g/.claude/agents/implementador-liviano.md"
+(cd "$TMP/g" && git add .claude/agents && git commit -qm "agente liviano")
+agsha=$(cd "$TMP/g" && git log -1 --format=%H -- .claude/agents/implementador-liviano.md)
+printf -- '---\nskill: implement-issue\nissue: 35\nmodelo: haiku\nrol: implementador-liviano\n---\nliviano\n' >"$TMP/liv.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/liv.md" >/dev/null 2>&1)
+c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'implement-issue-35' | head -1)" 2>/dev/null)
+grep -q '^modelo: haiku$' <<<"$c" && grep -q '^rol: implementador-liviano$' <<<"$c"; afirmar $? "guarda modelo y rol tal como vienen"
+grep -q "^agente_sha: $agsha$" <<<"$c"; afirmar $? "un subagente guarda agente_sha del .claude/agents/<rol>.md"
+
+printf -- '---\nskill: review-pr\npr: 46\nmodelo: opus\nrol: revisor\n---\nrev\n' >"$TMP/rev.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/rev.md" >/dev/null 2>&1)
+c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'review-pr-pr46' | head -1)" 2>/dev/null)
+grep -q '^agente_sha: desconocido$' <<<"$c"; afirmar $? "si el archivo del agente no existe, agente_sha es desconocido"
+
+printf -- '---\nskill: orquestar\nissue: 33\nmodelo: opus\nrol: orquestador\n---\nepica\n' >"$TMP/orq.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/orq.md" >/dev/null 2>&1)
+archivos | grep -Eq 'retros/[0-9]{4}-[0-9]{2}-[0-9]{2}-orquestar-33\.md$'; afirmar $? "orquestar con issue de la épica se guarda como orquestar-<n>"
+
+printf -- '---\nskill: orquestar\ncorrida: 20261008-1530\nmodelo: opus\nrol: orquestador\n---\ncorrida\n' >"$TMP/corr.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/corr.md" >/dev/null 2>&1)
+archivos | grep -Eq 'retros/[0-9]{4}-[0-9]{2}-[0-9]{2}-orquestar-20261008-1530\.md$'; afirmar $? "orquestar sin épica se identifica con corrida: AAAAMMDD-HHMM"
+
+printf -- '---\nskill: orquestar\ncorrida: ayer\npr: 47\n---\nmal formada\n' >"$TMP/corr-mal.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/corr-mal.md" >/dev/null 2>&1)
+archivos | grep -Eq 'retros/[0-9]{4}-[0-9]{2}-[0-9]{2}-orquestar-pr47\.md$'; afirmar $? "corrida mal formada cae al pr y la retro se nombra prN"
+
+printf -- '---\nskill: implement-issue\ncorrida: 20261008-1530\n---\ncorrida fuera de orquestar\n' >"$TMP/corr-ii.md"
+! (cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/corr-ii.md" >/dev/null 2>&1); afirmar $? "corrida: solo vale con skill orquestar: implement-issue sin issue ni pr se rechaza"
+
+# Campos vacíos y espacios al final (revisión de #46).
+printf -- '---\nskill: implement-issue\nissue: 61\nmodelo:\nrol:\n---\nvacios\n' >"$TMP/vacios.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/vacios.md" >/dev/null 2>&1)
+c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'implement-issue-61' | head -1)" 2>/dev/null)
+grep -q '^modelo: desconocido$' <<<"$c" && grep -q '^rol: sesion$' <<<"$c" && ! grep -Eq '^(modelo|rol):$' <<<"$c"; afirmar $? "modelo y rol vacíos se guardan como desconocido y sesion"
+
+printf -- '---\nskill: implement-issue\nissue: 62\nmodelo: haiku \nrol: implementador-liviano \n---\nespacios\n' >"$TMP/esp.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/esp.md" >/dev/null 2>&1)
+c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'implement-issue-62' | head -1)" 2>/dev/null)
+grep -q '^modelo: haiku$' <<<"$c" && grep -q '^rol: implementador-liviano$' <<<"$c" && grep -q "^agente_sha: $agsha$" <<<"$c"; afirmar $? "espacios al final no se guardan en modelo/rol y no impiden agente_sha"
+
+mkdir -p "$TMP/g/.claude/agents"; echo "# revisor" >"$TMP/g/.claude/agents/revisor.md"
+(cd "$TMP/g" && git add .claude/agents && git commit -qm "agente revisor")
+revsha=$(cd "$TMP/g" && git log -1 --format=%H -- .claude/agents/revisor.md)
+printf -- '---\nskill: review-pr\npr: 63\nmodelo: opus\nrol: revisor \n---\nrev2\n' >"$TMP/rev2.md"
+(cd "$TMP/g" && "$AQUI/retro.sh" "$TMP/rev2.md" >/dev/null 2>&1)
+c=$(git --git-dir="$TMP/remoto.git" show "$RAMA:$(archivos | grep 'review-pr-pr63' | head -1)" 2>/dev/null)
+grep -q "^agente_sha: $revsha$" <<<"$c"; afirmar $? "rol con espacio al final guarda agente_sha igual"
+
+# La skill de mejorar-skills describe el agrupado por modelo y rol y el ruteo de orquestar.
+S="$RAIZ/.claude/skills/mejorar-skills/SKILL.md"
+grep -Eiq 'agrup[^.]*modelo' "$S" && grep -Eiq 'agrup[^.]*rol' "$S"; afirmar $? "mejorar-skills describe cómo agrupa por modelo y rol"
+grep -Eiq 'ruteo[^.]*orquestar|orquestar[^.]*ruteo' "$S"; afirmar $? "mejorar-skills propone cambios en la regla de ruteo de orquestar"
+[ "$(wc -l <"$S")" -le 120 ]; afirmar $? "mejorar-skills/SKILL.md tiene como máximo 120 líneas"
 
 echo
 if [ "$fallas" -ne 0 ]; then echo "$fallas test(s) fallaron."; exit 1; fi
