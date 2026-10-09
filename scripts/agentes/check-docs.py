@@ -12,7 +12,7 @@ Revisa:
 - Rutas del mapa (docs, sensibles, verificar) que no coinciden con ningún archivo (salvo las
   marcadas como opcionales con "?" al principio); avisa de
   carpetas con código que el mapa no cubre.
-- Skills (.claude/skills/*/SKILL.md) de más de 120 líneas.
+- Skills (.claude/skills/*/SKILL.md) de más de 120 líneas, y docs/agentes/lecciones.md de más de 40.
 Las rutas de "ignorar_check" del mapa (por ejemplo, bitácoras históricas) no se validan.
 """
 import json
@@ -152,6 +152,13 @@ if os.path.isdir(".claude/skills"):
             lineas = sum(1 for _ in open(ruta, encoding="utf-8"))
             if lineas > MAX_SKILL:
                 errores.append(f"{ruta}: {lineas} líneas (máximo {MAX_SKILL}). Pasá algo a un script o sacá lo que no aporta.")
+
+# Lecciones de las retros: las lee cada agente antes de empezar, así que tienen que ser cortas.
+MAX_LECCIONES, LECCIONES = 40, "docs/agentes/lecciones.md"
+if os.path.exists(LECCIONES):
+    lineas = sum(1 for _ in open(LECCIONES, encoding="utf-8"))
+    if lineas > MAX_LECCIONES:
+        errores.append(f"{LECCIONES}: {lineas} líneas (máximo {MAX_LECCIONES}). Sacá la lección más vieja o la que ya pasó a una skill.")
 
 for a in avisos:
     print(f"Aviso: {a}")

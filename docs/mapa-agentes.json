@@ -115,6 +115,13 @@
       "correr": "command -v shellcheck >/dev/null || { echo 'Falta shellcheck: brew install shellcheck (macOS) o apt install shellcheck. Sin él, esta verificación no corre.'; exit 1; }; shellcheck {archivos}"
     },
     {
+      "nombre": "retros",
+      "cuando": [
+        ".claude/skills/mejorar-skills/**"
+      ],
+      "correr": "bash .claude/skills/mejorar-skills/test-retros.sh"
+    },
+    {
       "nombre": "lint",
       "siempre": true,
       "correr": "TODO: comando de lint (por ejemplo: npm run lint)"
