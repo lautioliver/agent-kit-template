@@ -145,6 +145,14 @@
       "correr": "bash scripts/agentes/test-agentes.sh"
     },
     {
+      "nombre": "rojo",
+      "cuando": [
+        ".claude/skills/implement-issue/rojo.sh",
+        ".claude/skills/implement-issue/test-rojo.sh"
+      ],
+      "correr": "bash .claude/skills/implement-issue/test-rojo.sh"
+    },
+    {
       "nombre": "retros",
       "cuando": [
         ".claude/skills/mejorar-skills/**"
@@ -157,6 +165,14 @@
         "scripts/agentes/**"
       ],
       "correr": "bash scripts/agentes/test-base.sh"
+    },
+    {
+      "nombre": "init",
+      "cuando": [
+        "?scripts/init-plantilla.sh",
+        "?scripts/test-init.sh"
+      ],
+      "correr": "bash scripts/test-init.sh"
     },
     {
       "nombre": "lint",

@@ -13,15 +13,9 @@ Si no te dieron un número ("tomá el siguiente"), corré `.claude/skills/estado
 
 ## 1. Tomar el issue
 
-```bash
-.claude/skills/implement-issue/preparar.sh <n>
-```
+`.claude/skills/implement-issue/preparar.sh <n>` valida que el issue esté abierto, que no sea una épica, que no esté bloqueado, que no lo tenga asignado otra persona y que no haya cambios sin commitear. Si pasa, lo asigna a quien corre el comando, crea la rama `claude/<n>-<descripcion>` desde `<RAMA_BASE>` (o retoma la que ya existe) e imprime el issue con sus comentarios, su épica y lo que desbloquea.
 
-Valida que el issue esté abierto, que no sea una épica, que no esté bloqueado, que no lo tenga asignado otra persona y que no haya cambios sin commitear. Si pasa, lo asigna a quien corre el comando, crea la rama `claude/<n>-<descripcion>` desde `<RAMA_BASE>` (o retoma la que ya existe) e imprime el issue con sus comentarios, su épica y lo que desbloquea.
-
-Con `--worktree` hace lo mismo pero en un worktree propio (`../<repo>-wt/<n>`), sin tocar el checkout actual, para correr varios issues en paralelo. Imprime `Worktree: <ruta>`; trabajá ahí con rutas absolutas o `git -C <ruta>` (si el directorio actual se reinicia entre comandos, commitearías en el checkout principal). Si la rama ya está en otro worktree, falla sin asignar. Con el PR mergeado, borralo con `git worktree remove <ruta>`.
-
-Si falla, **no fuerces nada**: contale al usuario por qué y, si sirve, proponé el siguiente disponible. Para leer un issue sin tomarlo: `preparar.sh <n> --revisar`.
+Para varios issues en paralelo, `--worktree` (cómo trabajar ahí: `preparar.sh --help`). Para leer un issue sin tomarlo, `--revisar`. Si falla, **no fuerces nada**: contale al usuario por qué y, si sirve, proponé el siguiente disponible.
 
 ## 2. Entender antes de tocar
 
@@ -57,16 +51,11 @@ TDD: los tests salen de los **criterios de aceptación** del issue, no del códi
 ## 5. Autorevisión
 
 Revisá el diff completo contra `<RAMA_BASE>` antes de abrir el PR:
-
 - Si está disponible el comando `/code-review`, corrélo sobre la rama y resolvé lo que encuentre.
 - Cada hallazgo que corrijas sigue el mismo ciclo: test que reproduce el hallazgo, `rojo.sh` contra el código actual, arreglo, verde.
 - Si no, revisá vos: bugs, casos borde, código muerto, secretos, archivos que no deberían estar.
 
-Además:
-```bash
-python3 scripts/agentes/mapa.py
-```
-Si dice que tocaste **rutas sensibles**, corré `/security-review` (si está disponible) o revisá a mano auth, permisos, inputs, secretos y exposición de datos, y confirmá que la aprobación de Autonomía consta. Además revisá a mano las **invariantes de los ADRs** que toca el cambio (lo que no puede pasar nunca: dos ingresos con la misma entrada, un doble cobro…): una revisión de seguridad genérica no las conoce, y es donde suelen estar los errores graves.
+Además, si `python3 scripts/agentes/mapa.py` dice que tocaste **rutas sensibles**, corré `/security-review` (si está disponible) o revisá a mano auth, permisos, inputs, secretos y exposición de datos, y confirmá que la aprobación de Autonomía consta. Además revisá a mano las **invariantes de los ADRs** que toca el cambio (lo que no puede pasar nunca: dos ingresos con la misma entrada, un doble cobro…): una revisión de seguridad genérica no las conoce, y es donde suelen estar los errores graves.
 
 Lo que decidas no corregir, explicalo en el PR.
 
@@ -76,26 +65,11 @@ Seguí la skill `update-docs` (modo 1): `mapa.py` te dice qué docs revisar, y `
 
 ## 7. Verificar
 
-Última guardia antes del PR, con todo commiteado:
-
-```bash
-python3 scripts/agentes/verificar.py
-```
-
-Según los archivos cambiados, corre lo configurado en `docs/mapa-agentes.json` (`verificar`): lint, typecheck, tests afectados, drift de migraciones, docs… Si algo falla, arreglalo y volvé a correrlo; nunca desactives una verificación ni la saques del mapa para que pase. Si `verificar.py` o la sección `verificar` del mapa todavía no existen en la rama base (por ejemplo, porque el PR que los agrega no se mergeó), corré a mano lint, typecheck, tests y los controles de `AGENTS.md`, y decilo en el PR. Si avisa que alguna está **sin configurar**, decilo en el PR: ese aspecto no quedó verificado. En "Cómo probarlo" va su resumen.
+Con todo commiteado, `python3 scripts/agentes/verificar.py` corre lo que corresponde a lo que cambió y explica en su salida qué hacer con cada resultado. Nunca desactives una verificación ni la saques del mapa para que pase. Lo que quede **sin configurar** no está verificado: decilo en el PR, con el resumen en "Cómo probarlo".
 
 ## 8. Abrir el PR
 
-```bash
-git push -u origin HEAD
-gh pr create --base <RAMA_BASE> --title "<tipo>(<scope>): <descripcion>" --body-file <archivo> \
-  --label "tipo:..." --label "area:..."
-```
-
-- Título: Conventional Commits, ≤ 72 caracteres (lo valida `pr-title.yml`).
-- Cuerpo: `.github/pull_request_template.md` completo. En "Cómo probarlo", los comandos que corriste y su resultado. En "Cómo probarlo", el bloque **rojo** de `rojo.sh` y el commit de los tests en rojo: sin eso, el revisor no puede comprobar que los tests prueban algo.
-- Labels: exactamente un `tipo:` (copialo del issue), 1–2 `area:`, ningún `prioridad:`, más `logica-negocio` o `breaking-change` si corresponden.
-- `Closes #<n>` en el cuerpo.
+`git push -u origin HEAD` y `gh pr create --base <RAMA_BASE> --body-file <archivo>`, con el cuerpo de `.github/pull_request_template.md` completo: en "Cómo probarlo", los comandos que corriste con su resultado, el bloque **rojo** de `rojo.sh` y el commit de los tests en rojo (sin eso, el revisor no puede comprobar que los tests prueban algo). Labels: el `tipo:` y el `area:` del issue, más `logica-negocio` o `breaking-change` si corresponden. El CI valida el título (`pr-title.yml`), los labels, `Closes #<n>` y el bloque rojo (`labels.yml`): si falla, corregí el PR.
 
 ## 9. Esperar el CI y entregar
 

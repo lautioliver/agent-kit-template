@@ -12,6 +12,7 @@ Revisa:
 - Rutas del mapa (docs, sensibles, verificar) que no coinciden con ningún archivo (salvo las
   marcadas como opcionales con "?" al principio); avisa de
   carpetas con código que el mapa no cubre.
+- Lo que AGENTS.md dice que está ignorado (`.env*`…) y git no ignora.
 - Skills (.claude/skills/*/SKILL.md) de más de 120 líneas, y docs/agentes/lecciones.md de más de 40.
 - Subagentes (.claude/agents/*.md) sin name, description o tools, con un model que no es opus,
   sonnet ni haiku, o que no remiten al contrato común (docs/agentes/contrato-subagentes.md).
@@ -154,6 +155,30 @@ if os.path.isdir(".claude/skills"):
             lineas = sum(1 for _ in open(ruta, encoding="utf-8"))
             if lineas > MAX_SKILL:
                 errores.append(f"{ruta}: {lineas} líneas (máximo {MAX_SKILL}). Pasá algo a un script o sacá lo que no aporta.")
+
+# Lo que AGENTS.md dice que está ignorado (`.env*` están ignorados) tiene que estarlo: el agente
+# confía en esa frase y, si es falsa, termina commiteando un secreto.
+if os.path.exists("AGENTS.md"):
+    NIEGA = re.compile(r"\b(?:no|nunca)\s+(?:est[aá]n?\s+|es\s+|son\s+|se\s+)?ignor", re.I)
+    for n, linea in enumerate(open("AGENTS.md", encoding="utf-8"), 1):
+        if not re.search(r"ignorad", linea, re.I):
+            continue
+        # Cada patrón entre backticks se decide por lo que viene después, hasta el siguiente:
+        # en "`.env*` está ignorado y `dist/` no está ignorado" se valida .env* y no dist/.
+        ms = list(re.finditer(r"`([^`\s]+)`", linea))
+        fin = [sig.start() for sig in ms[1:]] + [len(linea)]
+        tramos = [(m.group(1), linea[m.end():f]) for m, f in zip(ms, fin)]
+        afirmados = [p for p, t in tramos if re.search(r"ignor", t, re.I) and not NIEGA.search(t)]
+        if not any(re.search(r"ignor", t, re.I) for _, t in tramos) and not NIEGA.search(linea):
+            afirmados = [p for p, _ in tramos]  # "Están ignorados: `.env*`, `x`": la afirmación va antes
+        for patron in afirmados:
+            ejemplo = patron.replace("*", "")  # .env* → .env
+            if not ejemplo:
+                continue
+            r = subprocess.run(["git", "check-ignore", "-q", "--no-index", ejemplo], capture_output=True)
+            if r.returncode == 1:
+                errores.append(f"AGENTS.md:{n}: dice que `{patron}` está ignorado, pero {ejemplo} no lo está. "
+                               "Agregalo a .gitignore o corregí la frase.")
 
 # Lecciones de las retros: las lee cada agente antes de empezar, así que tienen que ser cortas.
 MAX_LECCIONES, LECCIONES = 40, "docs/agentes/lecciones.md"

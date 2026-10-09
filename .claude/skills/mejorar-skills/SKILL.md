@@ -13,13 +13,15 @@ Las skills aprenden de su uso, pero **no se reescriben solas**: esta skill propo
 .claude/skills/mejorar-skills/senales.sh [días]
 ```
 
-Trae las retros nuevas de la rama `agentes/retros` (desde `consolidado.md`; un archivo por retro, con `skill_sha` para saber con qué versión de la skill se hizo) y las señales objetivas: fallas de CI en ramas `claude/` agrupadas por workflow, y reverts. Las señales objetivas pesan más que las retros: el agente no ve sus propios puntos ciegos.
+Trae las retros nuevas de la rama `agentes/retros` (desde `consolidado.md`; un archivo por retro, con `skill_sha` para saber con qué versión de la skill se hizo, y `modelo` y `rol` para saber quién la hizo) y las señales objetivas: fallas de CI en ramas `claude/` agrupadas por workflow, y reverts. Las señales objetivas pesan más que las retros: el agente no ve sus propios puntos ciegos.
 
 Si no hay nada nuevo, decilo y terminá.
 
 ## 2. Agrupar por patrón
 
 Para cada patrón: qué pasó, en qué casos (links), y qué skill o script lo habría evitado. Un patrón es algo que se repite o que fue grave; una anécdota no es un patrón.
+
+Agrupá los desvíos y hallazgos por `modelo` y por `rol`. Si un mismo modelo falla repetido en un tipo de issue (`tipo:` o `area:`), es un caso para la regla de ruteo de `orquestar` (qué issues van a Haiku y cuáles a Sonnet): se propone en el PR, sin aflojar el escalado de `mapa.py` ni el revisor. Las retros con `modelo: desconocido` o `rol: sesion` no entran en esa comparación.
 
 ## 3. Decidir qué proponer
 

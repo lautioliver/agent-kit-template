@@ -6,7 +6,26 @@
 #   --worktree: crea (o retoma) la rama en su propio worktree, ../<repo>-wt/<n>,
 #               sin tocar el checkout actual. Imprime "Worktree: <ruta>".
 set -euo pipefail
-USO="Uso: $0 <n°issue> [--revisar] [--worktree]"
+USO="Uso: $0 <n°issue> [--revisar] [--worktree] | --help"
+if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
+  cat <<AYUDA
+$USO
+
+Valida que el issue se pueda tomar (abierto, no épica, no bloqueado, sin otra persona
+asignada, sin cambios sin commitear), lo asigna, crea la rama claude/<n>-<descripcion>
+desde la rama base (o retoma la que existe) e imprime el issue con su contexto.
+
+  --revisar   Solo valida e imprime: no asigna ni crea la rama.
+  --worktree  Lo mismo, pero en un worktree propio (../<repo>-wt/<n>), sin tocar el
+              checkout actual: sirve para correr varios issues en paralelo.
+              - Imprime "Worktree: <ruta>". Trabajá ahí con rutas absolutas o
+                git -C <ruta>: si el directorio actual se reinicia entre comandos,
+                commitearías en el checkout principal.
+              - Si la rama ya está en otro worktree, falla sin asignar.
+              - Con el PR mergeado, borralo con: git worktree remove <ruta>
+AYUDA
+  exit 0
+fi
 N="${1:?$USO}"; N="${N#\#}"; shift
 REVISAR=""; WORKTREE=""
 for opcion in "$@"; do

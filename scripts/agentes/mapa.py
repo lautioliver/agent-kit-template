@@ -86,12 +86,18 @@ def archivos_cambiados(args):
     if not existe(ref):
         salir(f"no encuentro la rama '{base}' ni 'origin/{base}'. "
               f"Corré 'git fetch origin {base}' o pasá --base <rama>.")
-    r = subprocess.run(["git", "diff", "--name-only", f"{ref}...HEAD"], capture_output=True, text=True)
+    # Con -z los nombres llegan literales: sin -z, git pone entre comillas y escapa los que tienen
+    # espacios, tildes o ñ, y no coinciden con ningún glob del mapa.
+    r = subprocess.run(["git", "diff", "--name-only", "-z", f"{ref}...HEAD"], capture_output=True, text=True)
     if r.returncode != 0:
         salir(f"git diff contra '{ref}' falló: {r.stderr.strip()}. ¿Tienen historia en común? Probá con --base.")
-    out = r.stdout
-    sucios = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True).stdout
-    nombres = set(out.splitlines()) | {l[3:].split(" -> ")[-1] for l in sucios.splitlines()}
+    nombres = set(r.stdout.split("\0"))
+    # Con -uall, una carpeta nueva sin trackear se lista archivo por archivo (si no, solo "carpeta/").
+    entradas = iter(subprocess.run(["git", "status", "--porcelain", "-z", "-uall"], capture_output=True, text=True).stdout.split("\0"))
+    for e in entradas:
+        nombres.add(e[3:])
+        if "R" in e[:2] or "C" in e[:2]:
+            next(entradas, None)  # renombre o copia: la entrada siguiente es el nombre viejo
     return sorted(n for n in nombres if n)
 
 

@@ -52,8 +52,11 @@ fi
 rm -rf perfiles
 # La marca (Barrilete) es de la plantilla, no del proyecto nuevo.
 rm -rf .github/marca
-perl -0pi -e 's/<!-- marca:inicio -->.*?<!-- marca:fin -->\n\n?//gs' README.md
-perl -ni -e 'print unless m{^\|.*`\.github/marca/`}' README.md  # fila "Marca" de la tabla
+for f in README.md README.en.md; do
+  [ -f "$f" ] || continue
+  perl -0pi -e 's/<!-- marca:inicio -->.*?<!-- marca:fin -->\n\n?//gs' "$f"
+  perl -ni -e 'print unless m{^\|.*`\.github/marca/`}' "$f"  # fila "Marca" de la tabla
+done
 # crecer.py solo sirve en proyectos chicos (para pasar al modo completo).
 [ -z "$CHICO" ] && rm -f scripts/crecer.py
 # shellcheck disable=SC2016  # $ENV{…} lo expande perl, no bash
@@ -68,7 +71,17 @@ else
   for f in $BLOQUES; do perl -0pi -e 's/\n<!-- releases:inicio -->.*?<!-- releases:fin -->\n//s' "$f"; done
   [ "$B" != "main" ] && perl -pi -e "s/branches: \[$B\]/branches: [main, $B]/" .github/workflows/labels.yml .github/workflows/docs.yml
 fi
-rm -- scripts/init-plantilla.sh
+rm -- scripts/init-plantilla.sh scripts/test-init.sh  # el test solo sirve con el init
+# La verificación "init" del mapa corre ese test: sin él, es una regla muerta.
+if [ -f docs/mapa-agentes.json ]; then
+  python3 - <<'PY'
+import json
+ruta = "docs/mapa-agentes.json"
+mapa = json.load(open(ruta, encoding="utf-8"))
+mapa["verificar"] = [v for v in mapa.get("verificar", []) if v.get("nombre") != "init"]
+open(ruta, "w", encoding="utf-8").write(json.dumps(mapa, ensure_ascii=False, indent=2) + "\n")
+PY
+fi
 # Registro del init: con qué datos se creó el proyecto y la huella de cada archivo tal como
 # quedó. crecer.py lo usa para saber qué archivos no tocó el proyecto y puede reemplazar.
 MODO_KIT=$([ -n "$CHICO" ] && echo chico || echo completo) RELEASES="$MODO" python3 - <<'PY'
